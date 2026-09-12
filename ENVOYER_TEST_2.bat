@@ -1,11 +1,11 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
-title PokeTama V9.91 - Envoi vers Test-2 uniquement
+title PokeTama V9.92 - Envoi vers Test-2 uniquement
 cd /d "%~dp0"
 
 set "REPO_URL=https://github.com/Moretro3D/Test-2.git"
 echo ============================================================
-echo  PokeTama V9.91 - ENVOI SECURISE VERS TEST-2
+echo  PokeTama V9.92 - ENVOI SECURISE VERS TEST-2
 echo ============================================================
 echo Destination unique : %REPO_URL%
 echo Ce lanceur ne peut pas envoyer vers Test-1.
@@ -43,7 +43,7 @@ if /I not "!FINAL_REMOTE!"=="%REPO_URL%" (
 
 git add -A
 git diff --cached --quiet
-if errorlevel 1 git commit -m "PokeTama V9.91 - Navigation Boite sur theme"
+if errorlevel 1 git commit -m "PokeTama V9.92 - Cadre Boite agrandi"
 git branch -M main
 
 echo.

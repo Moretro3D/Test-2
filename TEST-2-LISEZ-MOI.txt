@@ -1,4 +1,4 @@
-POKETAMA TEST-2 - PAGE INSTALLATEUR TEMPORAIRE V9.91
+POKETAMA TEST-2 - PAGE INSTALLATEUR TEMPORAIRE V9.92
 
 1. Cree sur GitHub un depot PUBLIC et VIDE nomme Test-2
    (sans README, licence ni .gitignore). Tu pourras le supprimer apres le test.

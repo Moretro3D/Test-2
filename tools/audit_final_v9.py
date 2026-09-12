@@ -92,7 +92,7 @@ ok("Mode cover : 600x432" in ino and "-67,-20,4" in ino,
 ok('snprintf(known' not in ino and 'snprintf(goal' not in ino and
    'gfx->fillRoundRect(302, 62, 106, 28' not in ino,
    "Connus, But Dex et bouton de tri DEX supprimes de la Boite")
-ok("x = 84 + col * 78, y = 100 + row * 74" in ino and
+ok("x = 84 + col * 78, y = 112 + row * 74" in ino and
    "gfx->fillRoundRect(x, y, 64, 64" in ino and
    "gfx->fillRoundRect(76, 306, 94, 38" in ino and
    "gfx->fillRect(0,350,466,116" not in ino,
@@ -101,8 +101,9 @@ ok("gfx->fillRect(0,350,466,116" not in ino and "gfx->fillRect(0,355,466,111,uiB
    "int navY = 360" in ino,
    "ligne fine et zone navigation sur fond clair/sombre du theme")
 ok("gfx->fillRoundRect(x, y, 64, 64, 10" in ino and
-   "gfx->fillRoundRect(108,28,250,58,15" in ino,
-   "titre et cadres de la Boite reduits pour le cercle")
+   "gfx->fillRoundRect(108,24,250,72,15" in ino and
+   "y >= 112 + row * 74 && y <= 176 + row * 74" in ino,
+   "cadre titre agrandi, grille descendue et tactile synchronise")
 ok('prefs.putUChar("boxbg", boxBackground)' in pet and
    'prefs.getUChar("boxbg", 0)' in pet,
    "fond de Boite memorise apres redemarrage")

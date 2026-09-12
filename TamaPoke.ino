@@ -32,7 +32,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.46.53-moretro3d-v9.91-boite-zone-theme"
+#define FW_VERSION "1.46.54-moretro3d-v9.92-boite-cadre-agrandi"
 #define HELP_PAGE_COUNT 8
 #define HELP_LINE_COUNT 6
 
@@ -1212,7 +1212,7 @@ void onTap(int16_t x, int16_t y) {
         int row = (y - 100) / 74;
         if (col >= 0 && col < 4 && row >= 0 && row < 2 &&
             x >= 84 + col * 78 && x <= 148 + col * 78 &&
-            y >= 100 + row * 74 && y <= 164 + row * 74) {
+            y >= 112 + row * 74 && y <= 176 + row * 74) {
           int16_t dex = boxDexAt((uint16_t)boxPage * 8 + row * 4 + col);
           if (dex > 0) {
             cardOpen = false;
@@ -4868,18 +4868,18 @@ void renderCardBox() {
   uint8_t pages = boxPageCount();
   if (boxPage >= pages) boxPage = pages - 1;
 
-  gfx->fillRoundRect(108,28,250,58,15,uiPanel());
-  gfx->drawRoundRect(108,28,250,58,15,uiLine());
+  gfx->fillRoundRect(108,24,250,72,15,uiPanel());
+  gfx->drawRoundRect(108,24,250,72,15,uiLine());
   gfx->setTextColor(uiInk());
   gfx->setTextSize(3);
-  gfx->setCursor(CX - strlen(T(S_BOX)) * 9, 42);
+  gfx->setCursor(CX - strlen(T(S_BOX)) * 9, 36);
   gfx->print(T(S_BOX));
 
   char caught[24];
   snprintf(caught, sizeof(caught), T(S_CAUGHT_COUNT_FMT), pet.caughtCount());
   gfx->setTextSize(2);
   gfx->setTextColor(uiInk());
-  gfx->setCursor(CX-(int)strlen(caught)*6, 72);
+  gfx->setCursor(CX-(int)strlen(caught)*6, 76);
   gfx->print(caught);
 
   if (pet.caughtCount() == 0) {
@@ -4903,7 +4903,7 @@ void renderCardBox() {
     if (dex <= 0) break;
     const DexEntry &d = DEX_TBL[dex];
     int col = i % 4, row = i / 4;
-    int x = 84 + col * 78, y = 100 + row * 74;
+    int x = 84 + col * 78, y = 112 + row * 74;
     gfx->fillRoundRect(x, y, 64, 64, 10, uiPanel());
     gfx->drawRoundRect(x, y, 64, 64, 10, d.accent);
     const uint8_t *thumb = thumbs.get(dex);

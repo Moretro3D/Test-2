@@ -1,25 +1,25 @@
 {
-  "name": "PokeTama Moretro3D - V9.91 Test-2",
-  "version": "1.46.53-moretro3d-v9.91-boite-zone-theme",
+  "name": "PokeTama Moretro3D - V9.92 Test-2",
+  "version": "1.46.54-moretro3d-v9.92-boite-cadre-agrandi",
   "new_install_prompt_erase": true,
   "builds": [
     {
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/poketama-1.46.53-moretro3d-v9.91-boite-zone-theme-bootloader.bin",
+          "path": "firmware/poketama-1.46.54-moretro3d-v9.92-boite-cadre-agrandi-bootloader.bin",
           "offset": 0
         },
         {
-          "path": "firmware/poketama-1.46.53-moretro3d-v9.91-boite-zone-theme-partitions.bin",
+          "path": "firmware/poketama-1.46.54-moretro3d-v9.92-boite-cadre-agrandi-partitions.bin",
           "offset": 32768
         },
         {
-          "path": "firmware/poketama-1.46.53-moretro3d-v9.91-boite-zone-theme-boot_app0.bin",
+          "path": "firmware/poketama-1.46.54-moretro3d-v9.92-boite-cadre-agrandi-boot_app0.bin",
           "offset": 57344
         },
         {
-          "path": "firmware/poketama-1.46.53-moretro3d-v9.91-boite-zone-theme-app.bin",
+          "path": "firmware/poketama-1.46.54-moretro3d-v9.92-boite-cadre-agrandi-app.bin",
           "offset": 65536
         }
       ]
