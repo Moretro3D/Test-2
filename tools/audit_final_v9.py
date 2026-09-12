@@ -95,10 +95,11 @@ ok('snprintf(known' not in ino and 'snprintf(goal' not in ino and
 ok("x = 84 + col * 78, y = 100 + row * 74" in ino and
    "gfx->fillRoundRect(x, y, 64, 64" in ino and
    "gfx->fillRoundRect(76, 306, 94, 38" in ino and
-   "gfx->fillRect(0,298,466,168" in ino,
-   "grille Boite reduite et pagination dans le fond noir abaisse")
-ok("gfx->fillRect(0,298,466,168" in ino and "gfx->fillRect(0,298,466,5,UI_INK)" in ino,
-   "fond de Boite arrete par une barre noire avant navigation")
+   "gfx->fillRect(0,350,466,116" not in ino,
+   "grille Boite reduite et pagination sur le decor")
+ok("gfx->fillRect(0,350,466,116" not in ino and "gfx->fillRect(0,355,466,111,uiBg())" in ino and "gfx->fillRect(0,350,466,5,UI_INK)" in ino and
+   "int navY = 360" in ino,
+   "ligne fine et zone navigation sur fond clair/sombre du theme")
 ok("gfx->fillRoundRect(x, y, 64, 64, 10" in ino and
    "gfx->fillRoundRect(108,28,250,58,15" in ino,
    "titre et cadres de la Boite reduits pour le cercle")

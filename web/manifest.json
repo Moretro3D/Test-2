@@ -1,25 +1,25 @@
 {
-  "name": "PokeTama Moretro3D - V9.88 Test-2",
-  "version": "1.46.50-moretro3d-v9.88-boite-ronde-nav-basse",
+  "name": "PokeTama Moretro3D - V9.91 Test-2",
+  "version": "1.46.53-moretro3d-v9.91-boite-zone-theme",
   "new_install_prompt_erase": true,
   "builds": [
     {
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/poketama-1.46.50-moretro3d-v9.88-boite-ronde-nav-basse-bootloader.bin",
+          "path": "firmware/poketama-1.46.53-moretro3d-v9.91-boite-zone-theme-bootloader.bin",
           "offset": 0
         },
         {
-          "path": "firmware/poketama-1.46.50-moretro3d-v9.88-boite-ronde-nav-basse-partitions.bin",
+          "path": "firmware/poketama-1.46.53-moretro3d-v9.91-boite-zone-theme-partitions.bin",
           "offset": 32768
         },
         {
-          "path": "firmware/poketama-1.46.50-moretro3d-v9.88-boite-ronde-nav-basse-boot_app0.bin",
+          "path": "firmware/poketama-1.46.53-moretro3d-v9.91-boite-zone-theme-boot_app0.bin",
           "offset": 57344
         },
         {
-          "path": "firmware/poketama-1.46.50-moretro3d-v9.88-boite-ronde-nav-basse-app.bin",
+          "path": "firmware/poketama-1.46.53-moretro3d-v9.91-boite-zone-theme-app.bin",
           "offset": 65536
         }
       ]

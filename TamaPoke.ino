@@ -32,7 +32,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.46.50-moretro3d-v9.88-boite-ronde-nav-basse"
+#define FW_VERSION "1.46.53-moretro3d-v9.91-boite-zone-theme"
 #define HELP_PAGE_COUNT 8
 #define HELP_LINE_COUNT 6
 
@@ -4892,10 +4892,10 @@ void renderCardBox() {
     return;
   }
 
-  // Zone inférieure indépendante : le décor s'arrête ici. Une ligne noire
-  // sépare clairement la Boîte des commandes de pagination et de retour.
-  gfx->fillRect(0,298,466,168,C565(0x08,0x09,0x0d));
-  gfx->fillRect(0,298,466,5,UI_INK);
+  // Le décor personnalisé de la Boîte s'arrête à la séparation. La navigation
+  // générale reprend ensuite le fond standard, clair ou sombre selon le thème.
+  gfx->fillRect(0,355,466,111,uiBg());
+  gfx->fillRect(0,350,466,5,UI_INK);
 
   // Grille 4x2 de mini-sprites captures, adaptee au cercle 1,75 pouce.
   for (uint8_t i = 0; i < BOX_ROWS; i++) {
