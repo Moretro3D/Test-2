@@ -1,0 +1,22 @@
+# artefactos de compilacion
+build/
+tests/build/
+
+# cacheas y artefactos regenerables del taller
+tools/downloads/
+tools/__pycache__/
+__pycache__/
+tools/sheet.png
+tools/import_sheet.png
+tools/emitted_sprites.js
+tools/demo_anim.js
+tools/demo_compare.js
+
+.DS_Store
+._*
+tools/pmd_cache/
+PROJEKT_KONTEXT.md
+
+# Firmware is published through the web installer and GitHub Releases.
+# Track only the active installer parts deliberately; ignore every local build.
+web/firmware/tamapoke-*.bin

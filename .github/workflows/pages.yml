@@ -1,0 +1,86 @@
+name: PokeTama Test-2 - Page installateur temporaire
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: "poketama-test-2-pages"
+  cancel-in-progress: true
+jobs:
+  build:
+    name: Compiler et preparer la page Test-2
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Tests moteur
+        run: make -C tests clean && make -C tests test
+      - uses: arduino/setup-arduino-cli@v2
+        with:
+          version: "1.x"
+      - name: Restaurer le cache de compilation
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.arduino15
+            ~/Arduino/libraries
+            ~/.cache/arduino
+            ~/.cache/pip
+          key: poketama-esp32-3.3.11-libs-v1-${{ runner.os }}
+      - name: Installer ESP32 3.3.11
+        run: |
+          arduino-cli config init || true
+          arduino-cli config add board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          if ! arduino-cli core list | grep -q 'esp32:esp32.*3.3.11'; then
+            arduino-cli core update-index
+            arduino-cli core install esp32:esp32@3.3.11
+          fi
+      - name: Installer les bibliotheques PokeTama
+        run: |
+          if ! arduino-cli lib list | grep -q 'GFX Library for Arduino'; then
+            arduino-cli lib update-index
+            arduino-cli lib install "GFX Library for Arduino" "SensorLib" "XPowersLib"
+          fi
+      - name: Restaurer les 386 sprites deja convertis
+        uses: actions/cache@v4
+        with:
+          path: |
+            tools/sdcard/mons/p*.bin
+            tools/sdcard/mons/ps*.bin
+            tools/sdcard/mons/thumbs.bin
+          key: poketama-pmd-386-v2-${{ hashFiles('tools/pack_pmd.py', 'tools/make_thumbs.py') }}
+          restore-keys: |
+            poketama-pmd-386-v2-
+      - name: Installer Pillow pour les sprites
+        run: |
+          python3 -c "from PIL import Image" 2>/dev/null || python3 -m pip install Pillow
+          python3 -c "from PIL import Image; print('Pillow OK:', Image.__version__)"
+      - name: Regenerer et auditer les six sols de combat
+        run: |
+          python3 tools/make_battle_bases.py
+          python3 tools/audit_battle_grounds.py
+      - name: Compiler la V9.87
+        run: chmod +x tools/build_web.sh && bash tools/build_web.sh
+      - name: Auditer les tailles des 386 Pokemon en combat
+        run: python3 tools/audit_battle_sprite_sizes.py
+      - name: Verifier la page et les binaires
+        run: python3 tools/verify_web.py
+      - uses: actions/configure-pages@v5
+      - name: Preparer GitHub Pages
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: web
+  deploy:
+    name: Publier l'installateur temporaire
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Publier Test-2
+        id: deployment
+        uses: actions/deploy-pages@v4

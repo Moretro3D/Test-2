@@ -1,0 +1,17 @@
+POKETAMA TEST-2 - PAGE INSTALLATEUR TEMPORAIRE V9.87
+
+1. Cree sur GitHub un depot PUBLIC et VIDE nomme Test-2
+   (sans README, licence ni .gitignore). Tu pourras le supprimer apres le test.
+2. Lance ENVOYER_TEST_2.bat et connecte-toi a GitHub si Windows le demande.
+3. Ouvre l'onglet Actions et laisse finir
+   « PokeTama Test-2 - Page installateur temporaire ».
+4. Dans Settings > Pages, verifie que Source est regle sur GitHub Actions.
+5. Ouvre https://moretro3d.github.io/Test-2/
+6. Branche le PokeTama et clique sur Installer le firmware Moretro3D.
+7. Choisis sans effacement pour conserver ta sauvegarde.
+
+SECURITE
+- Cette variante publie volontairement une page GitHub Pages temporaire.
+- Supprime le depot Test-2 apres ton essai pour supprimer la page.
+- Test-1 et Shopify ne sont jamais modifies.
+- L'artefact est conserve 30 jours.

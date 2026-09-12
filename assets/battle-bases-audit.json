@@ -1,0 +1,164 @@
+[
+  {
+    "style": "HERBE",
+    "player_row": 0,
+    "enemy_col": 0,
+    "enemy_row": 0,
+    "enemy_source_bbox": [
+      1,
+      8,
+      127,
+      40
+    ],
+    "player_bbox": [
+      15,
+      78,
+      155,
+      108
+    ],
+    "enemy_bbox": [
+      129,
+      16,
+      255,
+      48
+    ],
+    "player_sha1": "59ed26a9546286befbdf5b4920f54c4aad25d0d7",
+    "enemy_sha1": "d9e5d27b95014e83052923656b332358dff9ec99",
+    "enemy_bottom_pixels": 44
+  },
+  {
+    "style": "EAU",
+    "player_row": 1,
+    "enemy_col": 1,
+    "enemy_row": 0,
+    "enemy_source_bbox": [
+      2,
+      10,
+      126,
+      40
+    ],
+    "player_bbox": [
+      12,
+      83,
+      164,
+      108
+    ],
+    "enemy_bbox": [
+      130,
+      18,
+      254,
+      48
+    ],
+    "player_sha1": "e189389c8a19ccdd183511daf23d370bd8b2c963",
+    "enemy_sha1": "c35eb80433a2a1e641285a959d64de71086b72cd",
+    "enemy_bottom_pixels": 42
+  },
+  {
+    "style": "SABLE",
+    "player_row": 2,
+    "enemy_col": 2,
+    "enemy_row": 0,
+    "enemy_source_bbox": [
+      2,
+      10,
+      126,
+      40
+    ],
+    "player_bbox": [
+      12,
+      68,
+      164,
+      108
+    ],
+    "enemy_bbox": [
+      130,
+      18,
+      254,
+      48
+    ],
+    "player_sha1": "be3e25ad02f60a01dff7c6b35ce08140ffa080f4",
+    "enemy_sha1": "d38edd509931a56b78dc9ca97309e38882386df3",
+    "enemy_bottom_pixels": 42
+  },
+  {
+    "style": "VOLCAN",
+    "player_row": 11,
+    "enemy_col": 3,
+    "enemy_row": 2,
+    "enemy_source_bbox": [
+      1,
+      10,
+      127,
+      41
+    ],
+    "player_bbox": [
+      12,
+      83,
+      164,
+      108
+    ],
+    "enemy_bbox": [
+      129,
+      17,
+      255,
+      48
+    ],
+    "player_sha1": "de440a538ccfcef22f5c4322926c48faf9e7fe12",
+    "enemy_sha1": "ab019a5db8f46cd18ee5fa6ba14e8ac2145be12c",
+    "enemy_bottom_pixels": 46
+  },
+  {
+    "style": "ROCHE",
+    "player_row": 4,
+    "enemy_col": 0,
+    "enemy_row": 1,
+    "enemy_source_bbox": [
+      1,
+      8,
+      127,
+      40
+    ],
+    "player_bbox": [
+      15,
+      68,
+      161,
+      108
+    ],
+    "enemy_bbox": [
+      129,
+      16,
+      255,
+      48
+    ],
+    "player_sha1": "ddc327653c3828f9e6afbe6fa2b5d43cc84dc5c6",
+    "enemy_sha1": "bc4635621d5a73e7f87e5b372a1519a1041d9b73",
+    "enemy_bottom_pixels": 44
+  },
+  {
+    "style": "NEIGE",
+    "player_row": 5,
+    "enemy_col": 1,
+    "enemy_row": 1,
+    "enemy_source_bbox": [
+      2,
+      10,
+      126,
+      40
+    ],
+    "player_bbox": [
+      12,
+      83,
+      164,
+      108
+    ],
+    "enemy_bbox": [
+      130,
+      18,
+      254,
+      48
+    ],
+    "player_sha1": "90bd3488f949dc825377aa2774951ccfbcbee51e",
+    "enemy_sha1": "fc29cb7d8c48092b4a16ba228a7fd549fea5b328",
+    "enemy_bottom_pixels": 42
+  }
+]
