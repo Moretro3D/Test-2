@@ -32,7 +32,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.46.49-moretro3d-v9.87-boite-separee"
+#define FW_VERSION "1.46.50-moretro3d-v9.88-boite-ronde-nav-basse"
 #define HELP_PAGE_COUNT 8
 #define HELP_LINE_COUNT 6
 
@@ -1200,19 +1200,19 @@ void onTap(int16_t x, int16_t y) {
     }
     if (cardPage == 0 && y < 84) openKeyboard();  // tocar el nombre = renombrar
     else if (cardPage == 3) {
-      if (x >= 76 && x <= 170 && y >= 266 && y <= 322) {
+      if (x >= 76 && x <= 170 && y >= 300 && y <= 350) {
         if (boxPage > 0) { boxPage--; cardDirty = true; }
         sfxPlay(SFX_TAP);
-      } else if (x >= 296 && x <= 390 && y >= 266 && y <= 322) {
+      } else if (x >= 296 && x <= 390 && y >= 300 && y <= 350) {
         uint8_t pages = boxPageCount();
         if (boxPage + 1 < pages) { boxPage++; cardDirty = true; }
         sfxPlay(SFX_TAP);
       } else {
-        int col = (x - 72) / 84;
-        int row = (y - 94) / 80;
+        int col = (x - 84) / 78;
+        int row = (y - 100) / 74;
         if (col >= 0 && col < 4 && row >= 0 && row < 2 &&
-            x >= 72 + col * 84 && x <= 142 + col * 84 &&
-            y >= 94 + row * 80 && y <= 164 + row * 80) {
+            x >= 84 + col * 78 && x <= 148 + col * 78 &&
+            y >= 100 + row * 74 && y <= 164 + row * 74) {
           int16_t dex = boxDexAt((uint16_t)boxPage * 8 + row * 4 + col);
           if (dex > 0) {
             cardOpen = false;
@@ -4868,8 +4868,8 @@ void renderCardBox() {
   uint8_t pages = boxPageCount();
   if (boxPage >= pages) boxPage = pages - 1;
 
-  gfx->fillRoundRect(68,28,330,58,15,uiPanel());
-  gfx->drawRoundRect(68,28,330,58,15,uiLine());
+  gfx->fillRoundRect(108,28,250,58,15,uiPanel());
+  gfx->drawRoundRect(108,28,250,58,15,uiLine());
   gfx->setTextColor(uiInk());
   gfx->setTextSize(3);
   gfx->setCursor(CX - strlen(T(S_BOX)) * 9, 42);
@@ -4894,8 +4894,8 @@ void renderCardBox() {
 
   // Zone inférieure indépendante : le décor s'arrête ici. Une ligne noire
   // sépare clairement la Boîte des commandes de pagination et de retour.
-  gfx->fillRect(0,258,466,208,C565(0x08,0x09,0x0d));
-  gfx->fillRect(0,258,466,5,UI_INK);
+  gfx->fillRect(0,298,466,168,C565(0x08,0x09,0x0d));
+  gfx->fillRect(0,298,466,5,UI_INK);
 
   // Grille 4x2 de mini-sprites captures, adaptee au cercle 1,75 pouce.
   for (uint8_t i = 0; i < BOX_ROWS; i++) {
@@ -4903,34 +4903,34 @@ void renderCardBox() {
     if (dex <= 0) break;
     const DexEntry &d = DEX_TBL[dex];
     int col = i % 4, row = i / 4;
-    int x = 72 + col * 84, y = 94 + row * 80;
-    gfx->fillRoundRect(x, y, 70, 70, 11, uiPanel());
-    gfx->drawRoundRect(x, y, 70, 70, 11, d.accent);
+    int x = 84 + col * 78, y = 100 + row * 74;
+    gfx->fillRoundRect(x, y, 64, 64, 10, uiPanel());
+    gfx->drawRoundRect(x, y, 64, 64, 10, d.accent);
     const uint8_t *thumb = thumbs.get(dex);
-    if (thumb) drawStarterThumbCentered(thumb, dex, x + 35, y + 34, 2);
+    if (thumb) drawStarterThumbCentered(thumb, dex, x + 32, y + 31, 2);
     if (pet.isShinyRegistered(dex)) {
       gfx->setTextColor(UI_BAR_WARN);
       gfx->setTextSize(1);
-      gfx->setCursor(x + 56, y + 6);
+      gfx->setCursor(x + 51, y + 5);
       gfx->print("*");
     }
   }
   uint16_t prevBg = boxPage > 0 ? UI_TRACK : C565(0xe4, 0xe8, 0xee);
   uint16_t nextBg = boxPage + 1 < pages ? UI_TRACK : C565(0xe4, 0xe8, 0xee);
-  gfx->fillRoundRect(76, 272, 94, 38, 11, prevBg);
-  gfx->fillRoundRect(296, 272, 94, 38, 11, nextBg);
+  gfx->fillRoundRect(76, 306, 94, 38, 11, prevBg);
+  gfx->fillRoundRect(296, 306, 94, 38, 11, nextBg);
   gfx->setTextSize(3);
   gfx->setTextColor(uiContrastText(prevBg));
-  gfx->setCursor(111, 281);
+  gfx->setCursor(111, 315);
   gfx->print("<");
   gfx->setTextColor(uiContrastText(nextBg));
-  gfx->setCursor(331, 281);
+  gfx->setCursor(331, 315);
   gfx->print(">");
   char pg[12];
   snprintf(pg, sizeof(pg), T(S_PAGE_FMT), boxPage + 1, pages);
   gfx->setTextColor(uiSub());
   gfx->setTextSize(2);
-  gfx->setCursor(CX - strlen(pg) * 6, 284);
+  gfx->setCursor(CX - strlen(pg) * 6, 318);
   gfx->print(pg);
 }
 

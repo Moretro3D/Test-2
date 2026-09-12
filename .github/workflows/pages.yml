@@ -62,7 +62,7 @@ jobs:
         run: |
           python3 tools/make_battle_bases.py
           python3 tools/audit_battle_grounds.py
-      - name: Compiler la V9.87
+      - name: Compiler la V9.88
         run: chmod +x tools/build_web.sh && bash tools/build_web.sh
       - name: Auditer les tailles des 386 Pokemon en combat
         run: python3 tools/audit_battle_sprite_sizes.py

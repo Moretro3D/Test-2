@@ -92,13 +92,16 @@ ok("Mode cover : 600x432" in ino and "-67,-20,4" in ino,
 ok('snprintf(known' not in ino and 'snprintf(goal' not in ino and
    'gfx->fillRoundRect(302, 62, 106, 28' not in ino,
    "Connus, But Dex et bouton de tri DEX supprimes de la Boite")
-ok("y = 94 + row * 80" in ino and "gfx->fillRoundRect(76, 272, 94, 38" in ino,
-   "grille et fleches de Boite remontees")
-ok("gfx->fillRect(0,258,466,208" in ino and "gfx->fillRect(0,258,466,5,UI_INK)" in ino,
+ok("x = 84 + col * 78, y = 100 + row * 74" in ino and
+   "gfx->fillRoundRect(x, y, 64, 64" in ino and
+   "gfx->fillRoundRect(76, 306, 94, 38" in ino and
+   "gfx->fillRect(0,298,466,168" in ino,
+   "grille Boite reduite et pagination dans le fond noir abaisse")
+ok("gfx->fillRect(0,298,466,168" in ino and "gfx->fillRect(0,298,466,5,UI_INK)" in ino,
    "fond de Boite arrete par une barre noire avant navigation")
-ok("gfx->fillRoundRect(x, y, 70, 70, 11" in ino and
-   "gfx->fillRoundRect(68,28,330,58,15" in ino,
-   "cadres de la Boite reduits et aeres")
+ok("gfx->fillRoundRect(x, y, 64, 64, 10" in ino and
+   "gfx->fillRoundRect(108,28,250,58,15" in ino,
+   "titre et cadres de la Boite reduits pour le cercle")
 ok('prefs.putUChar("boxbg", boxBackground)' in pet and
    'prefs.getUChar("boxbg", 0)' in pet,
    "fond de Boite memorise apres redemarrage")
