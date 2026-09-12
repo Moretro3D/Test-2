@@ -8,6 +8,7 @@ dex=(ROOT/"dex.h").read_text(encoding="utf-8")
 battle=(ROOT/"battle.cpp").read_text(encoding="utf-8")
 battle_bases=(ROOT/"battle_bases.h").read_text(encoding="utf-8")
 pet=(ROOT/"pet.cpp").read_text(encoding="utf-8")
+pet_h=(ROOT/"pet.h").read_text(encoding="utf-8")
 audio=(ROOT/"audio.cpp").read_text(encoding="utf-8")
 chirp=(ROOT/"species_chirp.cpp").read_text(encoding="utf-8")
 sdmon=(ROOT/"sdmon.cpp").read_text(encoding="utf-8")
@@ -64,10 +65,10 @@ ok("void drawBattlePmd" in ino and "visibleW" in ino and
    "Rééchantillonnage nearest-neighbour" in ino and
    "void drawBattleThumb" in ino and
    "drawBattleThumb(th,battleDex,354,190,84,false)" in ino and
-   "drawBattleThumb(th,pet.speciesId,110,302,104,false)" in ino and
+   "drawBattleThumb(th,playerDex,110,302,104,false)" in ino and
    (ROOT/"tools/audit_battle_sprite_sizes.py").exists() and
    "drawBattlePmd(wildPmd, battleDex, 354, 190, 84" in ino and
-   "drawBattlePmd(pmd, pet.speciesId, 110, 302, 104" in ino,
+   "drawBattlePmd(pmd, playerDex, 110, 302, 104" in ino,
    "sprites PMD et miniatures de combat normalises")
 ok("drawBattleStatusBar(enemyName,battleLevel,enemySex,82,66,190" in ino and
    "battlePlayer.level,playerSex,220,234,220" in ino,
@@ -109,6 +110,28 @@ ok('prefs.putUChar("boxbg", boxBackground)' in pet and
    "fond de Boite memorise apres redemarrage")
 ok("STARTER_DEX[3][3]" in ino and "{ 252, 255, 258 }" in ino,
    "starters 1G, 2G et 3G presents")
+ok("#define SPRITE_AUDIT_BUILD 1" in ino and
+   'gfx->print("JOUEUR")' in ino and 'gfx->print("ADVERSAIRE")' in ino and
+   "startBattleWith(testDex" in ino and "spriteAuditPlayerDex" in ino and
+   "for (int16_t dex = 1; dex <= DEX_COUNT; dex++) out[n++] = dex" in ino,
+   "version speciale: 386 sprites testables comme joueur et adversaire")
+ok("battleAuditScalePercent" in ino and "dex == 381" in ino and "return 130" in ino,
+   "correction de taille Latios active dans les deux positions de combat")
+scale_block=re.search(r'uint8_t battleAuditScalePercent\(int16_t dex\) \{(.*?)\n\}',ino,re.S)
+ok(scale_block is not None and scale_block.group(1).count("case ") == 38 and
+   "case 172" in scale_block.group(1) and "case 175" in scale_block.group(1) and
+   "return 110" in scale_block.group(1) and "return 90" in scale_block.group(1),
+   "tranche utilisateur: 36 Pokemon +10 pour cent, Pichu et Togepi -10 pour cent")
+visual_scale=(ROOT/"pokemon_visual_scale.h").read_text(encoding="utf-8")
+visual_values=[int(v) for v in re.findall(r'\b(?:84|88|92|96|100|104|108|112|116)\b',
+              re.search(r'POKEMON_VISUAL_SCALE\[386\] = \{(.*?)\};',visual_scale,re.S).group(1))]
+ok(len(visual_values)==386 and min(visual_values)==84 and max(visual_values)==116 and
+   ino.count("target=target*pokemonVisualScalePercent(dex)/100") == 2,
+   "prorata de hauteur Pokedex compresse applique aux 386 sprites de combat")
+ok('"..........kkk..."' in (ROOT/"species.h").read_text(encoding="utf-8") and
+   '".....kkkkk.k...."' in (ROOT/"species.h").read_text(encoding="utf-8") and
+   '"...........lLk.."' in (ROOT/"species.h").read_text(encoding="utf-8"),
+   "nouvelle planche de baies et super bonbon integree en 16x16")
 ok("drawStarterPokeball" in ino and "starterPreviewDex" in ino,
    "Pokeballs et popup de confirmation starter presentes")
 ok("repairCaughtProfiles" in pet and "hasStoredProfile(candidate)" in pet,
@@ -181,7 +204,7 @@ ok("void drawBattleStatusBar" in ino and
    "void drawBattleSex" in ino and
    "battleSpeciesGenderless" in ino and
    "drawBattleStatusBar(enemyName,battleLevel,enemySex,82,66,190" in ino and
-   "drawBattleStatusBar(pet.nick[0]?pet.nick:dexName(pet.speciesId),battlePlayer.level,playerSex,220,234,220" in ino and
+   "drawBattleStatusBar(spriteAuditPlayerDex>0?dexName(playerDex):(pet.nick[0]?pet.nick:dexName(pet.speciesId)),battlePlayer.level,playerSex,220,234,220" in ino and
    "(phase==3||biome==2||biome==3)?UI_WHITE:UI_INK" in ino,
    "barres HP DS sans EXP, nom niveau sexe dans zone sure ronde")
 ok('#include "battle_ball_icon.h"' in ino and "BATTLE_BALL_MASK" in ino and

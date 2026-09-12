@@ -1,4 +1,21 @@
-POKETAMA TEST-2 - PAGE INSTALLATEUR TEMPORAIRE V9.92
+POKETAMA TEST-2 - VERSION SPECIALE AUDIT DES 386 SPRITES
+
+MODE D'EMPLOI
+1. Ouvre la Boîte : les 386 Pokémon sont visibles virtuellement.
+2. Touche un Pokémon pour ouvrir sa fiche.
+3. JOUEUR le charge comme compagnon pour contrôler son sprite côté joueur.
+4. ADVERSAIRE lance immédiatement un combat contre lui pour contrôler son sprite sauvage.
+
+Cette version est uniquement destinée aux tests. Le déverrouillage des 386 Pokémon
+est virtuel et ne remplit pas les bits de capture de la sauvegarde normale.
+
+CORRECTIONS DE TAILLE EN COURS
+- Latios : +30 %
+- Première liste utilisateur de 36 Pokémon : +10 %
+- Pichu et Togepi : -10 %
+- Les corrections s'appliquent au joueur et à l'adversaire.
+- Un prorata automatique basé sur la hauteur Pokédex est appliqué aux 386 espèces.
+- L'échelle est comprimée entre 84 % et 116 % pour rester lisible sur 1,75 pouce.
 
 1. Cree sur GitHub un depot PUBLIC et VIDE nomme Test-2
    (sans README, licence ni .gitignore). Tu pourras le supprimer apres le test.

@@ -18,6 +18,7 @@
 #include "pin_config.h"
 #include "species.h"
 #include "dex.h"
+#define SPRITE_AUDIT_BUILD 1
 #include "pet.h"
 #include "sdmon.h"
 #include "rtcbat.h"
@@ -29,10 +30,11 @@
 #include "battle_bases.h"
 #include "battle_backgrounds.h"
 #include "box_backgrounds.h"
+#include "pokemon_visual_scale.h"
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.46.54-moretro3d-v9.92-boite-cadre-agrandi"
+#define FW_VERSION "1.46.54-moretro3d-v9.92-sprite-audit-386"
 #define HELP_PAGE_COUNT 8
 #define HELP_LINE_COUNT 6
 
@@ -196,6 +198,7 @@ uint32_t lastPetEventCheck = 0;
 uint8_t petEventType = PET_EVENT_BERRY;
 uint32_t petEventFeedbackUntil = 0;
 char petEventMsg[18] = "";
+int16_t spriteAuditPlayerDex = 0;
 
 // las 9 especies con sprite propio en flash (respaldo sin SD): dex -> indice
 int flashIdxForDex(int16_t dex) {
@@ -219,6 +222,58 @@ bool hasPreEvolution(int16_t dex) {
 uint8_t spriteSizePercent(int16_t dex) {
   (void)dex;
   return 92;
+}
+
+// Première correction connue de la campagne d'audit. Les prochains écarts
+// relevés avec cette version seront ajoutés ici avant la version publique.
+uint8_t battleAuditScalePercent(int16_t dex) {
+  if (dex == 381) return 130; // Latios : source visuellement trop petite
+  switch (dex) {
+    // Première tranche validée par contrôle sur l'écran réel : +10 %.
+    case 3:   // Florizarre
+    case 6:   // Dracaufeu
+    case 9:   // Tortank
+    case 18:  // Roucarnage
+    case 24:  // Arbok
+    case 31:  // Nidoqueen
+    case 34:  // Nidoking
+    case 38:  // Feunard
+    case 55:  // Akwakwak
+    case 59:  // Arcanin
+    case 62:  // Tartard
+    case 65:  // Alakazam
+    case 68:  // Mackogneur
+    case 71:  // Empiflor
+    case 73:  // Tentacruel
+    case 76:  // Grolem
+    case 78:  // Galopa
+    case 80:  // Flagadoss
+    case 82:  // Magnéton
+    case 95:  // Onix
+    case 97:  // Hypnomade
+    case 103: // Noadkoko
+    case 106: // Kicklee
+    case 110: // Smogogo
+    case 112: // Rhinoféros
+    case 115: // Kangourex
+    case 117: // Hypocéan
+    case 142: // Ptéra
+    case 143: // Ronflex
+    case 144: // Artikodin
+    case 145: // Électhor
+    case 146: // Sulfura
+    case 149: // Dracolosse
+    case 150: // Mewtwo
+    case 154: // Méganium
+    case 160: // Aligatueur
+      return 110;
+    // Pokémon signalés légèrement trop grands : -10 %.
+    case 172: // Pichu
+    case 175: // Togepi
+      return 90;
+    default:
+      return 100;
+  }
 }
 
 #define CX 233  // centro de la pantalla redonda
@@ -3198,6 +3253,8 @@ void drawBattlePmd(PmdMon &m, int16_t dex, int cx, int groundY, int target, bool
   if (maxC<minC || maxR<minR) return;
   int visibleW=maxC-minC+1, visibleH=maxR-minR+1;
   target=target*spriteSizePercent(dex)/100;
+  target=target*pokemonVisualScalePercent(dex)/100;
+  target=target*battleAuditScalePercent(dex)/100;
   int maxDim=max(visibleW,visibleH);
   int drawW=max(1,visibleW*target/maxDim);
   int drawH=max(1,visibleH*target/maxDim);
@@ -3228,6 +3285,8 @@ void drawBattleThumb(const uint8_t *b,int16_t dex,int cx,int groundY,int target,
   if(maxC<minC||maxR<minR) return;
   int visibleW=maxC-minC+1,visibleH=maxR-minR+1;
   target=target*spriteSizePercent(dex)/100;
+  target=target*pokemonVisualScalePercent(dex)/100;
+  target=target*battleAuditScalePercent(dex)/100;
   int maxDim=max(visibleW,visibleH);
   int drawW=max(1,visibleW*target/maxDim),drawH=max(1,visibleH*target/maxDim);
   int x0=cx-drawW/2,y0=groundY-drawH;
@@ -3462,7 +3521,8 @@ void drawBattleShinyEntrance(int cx,int cy) {
 
 void renderBattle() {
   if (battleResolved) battleDirty = false;
-  const DexEntry &mine = DEX_TBL[pet.speciesId];
+  int16_t playerDex = spriteAuditPlayerDex > 0 ? spriteAuditPlayerDex : pet.speciesId;
+  const DexEntry &mine = DEX_TBL[playerDex];
   const DexEntry &foe = DEX_TBL[battleDex];
   uint8_t biome=mine.biome<6?mine.biome:0;
   static const uint16_t skies[6]={C565(0xe8,0xf3,0xd9),C565(0xd9,0xf4,0xfa),C565(0xdf,0xef,0xd4),C565(0xed,0xd8,0xc6),C565(0xf1,0xe4,0xcf),C565(0xe9,0xf3,0xfa)};
@@ -3474,7 +3534,7 @@ void renderBattle() {
 
   // Zone sûre du cercle : aucune pointe ni information ne touche les bords.
   uint8_t enemySex=battleSpeciesGenderless(battleDex)?2:battleEnemySex;
-  uint8_t playerSex=battleSpeciesGenderless(pet.speciesId)?2:battlePlayerSex;
+  uint8_t playerSex=battleSpeciesGenderless(playerDex)?2:battlePlayerSex;
   uint8_t phase=currentDayPhase();
   uint16_t nameColor=(phase==3||biome==2||biome==3)?UI_WHITE:UI_INK;
   char enemyName[28];
@@ -3482,7 +3542,7 @@ void renderBattle() {
   drawBattleStatusBar(enemyName,battleLevel,enemySex,82,66,190,battleRun.enemyHp,battleRun.enemyMaxHp,
                       battleEnemyShiny?UI_BAR_WARN:nameColor);
   if(pet.isCaught(battleDex)) drawBattleCaughtBall(102,137);
-  drawBattleStatusBar(pet.nick[0]?pet.nick:dexName(pet.speciesId),battlePlayer.level,playerSex,220,234,220,battleRun.playerHp,battleRun.playerMaxHp,nameColor);
+  drawBattleStatusBar(spriteAuditPlayerDex>0?dexName(playerDex):(pet.nick[0]?pet.nick:dexName(pet.speciesId)),battlePlayer.level,playerSex,220,234,220,battleRun.playerHp,battleRun.playerMaxHp,nameColor);
 
   // Sprites standardisés dans une boîte visuelle ~82 px, quelle que soit l'espèce.
   if (wildPmd.loaded) drawBattlePmd(wildPmd, battleDex, 354, 190, 84, false);
@@ -3491,10 +3551,10 @@ void renderBattle() {
     if (th) drawBattleThumb(th,battleDex,354,190,84,false);
   }
   drawBattleShinyEntrance(354,146);
-  if (pmd.loaded) drawBattlePmd(pmd, pet.speciesId, 110, 302, 104, false);
+  if (pmd.loaded) drawBattlePmd(pmd, playerDex, 110, 302, 104, false);
   else {
-    const uint8_t *th=thumbs.get(pet.speciesId);
-    if (th) drawBattleThumb(th,pet.speciesId,110,302,104,false);
+    const uint8_t *th=thumbs.get(playerDex);
+    if (th) drawBattleThumb(th,playerDex,110,302,104,false);
   }
 
   if (battleResolved) {
@@ -4832,8 +4892,12 @@ bool boxComesBefore(int16_t a, int16_t b) {
 
 uint16_t boxBuildList(int16_t *out) {
   uint16_t n = 0;
+#if SPRITE_AUDIT_BUILD
+  for (int16_t dex = 1; dex <= DEX_COUNT; dex++) out[n++] = dex;
+#else
   for (int16_t dex = 1; dex <= DEX_COUNT; dex++)
     if (pet.isCaught(dex)) out[n++] = dex;
+#endif
   for (uint16_t i = 1; i < n; i++) {
     int16_t v = out[i];
     int j = i - 1;
@@ -4847,7 +4911,11 @@ uint16_t boxBuildList(int16_t *out) {
 }
 
 uint8_t boxPageCount() {
+#if SPRITE_AUDIT_BUILD
+  uint16_t count = DEX_COUNT;
+#else
   uint16_t count = pet.caughtCount();
+#endif
   uint8_t pages = (count + BOX_ROWS - 1) / BOX_ROWS;
   return pages > 0 ? pages : 1;
 }
@@ -4876,13 +4944,13 @@ void renderCardBox() {
   gfx->print(T(S_BOX));
 
   char caught[24];
-  snprintf(caught, sizeof(caught), T(S_CAUGHT_COUNT_FMT), pet.caughtCount());
+  snprintf(caught, sizeof(caught), T(S_CAUGHT_COUNT_FMT), (unsigned)DEX_COUNT);
   gfx->setTextSize(2);
   gfx->setTextColor(uiInk());
   gfx->setCursor(CX-(int)strlen(caught)*6, 76);
   gfx->print(caught);
 
-  if (pet.caughtCount() == 0) {
+  if (false) {
     gfx->fillRoundRect(82, 178, 302, 72, 16, uiPanel());
     gfx->drawRoundRect(82, 178, 302, 72, 16, UI_TRACK);
     gfx->setTextColor(uiSub());
@@ -5477,8 +5545,8 @@ void renderGallery() {
   if (galleryDetail) {  // vista detalle: se redibuja siempre (animada)
     gfx->fillScreen(uiBg());
     const DexEntry &d = DEX_TBL[galleryDetail];
-    bool reg = pet.isRegistered(galleryDetail);
-    bool caught = pet.isCaught(galleryDetail);
+    bool reg = true;
+    bool caught = true;
     bool known = reg || caught;
     char head[24];
     snprintf(head, sizeof(head), "N.%03u %s%s", displayedDexNumber(galleryDetail),
@@ -5526,6 +5594,21 @@ void renderGallery() {
     gfx->setCursor(42, 28);
     gfx->print("<");
 
+    // Version spéciale d'audit : test du même sprite comme joueur ou adversaire.
+#if SPRITE_AUDIT_BUILD
+    {
+      bool active = (galleryDetail == pet.speciesId);
+      uint16_t playerBg = active ? UI_TRACK : UI_BAR_OK;
+      gfx->fillRoundRect(72, 386, 150, 42, 13, playerBg);
+      gfx->fillRoundRect(244, 386, 150, 42, 13, C565(0xd9,0x36,0x46));
+      gfx->setTextColor(UI_WHITE);
+      gfx->setTextSize(1);
+      gfx->setCursor(124, 402);
+      gfx->print("JOUEUR");
+      gfx->setCursor(287, 402);
+      gfx->print("ADVERSAIRE");
+    }
+#else
     // Pokémon capturé : bouton pour le choisir comme compagnon actif.
     if (caught || reg) {
       bool active = (galleryDetail == pet.speciesId);
@@ -5542,6 +5625,7 @@ void renderGallery() {
       gfx->setCursor(CX - strlen(T(S_DETAIL_BACK)) * 6, 408);
       gfx->print(T(S_DETAIL_BACK));
     }
+#endif
     gfx->flush();
     return;
   }
@@ -5649,6 +5733,33 @@ void galleryTap(int16_t x, int16_t y) {
       return;
     }
 
+    // Audit sprites : gauche = joueur actif, droite = combat immédiat.
+#if SPRITE_AUDIT_BUILD
+    if (y >= 378 && y <= 438 && x >= 62 && x <= 232) {
+      if (galleryDetail != (spriteAuditPlayerDex > 0 ? spriteAuditPlayerDex : pet.speciesId)) {
+        spriteAuditPlayerDex = galleryDetail;
+        pmd.unload();
+        pmd.load(spriteAuditPlayerDex, pet.isShinyRegistered(spriteAuditPlayerDex));
+        galleryOpen = false;
+        galleryDetail = 0;
+        galleryPmd.unload();
+        markUiDirty();
+        lockTouchBrief();
+        sfxPlay(SFX_CATCH_OK);
+      } else sfxPlay(SFX_TAP);
+      return;
+    }
+    if (y >= 378 && y <= 438 && x >= 234 && x <= 404) {
+      int16_t testDex = galleryDetail;
+      galleryOpen = false;
+      galleryDetail = 0;
+      galleryPmd.unload();
+      markUiDirty();
+      lockTouchBrief();
+      startBattleWith(testDex, max((uint8_t)5, pet.level()));
+      return;
+    }
+#else
     // Le bouton S'OCCUPER est disponible pour les Pokémon capturés OU déjà élevés.
     if ((pet.isCaught(galleryDetail) || pet.isRegistered(galleryDetail)) && y >= 378 && y <= 438 && x >= 112 && x <= 354) {
       if (galleryDetail == pet.speciesId) {
@@ -5668,6 +5779,7 @@ void galleryTap(int16_t x, int16_t y) {
       }
       return;
     }
+#endif
     // Toucher ailleurs revient à la grille.
     galleryDetail = 0;
     galleryPmd.unload();
