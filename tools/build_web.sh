@@ -9,7 +9,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 FQBN="esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=16M,PSRAM=opi,PartitionScheme=app3M_fat9M_16MB"
-VERSION="1.46.54-moretro3d-v9.92-boite-cadre-agrandi"
+VERSION="1.46.62-moretro3d-v9.92-original-sprites-all386"
 
 echo "Préparation du sketch TamaPoke..."
 TMP="$(mktemp -d "${TMPDIR:-/tmp}/tamapoke-ci.XXXXXX")"
@@ -52,20 +52,8 @@ except Exception as exc:
     raise SystemExit("Pillow/PIL absent : " + str(exc))
 PY
 
-echo "Préparation des sprites Johto + Hoenn #152-386..."
-missing=0
-for n in $(seq 152 386); do
-  printf -v num "%03d" "$n"
-  if [ ! -f "$ROOT/tools/sdcard/mons/p${num}.bin" ] || [ ! -f "$ROOT/tools/sdcard/mons/ps${num}.bin" ]; then
-    missing=1
-    break
-  fi
-done
-
-if [ "$missing" -eq 1 ]; then
-  echo "Téléchargement/packaging PMD SpriteCollab pour Johto + Hoenn..."
-  python3 "$ROOT/tools/pack_pmd.py" $(seq 152 386)
-fi
+echo "Téléchargement/packaging des 386 sprites PMD originaux, normaux et Shiny..."
+python3 "$ROOT/tools/pack_pmd.py" $(seq 1 386)
 
 echo "Génération des 386 miniatures Pokédex..."
 python3 "$ROOT/tools/make_thumbs.py"

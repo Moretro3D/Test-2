@@ -18,6 +18,7 @@
 #include "pin_config.h"
 #include "species.h"
 #include "dex.h"
+#define SPRITE_AUDIT_BUILD 0
 #include "pet.h"
 #include "sdmon.h"
 #include "rtcbat.h"
@@ -29,10 +30,11 @@
 #include "battle_bases.h"
 #include "battle_backgrounds.h"
 #include "box_backgrounds.h"
+#include "battle_sprite_layout.h"
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.46.54-moretro3d-v9.92-boite-cadre-agrandi"
+#define FW_VERSION "1.46.62-moretro3d-v9.92-original-sprites-all386"
 #define HELP_PAGE_COUNT 8
 #define HELP_LINE_COUNT 6
 
@@ -196,6 +198,7 @@ uint32_t lastPetEventCheck = 0;
 uint8_t petEventType = PET_EVENT_BERRY;
 uint32_t petEventFeedbackUntil = 0;
 char petEventMsg[18] = "";
+bool spriteAuditShiny = false;
 
 // las 9 especies con sprite propio en flash (respaldo sin SD): dex -> indice
 int flashIdxForDex(int16_t dex) {
@@ -211,14 +214,6 @@ bool hasPreEvolution(int16_t dex) {
   for (int16_t i = 1; i <= DEX_COUNT; i++)
     if (DEX_TBL[i].evolvesTo == dex) return true;
   return false;
-}
-
-// Une seule configuration visuelle pour les 386 especes. Le cadrage se fait
-// toujours sur la silhouette visible, puis cette reduction uniforme evite les
-// gros sprites qui donnaient un rendu irregulier selon l'evolution.
-uint8_t spriteSizePercent(int16_t dex) {
-  (void)dex;
-  return 92;
 }
 
 #define CX 233  // centro de la pantalla redonda
@@ -1220,7 +1215,8 @@ void onTap(int16_t x, int16_t y) {
             galleryDetail = dex;
             galleryDirty = true;
             lockTouchBrief();
-            galleryPmd.load(dex, pet.isShinyRegistered(dex));
+            spriteAuditShiny = false;
+            galleryPmd.load(dex, false);
             sfxPlay(SFX_TAP);
             speciesChirpPlay(dex);
           }
@@ -1273,7 +1269,7 @@ void onTap(int16_t x, int16_t y) {
       bool fight = (x >= 93 && x <= 373 && y >= 226 && y <= 270);
       bool later = (x >= 93 && x <= 373 && y >= 278 && y <= 322);
       if (fight) {
-        startBattleWith(wildPromptDex, wildPromptLevel);
+        startBattleWith(wildPromptDex, wildPromptLevel, -1);
       } else if (later) {
         wildPromptUntil = 0;
         scheduleNextWild(millis());
@@ -1533,7 +1529,7 @@ void drawStarterThumbCentered(const uint8_t *b, int16_t dex, int cx, int cy, int
   int visibleW=maxX-minX+1, visibleH=maxY-minY+1;
   // La fiche starter doit respirer sur l'ecran rond : taille volontairement
   // plus sobre que l'accueil et le combat.
-  int target=145*spriteSizePercent(dex)/100;
+  int target=145*pokemonSpriteScale(dex)/100;
   int scale=min(maxSize, target/max(visibleW,visibleH));
   if (scale < 2) scale=2;
   int x0=cx-visibleW*scale/2-minX*scale;
@@ -2837,7 +2833,7 @@ void closeBattle() {
   lockTouchBrief();
 }
 
-void startBattleWith(int16_t forcedDex, uint8_t forcedLevel) {
+void startBattleWith(int16_t forcedDex, uint8_t forcedLevel, int8_t forcedShiny) {
   if (!canStartWildBattle(pet.isEgg(), pet.sleeping, pet.ceremony)) return;
   wildPromptUntil = 0;
   scheduleNextWild(millis());
@@ -2854,7 +2850,7 @@ void startBattleWith(int16_t forcedDex, uint8_t forcedLevel) {
   battleEnemy = wildBattleStats(battleDex, battleLevel);
   battlePlayerSex=(uint8_t)((pet.geneAtk+pet.geneDef+pet.geneSpe)&1);
   battleEnemySex=(uint8_t)random(2);
-  battleEnemyShiny=(random(128)==0); // 1/128, independant de l'espece et de la generation
+  battleEnemyShiny=(forcedShiny >= 0) ? (forcedShiny != 0) : (random(128)==0);
   battleShinyFxUntil=battleEnemyShiny ? millis()+1800 : 0;
   battleEnemy.hp = 0;
   battleResult = {};
@@ -2880,7 +2876,7 @@ void startBattleWith(int16_t forcedDex, uint8_t forcedLevel) {
 }
 
 void startBattle() {
-  startBattleWith(0, 0);
+  startBattleWith(0, 0, -1);
 }
 
 void finishBattle() {
@@ -3177,7 +3173,7 @@ void drawPetEvent() {
 }
 
 
-void drawBattlePmd(PmdMon &m, int16_t dex, int cx, int groundY, int target, bool sil=false) {
+void drawBattlePmd(PmdMon &m, int16_t dex, int cx, int groundY, int target, bool playerSide, bool sil=false) {
   const PmdAct &a=m.acts[PMD_IDLE];
   if (!a.frames) return;
   // Bounding box visuel cible ~128px sur l'écran 466px.
@@ -3197,7 +3193,9 @@ void drawBattlePmd(PmdMon &m, int16_t dex, int cx, int groundY, int target, bool
   }
   if (maxC<minC || maxR<minR) return;
   int visibleW=maxC-minC+1, visibleH=maxR-minR+1;
-  target=target*spriteSizePercent(dex)/100;
+  target=target*pokemonSpriteScale(dex)/100;
+  cx+=battleSpriteX(dex,playerSide);
+  groundY+=battleSpriteY(dex,playerSide);
   int maxDim=max(visibleW,visibleH);
   int drawW=max(1,visibleW*target/maxDim);
   int drawH=max(1,visibleH*target/maxDim);
@@ -3217,7 +3215,7 @@ void drawBattlePmd(PmdMon &m, int16_t dex, int cx, int groundY, int target, bool
   }
 }
 
-void drawBattleThumb(const uint8_t *b,int16_t dex,int cx,int groundY,int target,bool sil=false) {
+void drawBattleThumb(const uint8_t *b,int16_t dex,int cx,int groundY,int target,bool playerSide,bool sil=false) {
   uint8_t w=b[0],h=b[1],n=b[2];
   const uint8_t *pal=b+3;
   const uint8_t *data=pal+n*2;
@@ -3227,7 +3225,9 @@ void drawBattleThumb(const uint8_t *b,int16_t dex,int cx,int groundY,int target,
   }
   if(maxC<minC||maxR<minR) return;
   int visibleW=maxC-minC+1,visibleH=maxR-minR+1;
-  target=target*spriteSizePercent(dex)/100;
+  target=target*pokemonSpriteScale(dex)/100;
+  cx+=battleSpriteX(dex,playerSide);
+  groundY+=battleSpriteY(dex,playerSide);
   int maxDim=max(visibleW,visibleH);
   int drawW=max(1,visibleW*target/maxDim),drawH=max(1,visibleH*target/maxDim);
   int x0=cx-drawW/2,y0=groundY-drawH;
@@ -3462,7 +3462,8 @@ void drawBattleShinyEntrance(int cx,int cy) {
 
 void renderBattle() {
   if (battleResolved) battleDirty = false;
-  const DexEntry &mine = DEX_TBL[pet.speciesId];
+  int16_t playerDex = pet.speciesId;
+  const DexEntry &mine = DEX_TBL[playerDex];
   const DexEntry &foe = DEX_TBL[battleDex];
   uint8_t biome=mine.biome<6?mine.biome:0;
   static const uint16_t skies[6]={C565(0xe8,0xf3,0xd9),C565(0xd9,0xf4,0xfa),C565(0xdf,0xef,0xd4),C565(0xed,0xd8,0xc6),C565(0xf1,0xe4,0xcf),C565(0xe9,0xf3,0xfa)};
@@ -3474,7 +3475,7 @@ void renderBattle() {
 
   // Zone sûre du cercle : aucune pointe ni information ne touche les bords.
   uint8_t enemySex=battleSpeciesGenderless(battleDex)?2:battleEnemySex;
-  uint8_t playerSex=battleSpeciesGenderless(pet.speciesId)?2:battlePlayerSex;
+  uint8_t playerSex=battleSpeciesGenderless(playerDex)?2:battlePlayerSex;
   uint8_t phase=currentDayPhase();
   uint16_t nameColor=(phase==3||biome==2||biome==3)?UI_WHITE:UI_INK;
   char enemyName[28];
@@ -3485,16 +3486,16 @@ void renderBattle() {
   drawBattleStatusBar(pet.nick[0]?pet.nick:dexName(pet.speciesId),battlePlayer.level,playerSex,220,234,220,battleRun.playerHp,battleRun.playerMaxHp,nameColor);
 
   // Sprites standardisés dans une boîte visuelle ~82 px, quelle que soit l'espèce.
-  if (wildPmd.loaded) drawBattlePmd(wildPmd, battleDex, 354, 190, 84, false);
+  if (wildPmd.loaded) drawBattlePmd(wildPmd, battleDex, 354, 190, 84, false, false);
   else {
     const uint8_t *th=thumbs.get(battleDex);
-    if (th) drawBattleThumb(th,battleDex,354,190,84,false);
+    if (th) drawBattleThumb(th,battleDex,354,190,84,false,false);
   }
   drawBattleShinyEntrance(354,146);
-  if (pmd.loaded) drawBattlePmd(pmd, pet.speciesId, 110, 302, 104, false);
+  if (pmd.loaded) drawBattlePmd(pmd, playerDex, 110, 302, 104, true, false);
   else {
-    const uint8_t *th=thumbs.get(pet.speciesId);
-    if (th) drawBattleThumb(th,pet.speciesId,110,302,104,false);
+    const uint8_t *th=thumbs.get(playerDex);
+    if (th) drawBattleThumb(th,playerDex,110,302,104,true,false);
   }
 
   if (battleResolved) {
@@ -4832,8 +4833,12 @@ bool boxComesBefore(int16_t a, int16_t b) {
 
 uint16_t boxBuildList(int16_t *out) {
   uint16_t n = 0;
+#if SPRITE_AUDIT_BUILD
+  for (int16_t dex = 1; dex <= DEX_COUNT; dex++) out[n++] = dex;
+#else
   for (int16_t dex = 1; dex <= DEX_COUNT; dex++)
     if (pet.isCaught(dex)) out[n++] = dex;
+#endif
   for (uint16_t i = 1; i < n; i++) {
     int16_t v = out[i];
     int j = i - 1;
@@ -4847,7 +4852,11 @@ uint16_t boxBuildList(int16_t *out) {
 }
 
 uint8_t boxPageCount() {
+#if SPRITE_AUDIT_BUILD
+  uint16_t count = DEX_COUNT;
+#else
   uint16_t count = pet.caughtCount();
+#endif
   uint8_t pages = (count + BOX_ROWS - 1) / BOX_ROWS;
   return pages > 0 ? pages : 1;
 }
@@ -4876,13 +4885,13 @@ void renderCardBox() {
   gfx->print(T(S_BOX));
 
   char caught[24];
-  snprintf(caught, sizeof(caught), T(S_CAUGHT_COUNT_FMT), pet.caughtCount());
+  snprintf(caught, sizeof(caught), T(S_CAUGHT_COUNT_FMT), (unsigned)DEX_COUNT);
   gfx->setTextSize(2);
   gfx->setTextColor(uiInk());
   gfx->setCursor(CX-(int)strlen(caught)*6, 76);
   gfx->print(caught);
 
-  if (pet.caughtCount() == 0) {
+  if (false) {
     gfx->fillRoundRect(82, 178, 302, 72, 16, uiPanel());
     gfx->drawRoundRect(82, 178, 302, 72, 16, UI_TRACK);
     gfx->setTextColor(uiSub());
@@ -5526,6 +5535,22 @@ void renderGallery() {
     gfx->setCursor(42, 28);
     gfx->print("<");
 
+    // Version spéciale : forme normale/Shiny et lancement d'un combat de contrôle.
+#if SPRITE_AUDIT_BUILD
+    {
+      gfx->fillRoundRect(46, 386, 112, 42, 13, spriteAuditShiny ? UI_TRACK : UI_BAR_OK);
+      gfx->fillRoundRect(177, 386, 112, 42, 13, spriteAuditShiny ? UI_BAR_WARN : UI_TRACK);
+      gfx->fillRoundRect(308, 386, 112, 42, 13, C565(0x36,0x78,0xd9));
+      gfx->setTextColor(UI_WHITE);
+      gfx->setTextSize(1);
+      gfx->setCursor(81, 402);
+      gfx->print("NORMAL");
+      gfx->setCursor(216, 402);
+      gfx->print("SHINY");
+      gfx->setCursor(340, 402);
+      gfx->print("COMBAT");
+    }
+#else
     // Pokémon capturé : bouton pour le choisir comme compagnon actif.
     if (caught || reg) {
       bool active = (galleryDetail == pet.speciesId);
@@ -5542,6 +5567,7 @@ void renderGallery() {
       gfx->setCursor(CX - strlen(T(S_DETAIL_BACK)) * 6, 408);
       gfx->print(T(S_DETAIL_BACK));
     }
+#endif
     gfx->flush();
     return;
   }
@@ -5649,6 +5675,36 @@ void galleryTap(int16_t x, int16_t y) {
       return;
     }
 
+    // Audit complet : même taille partout, choix Normal/Shiny, combat immédiat.
+#if SPRITE_AUDIT_BUILD
+    if (y >= 378 && y <= 438 && x >= 36 && x <= 168) {
+      spriteAuditShiny = false;
+      galleryPmd.unload();
+      galleryPmd.load(galleryDetail, false);
+      lockTouchBrief();
+      sfxPlay(SFX_TAP);
+      return;
+    }
+    if (y >= 378 && y <= 438 && x >= 169 && x <= 299) {
+      spriteAuditShiny = true;
+      galleryPmd.unload();
+      galleryPmd.load(galleryDetail, true);
+      lockTouchBrief();
+      sfxPlay(SFX_EVENT_SPARKLE);
+      return;
+    }
+    if (y >= 378 && y <= 438 && x >= 300 && x <= 430) {
+      int16_t testDex = galleryDetail;
+      bool testShiny = spriteAuditShiny;
+      galleryOpen = false;
+      galleryDetail = 0;
+      galleryPmd.unload();
+      markUiDirty();
+      lockTouchBrief();
+      startBattleWith(testDex, max((uint8_t)5, pet.level()), testShiny ? 1 : 0);
+      return;
+    }
+#else
     // Le bouton S'OCCUPER est disponible pour les Pokémon capturés OU déjà élevés.
     if ((pet.isCaught(galleryDetail) || pet.isRegistered(galleryDetail)) && y >= 378 && y <= 438 && x >= 112 && x <= 354) {
       if (galleryDetail == pet.speciesId) {
@@ -5668,6 +5724,7 @@ void galleryTap(int16_t x, int16_t y) {
       }
       return;
     }
+#endif
     // Toucher ailleurs revient à la grille.
     galleryDetail = 0;
     galleryPmd.unload();
@@ -5720,7 +5777,8 @@ void galleryTap(int16_t x, int16_t y) {
   int16_t dex = galleryDexAt(galleryPage * 16 + r * 4 + c);
   if (dex <= 0) return;
   galleryDetail = dex;
-  galleryPmd.load(dex, pet.isShinyRegistered(dex));
+  spriteAuditShiny = false;
+  galleryPmd.load(dex, false);
   sfxPlay(SFX_MENU);
   if (pet.isRegistered(dex) || pet.isCaught(dex)) speciesChirpPlay(dex);
 }
@@ -6081,7 +6139,8 @@ void drawPmdActM(PmdMon &m, uint8_t actId, int cx, int groundY, uint32_t t, bool
   // Uniformite d'accueil : l'ancienne formule ne regardait que la hauteur.
   // Un Pokemon large comme Kaiminus paraissait donc beaucoup plus gros. On
   // borne maintenant la plus grande dimension de la silhouette visible.
-  int targetDim=170*spriteSizePercent(dex)/100;
+  // La même taille propre à l'espèce est utilisée sur accueil, fiche et combat.
+  int targetDim=170*pokemonSpriteScale(dex)/100;
   int visibleMax=max(visibleW,visibleH);
   uint8_t sBase = visibleMax ? targetDim / visibleMax : 5;
   if (sBase < 2) sBase = 2;

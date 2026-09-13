@@ -1,11 +1,11 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
-title PokeTama V9.92 - Envoi vers Test-2 uniquement
+title PokeTama V9.92 Sprite Audit 386 - Envoi vers Test-2
 cd /d "%~dp0"
 
 set "REPO_URL=https://github.com/Moretro3D/Test-2.git"
 echo ============================================================
-echo  PokeTama V9.92 - ENVOI SECURISE VERS TEST-2
+echo  PokeTama V9.92 SPRITE AUDIT 386 - ENVOI VERS TEST-2
 echo ============================================================
 echo Destination unique : %REPO_URL%
 echo Ce lanceur ne peut pas envoyer vers Test-1.
@@ -43,17 +43,26 @@ if /I not "!FINAL_REMOTE!"=="%REPO_URL%" (
 
 git add -A
 git diff --cached --quiet
-if errorlevel 1 git commit -m "PokeTama V9.92 - Cadre Boite agrandi"
+if errorlevel 1 git commit -m "PokeTama V9.92 - Audit tactile des 386 sprites"
 git branch -M main
 
 echo.
 echo Envoi vers Test-2...
 echo Verification de la version deja presente sur Test-2...
-git fetch origin main >nul 2>nul
-git push --force-with-lease -u origin main
+git fetch origin +refs/heads/main:refs/remotes/origin/main
 if errorlevel 1 (
   echo.
-  echo ECHEC : verifie que Test-2 existe et que tu es connecte a GitHub.
+  echo ERREUR : impossible de lire Test-2. Verifie ta connexion GitHub.
+  pause
+  exit /b 1
+)
+
+echo Remplacement de la branche main de Test-2 uniquement...
+git push --force -u origin main
+if errorlevel 1 (
+  echo.
+  echo ECHEC D'ENVOI : Test-2 n'a pas accepte la connexion GitHub.
+  echo Si GitHub demande une connexion, connecte-toi puis relance ce fichier.
   pause
   exit /b 1
 )

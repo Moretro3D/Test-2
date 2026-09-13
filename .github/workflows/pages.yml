@@ -44,16 +44,15 @@ jobs:
             arduino-cli lib update-index
             arduino-cli lib install "GFX Library for Arduino" "SensorLib" "XPowersLib"
           fi
-      - name: Restaurer les 386 sprites deja convertis
+      - name: Cache neuf des sources originales PMD
         uses: actions/cache@v4
         with:
           path: |
+            tools/pmd_cache
             tools/sdcard/mons/p*.bin
             tools/sdcard/mons/ps*.bin
             tools/sdcard/mons/thumbs.bin
-          key: poketama-pmd-386-v2-${{ hashFiles('tools/pack_pmd.py', 'tools/make_thumbs.py') }}
-          restore-keys: |
-            poketama-pmd-386-v2-
+          key: poketama-pmd-original-386-v3-${{ hashFiles('tools/pack_pmd.py', 'tools/make_thumbs.py') }}
       - name: Installer Pillow pour les sprites
         run: |
           python3 -c "from PIL import Image" 2>/dev/null || python3 -m pip install Pillow
@@ -62,7 +61,7 @@ jobs:
         run: |
           python3 tools/make_battle_bases.py
           python3 tools/audit_battle_grounds.py
-      - name: Compiler la V9.89
+      - name: Compiler et recharger les sprites originaux
         run: chmod +x tools/build_web.sh && bash tools/build_web.sh
       - name: Auditer les tailles des 386 Pokemon en combat
         run: python3 tools/audit_battle_sprite_sizes.py

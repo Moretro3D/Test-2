@@ -8,6 +8,7 @@ dex=(ROOT/"dex.h").read_text(encoding="utf-8")
 battle=(ROOT/"battle.cpp").read_text(encoding="utf-8")
 battle_bases=(ROOT/"battle_bases.h").read_text(encoding="utf-8")
 pet=(ROOT/"pet.cpp").read_text(encoding="utf-8")
+pet_h=(ROOT/"pet.h").read_text(encoding="utf-8")
 audio=(ROOT/"audio.cpp").read_text(encoding="utf-8")
 chirp=(ROOT/"species_chirp.cpp").read_text(encoding="utf-8")
 sdmon=(ROOT/"sdmon.cpp").read_text(encoding="utf-8")
@@ -16,6 +17,12 @@ def ok(cond,msg):
     if not cond:
         raise SystemExit("FAIL V9: "+msg)
     print("OK  ",msg)
+
+ok("1.46.62-moretro3d-v9.92-original-sprites-all386" in ino and
+   "1.46.62-moretro3d-v9.92-original-sprites-all386" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.46.62-moretro3d-v9.92-original-sprites-all386" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.46.62-moretro3d-v9.92-original-sprites-all386" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.46.62 coherente et cache installateur invalide")
 
 # 466x466 / UI 1.75"
 ok("#define CX 233" in ino and "#define CY 233" in ino, "centre écran 466x466")
@@ -63,11 +70,11 @@ ok("void drawBattlePmd" in ino and "visibleW" in ino and
    "visibleW*target/maxDim" in ino and "visibleH*target/maxDim" in ino and
    "Rééchantillonnage nearest-neighbour" in ino and
    "void drawBattleThumb" in ino and
-   "drawBattleThumb(th,battleDex,354,190,84,false)" in ino and
-   "drawBattleThumb(th,pet.speciesId,110,302,104,false)" in ino and
+   "drawBattleThumb(th,battleDex,354,190,84,false,false)" in ino and
+   "drawBattleThumb(th,playerDex,110,302,104,true,false)" in ino and
    (ROOT/"tools/audit_battle_sprite_sizes.py").exists() and
    "drawBattlePmd(wildPmd, battleDex, 354, 190, 84" in ino and
-   "drawBattlePmd(pmd, pet.speciesId, 110, 302, 104" in ino,
+   "drawBattlePmd(pmd, playerDex, 110, 302, 104" in ino,
    "sprites PMD et miniatures de combat normalises")
 ok("drawBattleStatusBar(enemyName,battleLevel,enemySex,82,66,190" in ino and
    "battlePlayer.level,playerSex,220,234,220" in ino,
@@ -109,6 +116,31 @@ ok('prefs.putUChar("boxbg", boxBackground)' in pet and
    "fond de Boite memorise apres redemarrage")
 ok("STARTER_DEX[3][3]" in ino and "{ 252, 255, 258 }" in ino,
    "starters 1G, 2G et 3G presents")
+ok("#define SPRITE_AUDIT_BUILD 0" in ino and
+   "POKETAMA_UNLOCK_ALL_386 1" in pet_h and
+   'gfx->print("JOUEUR")' not in ino and 'gfx->print("ADVERSAIRE")' not in ino,
+   "version normale avec les 386 Pokemon disponibles")
+layout=(ROOT/"battle_sprite_layout.h").read_text(encoding="utf-8")
+ok("BattleSpriteLayout BATTLE_SPRITE_LAYOUT[386]" in layout and
+   "uint8_t scale" in layout and "playerScale" not in layout and "enemyScale" not in layout and
+   ino.count("pokemonSpriteScale(dex)") == 4,
+   "taille individuelle unique pour 386 Pokemon sur choix accueil fiche et combat")
+ok("spriteSizePercent" not in ino and "battleAuditScalePercent" not in ino and
+   "pokemonVisualScalePercent" not in ino and "pokemon_visual_scale.h" not in ino,
+   "anciens coefficients et exceptions de taille entierement retires")
+workflow=(ROOT/".github/workflows/pages.yml").read_text(encoding="utf-8")
+build_web=(ROOT/"tools/build_web.sh").read_text(encoding="utf-8")
+ok("python3 \"$ROOT/tools/pack_pmd.py\" $(seq 1 386)" in build_web and
+   "poketama-pmd-original-386-v3" in workflow and "restore-keys" not in workflow,
+   "386 formes normales et Shiny rechargees depuis les sources originales")
+ok("int8_t forcedShiny = -1" not in ino and
+   "startBattleWith(wildPromptDex, wildPromptLevel, -1)" in ino and
+   "startBattleWith(0, 0, -1)" in ino,
+   "prototype Arduino sans argument par defaut duplique")
+ok('"..........kkk..."' in (ROOT/"species.h").read_text(encoding="utf-8") and
+   '".....kkkkk.k...."' in (ROOT/"species.h").read_text(encoding="utf-8") and
+   '"...........lLk.."' in (ROOT/"species.h").read_text(encoding="utf-8"),
+   "nouvelle planche de baies et super bonbon integree en 16x16")
 ok("drawStarterPokeball" in ino and "starterPreviewDex" in ino,
    "Pokeballs et popup de confirmation starter presentes")
 ok("repairCaughtProfiles" in pet and "hasStoredProfile(candidate)" in pet,
@@ -191,7 +223,7 @@ ok("int16_t pickWildSpecies(uint32_t roll)" in battle and
    "rarityRoll < 55" in battle and "rarityRoll < 80" in battle and "rarityRoll < 98" in battle and
    "generation = (uint8_t)(x % 3)" in battle,
    "rencontres variees sur les 386 Pokemon et les trois generations")
-ok("battleEnemyShiny=(random(128)==0)" in ino and
+ok("(random(128)==0)" in ino and "battleEnemyShiny=(forcedShiny >= 0)" in ino and
    "wildPmd.load(battleDex, battleEnemyShiny)" in ino and
    "drawBattleShinyEntrance(354,146)" in ino and
    "registerCaught(wildDex, wildShiny)" in pet,

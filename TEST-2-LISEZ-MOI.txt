@@ -1,4 +1,21 @@
-POKETAMA TEST-2 - PAGE INSTALLATEUR TEMPORAIRE V9.92
+POKETAMA TEST-2 - VERSION NORMALE COMPLETE 386 POKEMON
+
+VERSION INTERNE : 1.46.61 (nouveaux noms de binaires pour éviter le cache)
+
+Cette version conserve l'interface et le fonctionnement normaux. Les 386 Pokémon
+sont disponibles dans la Boîte afin de pouvoir les sélectionner et les contrôler.
+Il n'existe plus de boutons spéciaux JOUEUR/ADVERSAIRE.
+
+Les 386 formes normales et les 386 formes Shiny sont retéléchargées depuis les
+sources originales PMD SpriteCollab lors du premier déploiement Test-2.
+
+NOUVEAU SYSTÈME DE TAILLE
+- Toutes les anciennes corrections et le prorata Pokédex sont désactivés.
+- Les 386 Pokémon repartent à 100 % pour réaliser un contrôle propre.
+- Chaque Pokémon possède une seule taille finale utilisée sur l'écran principal,
+  la fiche générale, le côté joueur et le côté adversaire du combat.
+- Les positions peuvent rester différentes par page sans modifier cette taille.
+- La configuration se trouve dans battle_sprite_layout.h.
 
 1. Cree sur GitHub un depot PUBLIC et VIDE nomme Test-2
    (sans README, licence ni .gitignore). Tu pourras le supprimer apres le test.

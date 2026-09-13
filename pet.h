@@ -3,6 +3,14 @@
 #include <Preferences.h>
 #include "dex.h"
 
+// Version de contrôle complète sur la carte : tous les Pokémon sont disponibles.
+// Les tests natifs n'ont pas ARDUINO et continuent donc de vérifier la logique normale.
+#if defined(ARDUINO)
+#define POKETAMA_UNLOCK_ALL_386 1
+#else
+#define POKETAMA_UNLOCK_ALL_386 0
+#endif
+
 // 1 tick = 1 minuto de juego. Baja este valor para probar mas rapido
 // (p. ej. 5000UL = las estadisticas caen 12x mas rapido).
 #define PET_TICK_MS 60000UL
@@ -262,7 +270,11 @@ public:
     return dex >= 1 && dex <= DEX_COUNT && (dexReg[(dex - 1) >> 3] & (1 << ((dex - 1) & 7)));
   }
   bool isCaught(int16_t dex) const {
+#if POKETAMA_UNLOCK_ALL_386
+    return dex >= 1 && dex <= DEX_COUNT;
+#else
     return dex >= 1 && dex <= DEX_COUNT && (dexCaught[(dex - 1) >> 3] & (1 << ((dex - 1) & 7)));
+#endif
   }
   bool isShinyRegistered(int16_t dex) const {
     return dex >= 1 && dex <= DEX_COUNT && (dexShinyReg[(dex - 1) >> 3] & (1 << ((dex - 1) & 7)));
