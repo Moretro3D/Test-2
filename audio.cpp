@@ -1,0 +1,531 @@
+#include "audio.h"
+#include "species_chirp.h"
+#include "pin_config.h"
+#include <Arduino.h>
+#include <Wire.h>
+#include <ESP_I2S.h>
+#include <Preferences.h>
+#include <SD_MMC.h>
+
+// ---------------------------------------------------------------------------
+// Audio del TamaPoke: códec ES8311 (DAC -> amplificador PA -> altavoz) por I2S.
+// Init del ES8311 portado del driver oficial de Espressif (esp-bsp), fijado a
+// MCLK=4.096MHz (256*fs), 16kHz, 16-bit, esclavo I2S. Los efectos son tonos
+// cuadrados (estilo Game Boy) sintetizados en una tarea aparte para no
+// bloquear el loop de juego.
+// ---------------------------------------------------------------------------
+
+#define ES8311_ADDR 0x18
+#define SAMPLE_RATE 16000
+
+static I2SClass i2s;
+static bool gReady = false;
+static uint8_t gMode = SOUND_FULL;
+static QueueHandle_t gQ = nullptr;
+static volatile bool gBusy = false;
+static volatile uint32_t gAmbientKeepAliveUntil = 0;
+static volatile uint8_t gAmbientTheme = 0xFF;
+static uint32_t gLastQueuedAt[4] = {0, 0, 0, 0};
+static uint32_t gLastChirpAt = 0;
+
+enum AudioEventKind : uint8_t { AUDIO_EVENT_SFX = 0, AUDIO_EVENT_CHIRP, AUDIO_EVENT_AMBIENT };
+struct AudioEvent {
+  uint8_t kind;
+  uint16_t value;  // SFX 0.., ou numéro Pokédex 1..386
+};
+
+// ---- I2C del códec ----
+static bool esW(uint8_t reg, uint8_t val) {
+  Wire.beginTransmission(ES8311_ADDR);
+  Wire.write(reg);
+  Wire.write(val);
+  return Wire.endTransmission() == 0;
+}
+static uint8_t esR(uint8_t reg) {
+  Wire.beginTransmission(ES8311_ADDR);
+  Wire.write(reg);
+  Wire.endTransmission(false);
+  Wire.requestFrom(ES8311_ADDR, 1);
+  return Wire.available() ? Wire.read() : 0;
+}
+
+// Secuencia de init VERIFICADA EN ESTA PLACA (proyecto PlaneRadar2.0, misma
+// Waveshare 1.75). Clave: reloj DERIVADO DEL BCLK (reg01=0xBF, sin MCLK externo)
+// y referencia interna que alimenta el DAC (reg44=0x58); sin esos dos el codec
+// respondia por I2C pero no salia audio. 16kHz, 16-bit, esclavo I2S.
+static bool es8311Init() {
+  Wire.beginTransmission(ES8311_ADDR);
+  if (Wire.endTransmission() != 0) return false;
+
+  // open()
+  esW(0x0D, 0xFA); esW(0x44, 0x08); esW(0x44, 0x08);  // power up + quirk de 1a escritura
+  esW(0x01, 0x30); esW(0x02, 0x00); esW(0x03, 0x10); esW(0x16, 0x24);
+  esW(0x04, 0x10); esW(0x05, 0x00); esW(0x0B, 0x00); esW(0x0C, 0x00);
+  esW(0x10, 0x1F); esW(0x11, 0x7F);
+  esW(0x00, 0x80); esW(0x00, 0x80);                   // reset clock, esclavo
+  esW(0x01, 0xBF);                                    // clk src = BCLK (sin MCLK externo)
+  { uint8_t r = esR(0x06); r &= ~0x20; esW(0x06, r); }  // SCLK no invertido
+  esW(0x13, 0x10); esW(0x1B, 0x0A); esW(0x1C, 0x6A);
+  esW(0x44, 0x58);                                    // referencia interna -> alimenta el DAC
+
+  // config_sample(): BCLK*8 = DIG_MCLK
+  esW(0x02, 0x18); esW(0x05, 0x00); esW(0x03, 0x10); esW(0x04, 0x20);
+  { uint8_t r = esR(0x07); r &= 0xC0; esW(0x07, r); }
+  esW(0x08, 0xFF);
+  { uint8_t r = esR(0x06); r &= 0xE0; r |= 0x03; esW(0x06, r); }  // bclk_div=4
+
+  // formato I2S 16-bit
+  esW(0x09, 0x0C); esW(0x0A, 0x0C);
+
+  // start() DAC esclavo
+  esW(0x00, 0x80); esW(0x01, 0xBF); esW(0x09, 0x0C); esW(0x0A, 0x0C);
+  esW(0x17, 0xBF); esW(0x0E, 0x02); esW(0x12, 0x00); esW(0x14, 0x1A);
+  esW(0x0D, 0x01); esW(0x15, 0x40); esW(0x37, 0x08); esW(0x45, 0x00);
+
+  // volumen + unmute
+  esW(0x32, 0xBF);                                    // volumen DAC ~0 dB
+  { uint8_t r = esR(0x31); r &= 0x9F; esW(0x31, r); }  // unmute
+  return true;
+}
+
+// ---- sintetizador pequeño: onda, volumen, slide y ruido ----
+enum Wave : uint8_t { W_SQUARE = 0, W_TRI, W_SOFT, W_NOISE };
+struct Note {
+  uint16_t f, ms;
+  int16_t slide;
+  uint8_t vol;
+  uint8_t wave;
+};
+
+#define SQ(f, ms, vol)       {f, ms, 0, vol, W_SQUARE}
+#define TRI(f, ms, vol)      {f, ms, 0, vol, W_TRI}
+#define SOFT(f, ms, vol)     {f, ms, 0, vol, W_SOFT}
+#define NS(ms, vol)          {0, ms, 0, vol, W_NOISE}
+#define SL(f, ms, to, vol, w) {f, ms, (int16_t)((to) - (f)), vol, w}
+#define SIL(ms)              {0, ms, 0, 0, W_SQUARE}
+
+static const Note N_TAP[]    = {SQ(1175, 52, 88)};
+static const Note N_EAT[]    = {SOFT(523, 42, 64), SIL(12), SOFT(659, 50, 70)};
+static const Note N_PLAY[]   = {SL(760, 65, 1080, 92, W_TRI), SQ(1397, 55, 86)};
+static const Note N_HEART[]  = {SOFT(1047, 70, 56), SIL(18), SOFT(1319, 105, 68)};
+static const Note N_HATCH[]  = {TRI(523, 70, 60), TRI(659, 70, 64), TRI(784, 95, 68), SL(880, 190, 1320, 72, W_TRI)};
+static const Note N_EVOLVE[] = {SL(392, 100, 560, 58, W_TRI), SL(523, 100, 740, 62, W_TRI), SL(659, 110, 960, 66, W_TRI), SL(880, 210, 1480, 76, W_SOFT)};
+static const Note N_MEDAL[]  = {TRI(784, 60, 66), SIL(22), TRI(1047, 68, 72), SIL(20), SL(1175, 210, 1568, 78, W_TRI)};
+static const Note N_DENY[]   = {SL(330, 120, 230, 70, W_SQUARE), SL(220, 150, 160, 64, W_SQUARE)};
+static const Note N_BYE[]    = {SOFT(784, 130, 58), SOFT(659, 140, 55), SL(523, 260, 392, 54, W_SOFT)};
+static const Note N_LEVEL[]  = {TRI(784, 65, 64), TRI(1047, 80, 70), SOFT(1319, 130, 70)};
+static const Note N_BATTLE_WIN[]   = {TRI(659, 58, 66), TRI(784, 58, 68), TRI(988, 80, 72), SL(1175, 170, 1568, 76, W_TRI)};
+static const Note N_BATTLE_LOSS[]  = {SL(392, 140, 330, 66, W_SOFT), SL(330, 140, 247, 62, W_SOFT), SOFT(196, 220, 56)};
+static const Note N_CATCH_OK[]     = {TRI(784, 55, 68), TRI(988, 65, 72), SL(1175, 180, 1568, 78, W_TRI)};
+static const Note N_CATCH_FAIL[]   = {NS(55, 50), SL(523, 80, 392, 64, W_SQUARE), SIL(16), SL(392, 180, 247, 62, W_SOFT)};
+static const Note N_DAILY_GOAL[]   = {TRI(1175, 50, 68), SIL(22), TRI(1568, 70, 74), SOFT(1760, 95, 68)};
+static const Note N_EVENT_SPARKLE[] = {NS(35, 36), TRI(1568, 42, 56), TRI(1976, 62, 60), SIL(18), TRI(1760, 56, 54)};
+static const Note N_REST[]         = {SL(523, 125, 392, 48, W_SOFT), SOFT(330, 170, 42)};
+static const Note N_COUNTER[]      = {SL(784, 75, 1175, 62, W_TRI), SIL(16), SQ(1568, 70, 74), NS(40, 42)};
+static const Note N_MENU[]         = {TRI(988, 56, 84), SQ(1319, 62, 90)};
+static const Note N_GAME_START[]   = {TRI(659, 58, 72), TRI(880, 64, 78), SQ(1175, 74, 82)};
+static const Note N_BALL_BOUNCE[]  = {SL(820, 42, 520, 72, W_SQUARE)};
+static const Note N_BALL_MISS[]    = {NS(55, 56), SL(360, 110, 210, 68, W_SOFT)};
+static const Note N_MEMO_STEP[]    = {SQ(1047, 54, 68)};
+static const Note N_MEMO_PAD_0[]   = {SOFT(349, 82, 76)};
+static const Note N_MEMO_PAD_1[]   = {TRI(523, 82, 76)};
+static const Note N_MEMO_PAD_2[]   = {TRI(784, 82, 76)};
+static const Note N_MEMO_PAD_3[]   = {SQ(1047, 82, 76)};
+static const Note N_ATTACK_QUICK[] = {SL(980, 42, 1320, 90, W_TRI), SQ(1760, 38, 82)};
+static const Note N_ATTACK_HEAVY[] = {NS(36, 46), SL(330, 74, 700, 92, W_SQUARE), SQ(880, 52, 86)};
+static const Note N_ENEMY_HIT[]    = {SL(300, 70, 190, 82, W_SQUARE), NS(38, 44)};
+static const Note N_EFFECTIVE[]    = {TRI(988, 48, 82), TRI(1319, 54, 90), SQ(1760, 64, 86)};
+static const Note N_WEAK_HIT[]     = {SOFT(420, 70, 58), SOFT(360, 90, 50)};
+static const Note N_MINIGAME_OK[]  = {SL(1047, 46, 1568, 88, W_TRI), TRI(1760, 42, 78)};
+static const Note N_MINIGAME_BAD[] = {NS(42, 52), SL(300, 95, 180, 70, W_SOFT)};
+static const Note N_LOW_HP[]       = {SQ(740, 70, 74), SIL(38), SQ(740, 70, 74)};
+static const Note N_EXPEDITION_START[] = {TRI(523, 52, 64), TRI(659, 62, 70), SL(784, 115, 1047, 72, W_TRI)};
+static const Note N_EXPEDITION_FOUND[] = {TRI(784, 55, 70), TRI(1047, 58, 76), TRI(1319, 65, 78), SOFT(1568, 130, 72)};
+static const Note N_EXPEDITION_CLAIM[] = {SOFT(988, 55, 66), TRI(1319, 70, 74), SL(1568, 115, 1976, 76, W_TRI)};
+static const Note N_ITEM_USE[] = {SOFT(659, 48, 62), SL(784, 95, 1175, 70, W_TRI)};
+
+// Trois compositions originales "ville douce / lo-fi". Elles sont jouees
+// note par note afin qu'un SFX ou un cri puisse s'intercaler rapidement.
+static const Note OST_MORNING[] = {
+  SOFT(523,260,24), SOFT(659,260,22), TRI(784,300,20), SIL(100),
+  SOFT(659,240,22), SOFT(587,240,21), TRI(523,340,20), SIL(140),
+  SOFT(392,260,20), SOFT(523,260,22), TRI(659,300,21), SIL(100),
+  SOFT(587,240,20), SOFT(523,240,20), TRI(440,380,18), SIL(180),
+};
+static const Note OST_LOFI[] = {
+  SOFT(349,300,20), TRI(440,260,18), SOFT(523,320,20), SIL(120),
+  SOFT(330,300,19), TRI(415,260,18), SOFT(494,340,20), SIL(120),
+  SOFT(294,300,18), TRI(392,260,18), SOFT(466,320,19), SIL(120),
+  SOFT(330,280,18), TRI(440,280,18), SOFT(523,400,20), SIL(180),
+};
+static const Note OST_NIGHT[] = {
+  SOFT(262,360,16), SIL(100), TRI(392,320,17), SOFT(330,380,16),
+  SIL(160), SOFT(294,360,16), TRI(440,340,17), SIL(120),
+  SOFT(349,400,16), SOFT(294,340,15), SIL(140), TRI(392,360,16),
+  SOFT(330,420,15), SIL(180), SOFT(262,480,14), SIL(240),
+};
+static const Note *const AMBIENT_TRACKS[3] = { OST_MORNING, OST_LOFI, OST_NIGHT };
+static const uint8_t AMBIENT_LENGTHS[3] = {
+  sizeof(OST_MORNING)/sizeof(OST_MORNING[0]),
+  sizeof(OST_LOFI)/sizeof(OST_LOFI[0]),
+  sizeof(OST_NIGHT)/sizeof(OST_NIGHT[0]),
+};
+static uint8_t gAmbientStep[3] = {0,0,0};
+static int16_t *gMusicPcm = nullptr;
+static size_t gMusicCapacity = 0;
+static size_t gMusicSamples = 0;
+static size_t gMusicPosition = 0;
+static uint8_t gMusicTheme = 0xFF;
+static int16_t buf[256 * 2];  // stereo intercale (L=R)
+static uint8_t modeGainPct();
+static uint8_t musicGainPct();
+static const char *const MUSIC_PATHS[3] = {
+  "/music/morning.wav", "/music/lofi.wav", "/music/night.wav"
+};
+
+static bool openMusic(uint8_t theme) {
+  if (theme >= 3) return false;
+  if (gMusicPcm && gMusicTheme == theme) return true;
+  gMusicSamples=0; gMusicPosition=0; gMusicTheme=0xFF;
+  File music = SD_MMC.open(MUSIC_PATHS[theme], FILE_READ);
+  if (!music || music.size() <= 44) {
+    Serial.printf("OST absente: %s\n", MUSIC_PATHS[theme]);
+    return false;
+  }
+  uint8_t header[12];
+  if (music.read(header, sizeof(header)) != sizeof(header) ||
+      memcmp(header, "RIFF", 4) || memcmp(header + 8, "WAVE", 4)) {
+    music.close(); return false;
+  }
+  size_t bytes = music.size() - 44;
+  bytes &= ~1U;
+  if (!gMusicPcm || gMusicCapacity < bytes) {
+    if (gMusicPcm) free(gMusicPcm);
+    gMusicPcm = (int16_t *)ps_malloc(bytes);
+    gMusicCapacity = gMusicPcm ? bytes : 0;
+  }
+  if (!gMusicPcm) {
+    Serial.printf("OST sans PSRAM: %u octets requis\n", (unsigned)bytes);
+    music.close(); return false;
+  }
+  music.seek(44);
+  size_t received = 0;
+  while (received < bytes) {
+    size_t want = bytes - received;
+    if (want > 16384) want = 16384;
+    size_t got = music.read((uint8_t *)gMusicPcm + received, want);
+    if (!got) break;
+    received += got;
+  }
+  if (received != bytes) {
+    Serial.printf("OST tronquee: %s (%u/%u)\n", MUSIC_PATHS[theme],
+                  (unsigned)received, (unsigned)bytes);
+    music.close(); return false;
+  }
+  music.close();
+  gMusicSamples = bytes / 2;
+  gMusicTheme = theme;
+  Serial.printf("OST prete en PSRAM: %s (%u KB)\n", MUSIC_PATHS[theme], (unsigned)(bytes / 1024));
+  return true;
+}
+
+static bool playMusicChunk(uint8_t theme) {
+  if (!openMusic(theme)) return false;
+  int remaining = SAMPLE_RATE * 240 / 1000; // blocs courts: les SFX restent reactifs
+  while (remaining > 0) {
+    int count = remaining > 256 ? 256 : remaining;
+    if (gMusicPosition + count > gMusicSamples) count = gMusicSamples - gMusicPosition;
+    if (count <= 0) { gMusicPosition=0; continue; }
+    for (int i=0;i<count;i++) {
+      // Gain musical indépendant des effets : les niveaux SON MIN/MOY/MAX
+      // pilotent réellement l'ambiance. Les WAV culminent à ~51 %, donc même
+      // le gain MAX de 135 % reste sous l'écrêtage numérique.
+      int16_t s=(int16_t)((int32_t)gMusicPcm[gMusicPosition+i] * musicGainPct() / 100);
+      buf[i*2]=s; buf[i*2+1]=s;
+    }
+    i2s.write((uint8_t *)buf, count * 4);
+    gMusicPosition += count;
+    if (gMusicPosition >= gMusicSamples) gMusicPosition=0;
+    remaining -= count;
+  }
+  return true;
+}
+
+struct SfxDef { const Note *n; uint8_t len; };
+static const SfxDef SFX[SFX_COUNT] = {
+  {N_TAP, 1}, {N_EAT, 3}, {N_PLAY, 2}, {N_HEART, 2}, {N_HATCH, 4},
+  {N_EVOLVE, 4}, {N_MEDAL, 5}, {N_DENY, 2}, {N_BYE, 3}, {N_LEVEL, 3},
+  {N_BATTLE_WIN, 4}, {N_BATTLE_LOSS, 3}, {N_CATCH_OK, 3}, {N_CATCH_FAIL, 4},
+  {N_DAILY_GOAL, 4}, {N_EVENT_SPARKLE, 5}, {N_REST, 2}, {N_COUNTER, 4},
+  {N_MENU, 2}, {N_GAME_START, 3}, {N_BALL_BOUNCE, 1}, {N_BALL_MISS, 2}, {N_MEMO_STEP, 1},
+  {N_MEMO_PAD_0, 1}, {N_MEMO_PAD_1, 1}, {N_MEMO_PAD_2, 1}, {N_MEMO_PAD_3, 1},
+  {N_ATTACK_QUICK, 2}, {N_ATTACK_HEAVY, 3}, {N_ENEMY_HIT, 2}, {N_EFFECTIVE, 3},
+  {N_WEAK_HIT, 2}, {N_MINIGAME_OK, 2}, {N_MINIGAME_BAD, 2}, {N_LOW_HP, 3},
+  {N_EXPEDITION_START, 3}, {N_EXPEDITION_FOUND, 4}, {N_EXPEDITION_CLAIM, 3}, {N_ITEM_USE, 2},
+};
+
+static const uint8_t SFX_MIN_MODE[SFX_COUNT] = {
+  SOUND_FULL, // TAP: nur "viel"
+  SOUND_MED,  // EAT
+  SOUND_FULL, // PLAY: kleine Punkte/Klicks nur "viel"
+  SOUND_MED,  // HEART
+  SOUND_LOW,  // HATCH: grosses Ereignis
+  SOUND_LOW,  // EVOLVE
+  SOUND_LOW,  // MEDAL
+  SOUND_LOW,  // DENY: wichtiges Feedback auch bei wenig
+  SOUND_LOW,  // BYE
+  SOUND_LOW,  // LEVEL
+  SOUND_LOW,  // BATTLE_WIN
+  SOUND_LOW,  // BATTLE_LOSS
+  SOUND_LOW,  // CATCH_OK
+  SOUND_LOW,  // CATCH_FAIL
+  SOUND_LOW,  // DAILY_GOAL
+  SOUND_MED,  // EVENT_SPARKLE
+  SOUND_MED,  // REST
+  SOUND_MED,  // COUNTER
+  SOUND_FULL, // MENU
+  SOUND_MED,  // GAME_START
+  SOUND_FULL, // BALL_BOUNCE
+  SOUND_FULL, // BALL_MISS
+  SOUND_FULL, // MEMO_STEP
+  SOUND_FULL, // MEMO_PAD_0
+  SOUND_FULL, // MEMO_PAD_1
+  SOUND_FULL, // MEMO_PAD_2
+  SOUND_FULL, // MEMO_PAD_3
+  SOUND_FULL, // ATTACK_QUICK
+  SOUND_FULL, // ATTACK_HEAVY
+  SOUND_FULL, // ENEMY_HIT
+  SOUND_MED,  // EFFECTIVE
+  SOUND_FULL, // WEAK_HIT
+  SOUND_MED,  // MINIGAME_OK
+  SOUND_MED,  // MINIGAME_BAD
+  SOUND_LOW,  // LOW_HP
+  SOUND_MED,  // EXPEDITION_START
+  SOUND_LOW,  // EXPEDITION_FOUND
+  SOUND_MED,  // EXPEDITION_CLAIM
+  SOUND_MED,  // ITEM_USE
+};
+
+static uint16_t noiseState = 0xACE1;
+static int16_t nextNoise() {
+  noiseState = (uint16_t)((noiseState >> 1) ^ (-(noiseState & 1u) & 0xB400u));
+  return (noiseState & 1) ? 1 : -1;
+}
+
+static int16_t oscSample(uint8_t wave, int phase, int period, int16_t amp) {
+  if (wave == W_NOISE) return (int16_t)(nextNoise() * amp);
+  if (period <= 1) return 0;
+  int p = phase % period;
+  if (wave == W_TRI) {
+    int half = period / 2;
+    int v = (p < half) ? (-amp + (2 * amp * p) / half) : (amp - (2 * amp * (p - half)) / (period - half));
+    return (int16_t)v;
+  }
+  if (wave == W_SOFT) {
+    int half = period / 2;
+    int q = (p < half) ? p : period - p;
+    int v = (2 * amp * q) / half - amp;
+    return (int16_t)(v * 3 / 4);
+  }
+  return (p < period / 2) ? amp : -amp;
+}
+
+static uint8_t modeGainPct() {
+  switch (gMode) {
+    case SOUND_LOW: return 58;
+    case SOUND_MED: return 82;
+    case SOUND_FULL: return 118;
+    default: return 0;
+  }
+}
+
+static uint8_t musicGainPct() {
+  switch (gMode) {
+    case SOUND_LOW: return 45;   // ambiance discrète
+    case SOUND_MED: return 85;   // niveau de base audible
+    case SOUND_FULL: return 135; // musique renforcée
+    default: return 0;
+  }
+}
+
+static bool criticalSfx(uint8_t id) {
+  return id < SFX_COUNT && SFX_MIN_MODE[id] == SOUND_LOW;
+}
+
+// reproduce una nota con rampa anti-click; f==0 es silencio salvo W_NOISE.
+static void playTone(const Note &note) {
+  uint16_t f = note.f;
+  uint16_t ms = note.ms;
+  int total = SAMPLE_RATE * ms / 1000;
+  int done = 0;
+  int phase = 0;
+  const int16_t maxAmp = (int16_t)(7600L * note.vol * modeGainPct() / 10000);
+  while (done < total) {
+    int n = total - done; if (n > 256) n = 256;
+    for (int i = 0; i < n; i++) {
+      int16_t s = 0;
+      int idx = done + i;
+      if (note.wave == W_NOISE || f) {
+        uint16_t curF = f;
+        if (note.slide && total > 1) {
+          int32_t v = (int32_t)note.f + ((int32_t)note.slide * idx) / total;
+          curF = (v < 20) ? 20 : (uint16_t)v;
+        }
+        int period = curF ? (SAMPLE_RATE / curF) : 0;
+        if (period < 2) period = 2;
+        int16_t amp = maxAmp;
+        if (idx < 64) s = (int16_t)(s * idx / 64);                 // ataque
+        s = oscSample(note.wave, phase, period, amp);
+        if (idx < 64) s = (int16_t)(s * idx / 64);
+        else if (idx > total - 96) s = (int16_t)(s * (total - idx) / 96);
+        phase++;
+      }
+      buf[i * 2] = s; buf[i * 2 + 1] = s;
+    }
+    i2s.write((uint8_t *)buf, n * 4);
+    done += n;
+  }
+}
+
+static void playSpeciesChirp(uint16_t dex) {
+  SpeciesChirpProfile profile{};
+  if (!speciesChirpProfile(dex, &profile)) return;
+  for (uint8_t i = 0; i < profile.count; i++) {
+    const SpeciesChirpNote &src = profile.notes[i];
+    Note note = { src.frequency, src.durationMs, src.slide, src.volume, src.wave };
+    playTone(note);
+  }
+}
+
+static void audioTask(void *) {
+  AudioEvent event;
+  for (;;) {
+    if (!xQueueReceive(gQ, &event, portMAX_DELAY) || !gReady) continue;
+    bool isSfx = event.kind == AUDIO_EVENT_SFX && event.value < SFX_COUNT;
+    bool isChirp = event.kind == AUDIO_EVENT_CHIRP && event.value >= 1 && event.value <= 386 && gMode >= SOUND_MED;
+    bool isAmbient = event.kind == AUDIO_EVENT_AMBIENT && event.value < 3 && gMode >= SOUND_LOW;
+    if (isSfx && gMode < SFX_MIN_MODE[event.value]) continue;
+    if (isSfx || isChirp || isAmbient) {
+      gBusy = true;
+      digitalWrite(PA, HIGH);  // enciende el amplificador
+      delay(8);                // deja que arranque
+      if (isSfx) {
+        const SfxDef &d = SFX[event.value];
+        for (uint8_t i = 0; i < d.len; i++) playTone(d.n[i]);
+      } else if (isChirp) {
+        playSpeciesChirp(event.value);
+      } else {
+        uint8_t theme=(uint8_t)event.value;
+        bool wavOk = openMusic(theme);
+        if (wavOk) {
+          // Conserver un flux I2S continu tant que l'accueil renouvelle le
+          // keep-alive. L'ampli n'est donc plus coupe/rallume toutes les 240 ms.
+          do {
+            if (!playMusicChunk(theme)) { wavOk=false; break; }
+            if (uxQueueMessagesWaiting(gQ) > 0) break; // priorite aux SFX/cris
+          } while (gMode >= SOUND_LOW && gAmbientTheme == theme &&
+                   (int32_t)(gAmbientKeepAliveUntil - millis()) > 0);
+        }
+        if (!wavOk) {
+          uint8_t step=gAmbientStep[theme]++;
+          if (gAmbientStep[theme]>=AMBIENT_LENGTHS[theme]) gAmbientStep[theme]=0;
+          playTone(AMBIENT_TRACKS[theme][step]);
+        }
+      }
+      delay(isAmbient ? 18 : (gMode == SOUND_FULL ? 90 : 60));
+      digitalWrite(PA, LOW);                 // apaga el amp entre sonidos (evita siseo)
+      gBusy = false;
+    }
+  }
+}
+
+void audioBegin() {
+  // I2S primero: arranca el MCLK que necesita el códec para engancharse
+  pinMode(PA, OUTPUT);
+  digitalWrite(PA, LOW);   // amp apagado; la tarea lo enciende al reproducir
+
+  i2s.setPins(I2S_BCK_IO, I2S_WS_IO, I2S_DO_IO, I2S_DI_IO, I2S_MCK_IO);
+  if (!i2s.begin(I2S_MODE_STD, SAMPLE_RATE, I2S_DATA_BIT_WIDTH_16BIT,
+                 I2S_SLOT_MODE_STEREO, I2S_STD_SLOT_BOTH)) {
+    Serial.println("I2S begin fallo");
+    return;
+  }
+  if (!es8311Init()) { Serial.println("ES8311 no responde (audio off)"); return; }
+
+  Preferences p;
+  p.begin("tamapoke", true);
+  if (p.isKey("sndm")) {
+    gMode = p.getUChar("sndm", SOUND_FULL);
+  } else {
+    gMode = p.getBool("snd", true) ? SOUND_FULL : SOUND_OFF;
+  }
+  p.end();
+  if (gMode > SOUND_FULL) gMode = SOUND_FULL;
+
+  gReady = true;
+  gQ = xQueueCreate(32, sizeof(AudioEvent));
+  xTaskCreatePinnedToCore(audioTask, "audio", 4096, nullptr, 1, nullptr, 0);
+  // Pas de jingle bloquant au demarrage : l'OST peut prendre la main aussitot.
+}
+
+void sfxPlay(uint8_t id) {
+  if (!gReady || gMode == SOUND_OFF || !gQ || id >= SFX_COUNT || gMode < SFX_MIN_MODE[id]) return;
+
+  // Die Modi sollen sich spuerbar anfuehlen: "viel" spielt alles, "mittel"
+  // laesst schnelle Wiederholungen etwas aus, "wenig" bleibt bei grossen
+  // Ereignissen und klaren Warnungen.
+  uint32_t now = millis();
+  if (gMode == SOUND_MED && !criticalSfx(id)) {
+    if (now - gLastQueuedAt[gMode] < 180UL) return;
+  } else if (gMode == SOUND_LOW) {
+    if (now - gLastQueuedAt[gMode] < 650UL && !criticalSfx(id)) return;
+  }
+  gLastQueuedAt[gMode] = now;
+  AudioEvent event = { AUDIO_EVENT_SFX, id };
+  xQueueSend(gQ, &event, gMode == SOUND_FULL ? pdMS_TO_TICKS(28) : 0);
+}
+
+void audioSetEnabled(bool on) {
+  audioSetMode(on ? SOUND_FULL : SOUND_OFF);
+}
+
+bool audioEnabled() { return gMode != SOUND_OFF; }
+
+void audioSetMode(uint8_t mode) {
+  if (mode > SOUND_FULL) mode = SOUND_FULL;
+  gMode = mode;
+  Preferences p;
+  p.begin("tamapoke", false);
+  p.putUChar("sndm", gMode);
+  p.putBool("snd", gMode != SOUND_OFF);
+  p.end();
+}
+
+uint8_t audioMode() { return gMode; }
+
+bool audioBusy() {
+  return gBusy || (gQ && uxQueueMessagesWaiting(gQ) > 0);
+}
+
+void audioAmbientPlay(uint8_t theme) {
+  if (!gReady || gMode < SOUND_LOW || !gQ || theme >= 3) return;
+  gAmbientTheme = theme;
+  gAmbientKeepAliveUntil = millis() + 650;
+  if (audioBusy()) return;
+  AudioEvent event = { AUDIO_EVENT_AMBIENT, theme };
+  xQueueSend(gQ, &event, 0);
+}
+
+bool audioPreloadMusic(uint8_t theme) {
+  if (!gReady || gMode == SOUND_OFF || theme >= 3) return false;
+  return openMusic(theme);
+}
+
+void speciesChirpPlay(int16_t dex) {
+  if (!gReady || !gQ || gMode < SOUND_MED || dex < 1 || dex > 386) return;
+  uint32_t now = millis();
+  if (now - gLastChirpAt < 800UL) return;
+  gLastChirpAt = now;
+  AudioEvent event = { AUDIO_EVENT_CHIRP, (uint16_t)dex };
+  xQueueSend(gQ, &event, gMode == SOUND_FULL ? pdMS_TO_TICKS(28) : 0);
+}
