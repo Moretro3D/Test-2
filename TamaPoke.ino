@@ -34,7 +34,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.46.76-moretro3d-v9.97-box-count"
+#define FW_VERSION "1.46.77-moretro3d-v9.98-sun-path"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -1429,6 +1429,15 @@ void drawScene(uint8_t biome, uint32_t now, bool night) {
   uint8_t phase = (h>=6 && h<8) ? 0 : (h>=8 && h<18) ? 1 : (h>=18 && h<20) ? 2 : 3;
   if (night) phase=3;
 
+  // Soleil de gauche (06 h) a droite (20 h), avec une arche haute a midi.
+  // La progression utilise aussi les minutes : pas de saut a chaque heure.
+  int minuteOfDay=pet.lastSeenEpoch ? (int)((pet.lastSeenEpoch/60) % 1440) : 13*60;
+  int daylight=minuteOfDay-6*60;
+  if (daylight<0) daylight=0;
+  if (daylight>14*60) daylight=14*60;
+  int sunX=94+(278*daylight)/(14*60);
+  int sunY=HORIZON-18-(600L*daylight*(14*60-daylight))/((14L*60)*(14L*60));
+
   uint16_t top,mid,bot;
   if (phase==0) {       // lever du soleil
     top=C565(0x3b,0x32,0x8f); mid=C565(0xb8,0x55,0x9b); bot=C565(0xff,0xb0,0x58);
@@ -1454,13 +1463,13 @@ void drawScene(uint8_t biome, uint32_t now, bool night) {
     gfx->fillCircle(376,68,23,lerp565(top,mid,1,3)); // croissant
     for (auto &st:STARS) gfx->fillRect(st[0],st[1],3,3,UI_WHITE);
   } else if (phase==0) {
-    gfx->fillCircle(358,HORIZON-18,32,C565(0xff,0xd0,0x58));
+    gfx->fillCircle(sunX,sunY,32,C565(0xff,0xd0,0x58));
     drawClouds(now,C565(0xff,0xc0,0xb8));
   } else if (phase==1) {
-    gfx->fillCircle(370,78,25,C565(0xff,0xe2,0x58));
+    gfx->fillCircle(sunX,sunY,25,C565(0xff,0xe2,0x58));
     drawClouds(now,C565(0xf7,0xfb,0xff));
   } else {
-    gfx->fillCircle(360,HORIZON-14,34,C565(0xff,0xc1,0x45));
+    gfx->fillCircle(sunX,sunY,34,C565(0xff,0xc1,0x45));
     drawClouds(now,C565(0xeb,0x7b,0x76));
   }
 

@@ -1,9 +1,9 @@
 @echo off
 setlocal EnableExtensions
-title PokeTama V9.97 - Envoi simple vers Test-2
+title PokeTama V9.98 - Envoi simple vers Test-2
 cd /d "%~dp0"
 
-echo PokeTama V9.97 - envoi vers Moretro3D/Test-2
+echo PokeTama V9.98 - envoi vers Moretro3D/Test-2
 echo.
 where git >nul 2>nul
 if errorlevel 1 (
@@ -34,7 +34,7 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo Envoi de la V9.97 sans effacement ni force push...
+echo Envoi de la V9.98 sans effacement ni force push...
 git -c safe.directory="%CD%" -c http.sslBackend=openssl push origin HEAD:main
 if errorlevel 1 goto :connexion
 echo.

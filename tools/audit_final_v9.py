@@ -18,11 +18,11 @@ def ok(cond,msg):
         raise SystemExit("FAIL V9: "+msg)
     print("OK  ",msg)
 
-ok("1.46.76-moretro3d-v9.97-box-count" in ino and
-   "1.46.76-moretro3d-v9.97-box-count" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
-   "1.46.76-moretro3d-v9.97-box-count" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "1.46.76-moretro3d-v9.97-box-count" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
-   "version 1.46.76 coherente et cache installateur invalide")
+ok("1.46.77-moretro3d-v9.98-sun-path" in ino and
+   "1.46.77-moretro3d-v9.98-sun-path" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.46.77-moretro3d-v9.98-sun-path" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.46.77-moretro3d-v9.98-sun-path" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.46.77 coherente et cache installateur invalide")
 
 ok('snprintf(caught, sizeof(caught), T(S_CAUGHT_COUNT_FMT), (unsigned)pet.caughtCount());' in ino and
    '#define POKETAMA_UNLOCK_ALL_386 0' in pet_h and
@@ -73,6 +73,20 @@ ok("drawHomeIdentity" in ino, "nom + niveau séparés sur accueil")
 ok("if (pet.weight > 60) return T(S_CHUBBY)" not in ino, "message ambigu 'un peu rond' supprimé")
 ok("gNight = pet.sleeping || h < 6 || h >= 20;" in ino, "fond piloté par heure réelle, pas par thème sombre")
 ok("06-07 lever" in ino and "08-17 jour" in ino and "18-19 coucher" in ino, "cycle 24h en 4 phases")
+sun_code=ino[ino.index("void drawScene("):ino.index("void drawStarterPokeball(")]
+sun_points=[]
+for minute in (6*60, 8*60, 13*60, 18*60, 20*60):
+    daylight=minute-6*60
+    x=94+(278*daylight)//(14*60)
+    y=232-18-(600*daylight*(14*60-daylight))//((14*60)*(14*60))
+    sun_points.append((x,y))
+ok("int sunX=94+(278*daylight)/(14*60);" in sun_code and
+   "int sunY=HORIZON-18-" in sun_code and
+   all(f"gfx->fillCircle(sunX,sunY,{radius}" in sun_code for radius in (32,25,34)) and
+   sun_points[0][0]<sun_points[1][0]<sun_points[2][0]<sun_points[3][0]<sun_points[4][0] and
+   sun_points[2][1]<sun_points[0][1] and sun_points[2][1]<sun_points[4][1] and
+   all((x-233)**2+(y-233)**2 < (233-34)**2 for x,y in sun_points),
+   "soleil de gauche a droite et toujours dans l'ecran rond")
 ok("DEX_TBL[pet.speciesId].biome" in ino, "habitat lié au Pokémon actif")
 ok("drawCollectionFrame(CX, PET_GROUND - 96" not in ino, "aucun anneau/flèche latérale sur accueil")
 
