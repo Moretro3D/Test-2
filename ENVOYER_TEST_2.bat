@@ -1,74 +1,50 @@
 @echo off
-setlocal EnableExtensions EnableDelayedExpansion
-title PokeTama V9.96 Boite normale - Envoi vers Test-2
+setlocal EnableExtensions
+title PokeTama V9.96 - Envoi simple vers Test-2
 cd /d "%~dp0"
 
-set "REPO_URL=https://github.com/Moretro3D/Test-2.git"
-echo ============================================================
-echo  PokeTama V9.96 BOITE NORMALE - ENVOI VERS TEST-2
-echo ============================================================
-echo Destination unique : %REPO_URL%
-echo Ce lanceur ne peut pas envoyer vers Test-1.
+echo PokeTama V9.96 - envoi vers Moretro3D/Test-2
 echo.
-
 where git >nul 2>nul
 if errorlevel 1 (
-  echo ERREUR : Git pour Windows n'est pas installe ou pas dans le PATH.
+  echo ERREUR : Git pour Windows est introuvable.
+  pause
+  exit /b 1
+)
+if not exist ".git\HEAD" (
+  echo ERREUR : extrais d'abord le ZIP entier, avec tous ses fichiers.
   pause
   exit /b 1
 )
 
-git config --global --add safe.directory "%CD%" >nul 2>nul
-if not exist ".git" git init
+for /f "delims=" %%R in ('git -c safe.directory="%CD%" remote get-url origin 2^>nul') do set "REPO_URL=%%R"
+if /I not "%REPO_URL%"=="https://github.com/Moretro3D/Test-2.git" (
+  echo ARRET : ce dossier ne pointe pas vers Moretro3D/Test-2.
+  pause
+  exit /b 1
+)
 
-git config user.name >nul 2>nul
-if errorlevel 1 git config user.name "MoRetro3D"
-git config user.email >nul 2>nul
-if errorlevel 1 git config user.email "moretro3d@users.noreply.github.com"
-
-git remote get-url origin >nul 2>nul
+echo Verification de la version presente sur GitHub...
+git -c safe.directory="%CD%" -c http.sslBackend=openssl fetch origin main
+if errorlevel 1 goto :connexion
+git -c safe.directory="%CD%" merge-base --is-ancestor origin/main HEAD
 if errorlevel 1 (
-  git remote add origin "%REPO_URL%"
-) else (
-  for /f "delims=" %%R in ('git remote get-url origin') do set "CURRENT_REMOTE=%%R"
-  if /I not "!CURRENT_REMOTE!"=="%REPO_URL%" git remote set-url origin "%REPO_URL%"
-)
-
-for /f "delims=" %%R in ('git remote get-url origin') do set "FINAL_REMOTE=%%R"
-if /I not "!FINAL_REMOTE!"=="%REPO_URL%" (
-  echo ARRET SECURISE : la destination Git ne correspond pas a Test-2.
+  echo ARRET : Test-2 contient de nouveaux changements. Aucun fichier n'a ete ecrase.
   pause
   exit /b 1
 )
 
-git add -A
-git diff --cached --quiet
-if errorlevel 1 git commit -m "PokeTama V9.96 - Desactiver le deblocage des 386 Pokemon"
-git branch -M main
-
+echo Envoi de la V9.96 sans effacement ni force push...
+git -c safe.directory="%CD%" -c http.sslBackend=openssl push origin HEAD:main
+if errorlevel 1 goto :connexion
 echo.
-echo Envoi vers Test-2...
-echo Verification de la version deja presente sur Test-2...
-git fetch origin +refs/heads/main:refs/remotes/origin/main
-if errorlevel 1 (
-  echo.
-  echo ERREUR : impossible de lire Test-2. Verifie ta connexion GitHub.
-  pause
-  exit /b 1
-)
-
-echo Remplacement de la branche main de Test-2 uniquement...
-git push --force -u origin main
-if errorlevel 1 (
-  echo.
-  echo ECHEC D'ENVOI : Test-2 n'a pas accepte la connexion GitHub.
-  echo Si GitHub demande une connexion, connecte-toi puis relance ce fichier.
-  pause
-  exit /b 1
-)
-
-echo.
-echo ENVOI TERMINE.
-echo Ouvre : https://github.com/Moretro3D/Test-2/actions
-echo Puis : https://moretro3d.github.io/Test-2/
+echo TERMINE : ouvre https://github.com/Moretro3D/Test-2/actions
 pause
+exit /b 0
+
+:connexion
+echo.
+echo ECHEC : connecte-toi a GitHub si une fenetre de connexion s'affiche.
+echo Aucun force push ni effacement n'a ete effectue. Relance ensuite ce fichier.
+pause
+exit /b 1
