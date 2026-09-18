@@ -17,8 +17,8 @@ if not exist ".git\HEAD" (
   exit /b 1
 )
 
-for /f "delims=" %%R in ('git -c safe.directory="%CD%" remote get-url origin 2^>nul') do set "REPO_URL=%%R"
-if /I not "%REPO_URL%"=="https://github.com/Moretro3D/Test-2.git" (
+git -c safe.directory="%CD%" remote get-url origin 2>nul | findstr /I /L https://github.com/Moretro3D/Test-2.git >nul
+if errorlevel 1 (
   echo ARRET : ce dossier ne pointe pas vers Moretro3D/Test-2.
   pause
   exit /b 1
