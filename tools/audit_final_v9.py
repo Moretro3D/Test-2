@@ -18,11 +18,16 @@ def ok(cond,msg):
         raise SystemExit("FAIL V9: "+msg)
     print("OK  ",msg)
 
-ok("1.46.75-moretro3d-v9.96-normal-box" in ino and
-   "1.46.75-moretro3d-v9.96-normal-box" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
-   "1.46.75-moretro3d-v9.96-normal-box" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "1.46.75-moretro3d-v9.96-normal-box" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
-   "version 1.46.75 coherente et cache installateur invalide")
+ok("1.46.76-moretro3d-v9.97-box-count" in ino and
+   "1.46.76-moretro3d-v9.97-box-count" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.46.76-moretro3d-v9.97-box-count" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.46.76-moretro3d-v9.97-box-count" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.46.76 coherente et cache installateur invalide")
+
+ok('snprintf(caught, sizeof(caught), T(S_CAUGHT_COUNT_FMT), (unsigned)pet.caughtCount());' in ino and
+   '#define POKETAMA_UNLOCK_ALL_386 0' in pet_h and
+   '#define SPRITE_AUDIT_BUILD 0' in ino,
+   "compteur Boite reel et debloquages de test desactives")
 
 # 466x466 / UI 1.75"
 ok("#define CX 233" in ino and "#define CY 233" in ino, "centre écran 466x466")
