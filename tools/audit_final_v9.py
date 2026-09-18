@@ -18,11 +18,11 @@ def ok(cond,msg):
         raise SystemExit("FAIL V9: "+msg)
     print("OK  ",msg)
 
-ok("1.46.74-moretro3d-v9.95-auto-evolution-fix" in ino and
-   "1.46.74-moretro3d-v9.95-auto-evolution-fix" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
-   "1.46.74-moretro3d-v9.95-auto-evolution-fix" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "1.46.74-moretro3d-v9.95-auto-evolution-fix" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
-   "version 1.46.74 coherente et cache installateur invalide")
+ok("1.46.75-moretro3d-v9.96-normal-box" in ino and
+   "1.46.75-moretro3d-v9.96-normal-box" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.46.75-moretro3d-v9.96-normal-box" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.46.75-moretro3d-v9.96-normal-box" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.46.75 coherente et cache installateur invalide")
 
 # 466x466 / UI 1.75"
 ok("#define CX 233" in ino and "#define CY 233" in ino, "centre écran 466x466")
@@ -145,9 +145,10 @@ ok('prefs.putUChar("boxbg", boxBackground)' in pet and
 ok("STARTER_DEX[3][3]" in ino and "{ 252, 255, 258 }" in ino,
    "starters 1G, 2G et 3G presents")
 ok("#define SPRITE_AUDIT_BUILD 0" in ino and
-   "POKETAMA_UNLOCK_ALL_386 1" in pet_h and
+   "#define POKETAMA_UNLOCK_ALL_386 1" not in pet_h and
+   "#define POKETAMA_UNLOCK_ALL_386 0" in pet_h and
    'gfx->print("JOUEUR")' not in ino and 'gfx->print("ADVERSAIRE")' not in ino,
-   "version normale avec les 386 Pokemon disponibles")
+   "mode test 386 retire sans effacer les Pokemon obtenus")
 layout=(ROOT/"battle_sprite_layout.h").read_text(encoding="utf-8")
 ok("BattleSpriteLayout BATTLE_SPRITE_LAYOUT[386]" in layout and
    "uint8_t scale" in layout and "playerScale" not in layout and "enemyScale" not in layout and

@@ -34,7 +34,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.46.74-moretro3d-v9.95-auto-evolution-fix"
+#define FW_VERSION "1.46.75-moretro3d-v9.96-normal-box"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 

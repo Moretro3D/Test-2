@@ -3,10 +3,10 @@
 #include <Preferences.h>
 #include "dex.h"
 
-// Version de contrôle complète sur la carte : tous les Pokémon sont disponibles.
-// Les tests natifs n'ont pas ARDUINO et continuent donc de vérifier la logique normale.
+// Accès normal à la Boîte : seuls les Pokémon réellement obtenus sont disponibles.
+// Les 386 sprites restent présents pour les rencontres et le Pokédex.
 #if defined(ARDUINO)
-#define POKETAMA_UNLOCK_ALL_386 1
+#define POKETAMA_UNLOCK_ALL_386 0
 #else
 #define POKETAMA_UNLOCK_ALL_386 0
 #endif
