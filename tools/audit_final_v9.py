@@ -18,12 +18,12 @@ def ok(cond,msg):
         raise SystemExit("FAIL V9: "+msg)
     print("OK  ",msg)
 
-ok("1.46.87-moretro3d-v10.08-hd-badges" in ino and
-   "1.46.87-moretro3d-v10.08-hd-badges" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
-   "1.46.87-moretro3d-v10.08-hd-badges" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "1.46.87-moretro3d-v10.08-hd-badges" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
-   "1.46.87-moretro3d-v10.08-hd-badges" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
-   "version 1.46.87 coherente et caches installateur invalides")
+ok("1.46.88-moretro3d-v10.09-box-fixes" in ino and
+   "1.46.88-moretro3d-v10.09-box-fixes" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.46.88-moretro3d-v10.09-box-fixes" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.46.88-moretro3d-v10.09-box-fixes" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   "1.46.88-moretro3d-v10.09-box-fixes" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.46.88 coherente et caches installateur invalides")
 ok('gfx->setCursor(CX - 18, 366); gfx->print("V10")' in ino and
    '<div class="version">Firmware V10</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    '<div class="version">Firmware V10</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
@@ -37,7 +37,7 @@ ok("github.repository == 'Moretro3D/Test-2'" in workflow and
    "! grep -q 'location.replace' web/index.html" in workflow,
    "Test-2 affiche son Web Flasher sans redirection Shopify")
 test2_launcher=(ROOT/"OUVRIR_WEB_FLASHER_TEST_2.bat").read_text(encoding="utf-8")
-ok("https://moretro3d.github.io/Test-2/?v=1.46.87-moretro3d-v10.08-hd-badges" in test2_launcher,
+ok("https://moretro3d.github.io/Test-2/?v=1.46.88-moretro3d-v10.09-box-fixes" in test2_launcher,
    "lanceur direct Test-2 avec contournement du cache")
 
 ok('snprintf(caught, sizeof(caught), T(S_CAUGHT_COUNT_FMT), (unsigned)pet.caughtCount());' in ino and
@@ -62,6 +62,19 @@ ok("galleryFilter" not in ino and "S_FILTER_ALL" not in ino and
 ok("drawBattleCaughtBall(350,354,24,26)" in ino and
    "if (known) drawBattleCaughtBall" in ino,
    "Pokeball discrete sur les fiches de Pokemon deja obtenus")
+ok("#define GAL_ROWS 3" in ino and "#define GAL_PAGE_SIZE (GAL_COLS * GAL_ROWS)" in ino and
+   "galleryPage * GAL_PAGE_SIZE" in ino and
+   "snprintf(caught,sizeof(caught),T(S_CAUGHT_COUNT_FMT),(unsigned)pet.caughtCount())" in ino,
+   "Pokedex en grille 4x3 avec total reel des captures")
+ok("La fiche Pokedex reste purement informative" in ino and
+   "switchToCaught(galleryDetail)" not in ino and "S_CARE_ACTION" not in ino,
+   "action S'occuper et zone tactile associee retirees du Pokedex")
+ok("La Boite est désormais le seul endroit" in ino and
+   "pet.switchToCaught(dex)" in ino and
+   "galleryDetail = dex;" not in ino[ino.index("else if (cardPage == 3)"):ino.index("else if (cardPage == 4")],
+   "selection du compagnon reste dans la Boite")
+ok("confirmUntil" not in ino and "pet.release();" not in ino,
+   "relachement par appui long totalement retire de l'accueil")
 
 # Aide : meme structure dans les six langues et lignes lisibles sur le rond.
 help_match=re.search(r'HELP_LINES\[LANG_COUNT\]\[HELP_PAGE_COUNT\]\[HELP_LINE_COUNT\]\s*=\s*\{(.*?)\n\};', ino, re.S)

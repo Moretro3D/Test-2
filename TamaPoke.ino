@@ -36,7 +36,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.46.87-moretro3d-v10.08-hd-badges"
+#define FW_VERSION "1.46.88-moretro3d-v10.09-box-fixes"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -348,7 +348,6 @@ uint8_t dimStage = 0;        // 0 despierto, 1 atenuado (90s), 2 casi apagado (5
 bool swallowGesture = false; // el toque que despierta no acciona nada
 uint32_t ignoreTouchUntil = 0;
 uint32_t holdStart = 0;     // pulsacion larga sobre el bicho
-uint32_t confirmUntil = 0;  // dialogo "soltar?" activo hasta este millis
 uint8_t choiceKind = 0;     // dialogue de decision : 0 aucun, 1 evolution
 uint32_t choiceUntil = 0;   // se cierra solo a este millis
 int16_t tX0, tY0, tXl, tYl; // gesto en curso (inicio y ultima posicion)
@@ -570,7 +569,7 @@ bool lightSleepAllowed(uint32_t now) {
   if (!screenOff) return false;
   if (wasPressed || gTouchIrq || now < ignoreTouchUntil) return false;
   if (gameOpen || sackOpen || battleOpen || bathUntil) return false;
-  if (pet.awaitingStarter() || feedMenuUntil || confirmUntil || choiceKind || wildPromptUntil || petEventUntil) return false;
+  if (pet.awaitingStarter() || feedMenuUntil || choiceKind || wildPromptUntil || petEventUntil) return false;
   if (pet.evolving() || pet.ceremony || pet.eating() || pet.showHeart()) return false;
   if (galleryOpen || cardOpen || kbOpen || clockOpen || helpOpen || gameMenuOpen) return false;
   return true;
@@ -943,13 +942,6 @@ void handleTouch() {
   } else if (pressed) {  // sigue apoyado
     tXl = x;
     tYl = y;
-    // pulsacion larga sin moverse sobre el bicho -> dialogo de soltar
-    if (!holdFired && !swallowGesture && !galleryOpen && !cardOpen && !kbOpen && !clockOpen && !helpOpen && millis() - tStart > 3000 &&
-        abs(tXl - tX0) < 30 && abs(tYl - tY0) < 30 && inPetZone(tX0, tY0) &&
-        !pet.isEgg() && !confirmUntil && !pet.ceremony) {
-      confirmUntil = millis() + 10000;
-      holdFired = true;
-    }
   } else if (wasPressed) {  // levanta el dedo: resolver gesto
     lastInteract = millis();
     int dx = tXl - tX0, dy = tYl - tY0;
@@ -988,8 +980,8 @@ void onSwipeV(int dir) {
     return;
   }
   if (dir > 0) {                    // deslizar abajo: ajustar hora
-    if (!confirmUntil && !feedMenuUntil) openClock();
-  } else if (!pet.isEgg() && !confirmUntil && !feedMenuUntil) {
+    if (!feedMenuUntil) openClock();
+  } else if (!pet.isEgg() && !feedMenuUntil) {
     cardOpen = true;                // deslizar arriba: ficha
     cardPage = 0;
     cardDirty = true;
@@ -1019,7 +1011,7 @@ void onSwipe(int dir) {
     return;
   }
   if (!galleryOpen) {
-    if (!pet.ceremony && !confirmUntil) {
+    if (!pet.ceremony) {
       galleryOpen = true;
       galleryPage = 0;
       galleryDetail = 0;
@@ -1239,15 +1231,15 @@ void onTap(int16_t x, int16_t y) {
             y >= 112 + row * 74 && y <= 176 + row * 74) {
           int16_t dex = boxDexAt((uint16_t)boxPage * 8 + row * 4 + col);
           if (dex > 0) {
-            cardOpen = false;
-            galleryOpen = true;
-            galleryDetail = dex;
-            galleryDirty = true;
+            // La Boite est désormais le seul endroit pour choisir son
+            // compagnon. La selection reste sur cette page et ne bascule
+            // plus vers la fiche Pokedex.
+            if (dex == pet.speciesId || pet.switchToCaught(dex)) {
+              sdDirty = true;
+              cardDirty = true;
+              sfxPlay(dex == pet.speciesId ? SFX_TAP : SFX_CATCH_OK);
+            } else sfxPlay(SFX_DENY);
             lockTouchBrief();
-            spriteAuditShiny = false;
-            galleryPmd.load(dex, false);
-            sfxPlay(SFX_TAP);
-            speciesChirpPlay(dex);
           }
         } else if (y >= 400) {
           cardOpen = false;
@@ -1348,13 +1340,6 @@ void onTap(int16_t x, int16_t y) {
       else if (b2) pet.declineEvolve();
     }
     choiceKind = 0;
-    return;
-  }
-  if (confirmUntil) {        // dialogo "soltar?": SI / NO
-    if (millis() < confirmUntil && x >= 118 && x <= 218 && y >= 252 && y <= 304) {
-      pet.release();
-    }
-    confirmUntil = 0;
     return;
   }
   if (feedMenuUntil) {       // selector de comida
@@ -1830,29 +1815,6 @@ void render() {
       drawMap(SPR_ICON_BERRY_B, 16, 176, 296, 3, false);
       drawMap(SPR_ICON_BERRY_G, 16, 242, 296, 3, false);
       drawMap(SPR_ICON_CANDY, 16, 308, 296, 3, false);
-    }
-  }
-
-  // dialogo "soltar?" (pulsacion larga sobre el bicho)
-  if (confirmUntil) {
-    if (millis() > confirmUntil) {
-      confirmUntil = 0;
-    } else {
-      gfx->fillRoundRect(94, 168, 278, 152, 16, uiPanel());
-      gfx->drawRoundRect(94, 168, 278, 152, 16, uiInk());
-      char q[28];
-      snprintf(q, sizeof(q), T(S_RELEASE_FMT), dexName(pet.speciesId));
-      gfx->setTextColor(uiInk());
-      gfx->setTextSize(2);
-      gfx->setCursor(CX - strlen(q) * 6, 196);
-      gfx->print(q);
-      gfx->fillRoundRect(118, 252, 100, 52, 12, UI_BAR_OK);
-      gfx->setTextColor(UI_WHITE);
-      gfx->setCursor(118 + (100 - (int)strlen(T(S_YES)) * 12) / 2, 270);
-      gfx->print(T(S_YES));
-      gfx->fillRoundRect(248, 252, 100, 52, 12, UI_BAR_BAD);
-      gfx->setCursor(248 + (100 - (int)strlen(T(S_NO)) * 12) / 2, 270);
-      gfx->print(T(S_NO));
     }
   }
 
@@ -2801,7 +2763,7 @@ void scheduleNextWild(uint32_t now) {
 bool mainScreenReadyForWild() {
   if (screenOff || pet.awaitingStarter() || pet.isEgg() || pet.sleeping || pet.ceremony) return false;
   if (battleOpen || gameOpen || gameMenuOpen || sackOpen || cardOpen || galleryOpen || kbOpen || clockOpen || helpOpen) return false;
-  if (feedMenuUntil || confirmUntil || choiceKind || bathUntil || petEventUntil) return false;
+  if (feedMenuUntil || choiceKind || bathUntil || petEventUntil) return false;
   if (pet.evolving() || pet.wantEvolveButton()) return false;
   return true;
 }
@@ -2840,7 +2802,7 @@ void scheduleNextPetEvent(uint32_t now) {
 bool mainScreenReadyForPetEvent() {
   if (screenOff || pet.awaitingStarter() || pet.isEgg() || pet.sleeping || pet.ceremony) return false;
   if (battleOpen || gameOpen || gameMenuOpen || sackOpen || cardOpen || galleryOpen || kbOpen || clockOpen || helpOpen) return false;
-  if (feedMenuUntil || confirmUntil || choiceKind || bathUntil || wildPromptUntil) return false;
+  if (feedMenuUntil || choiceKind || bathUntil || wildPromptUntil) return false;
   if (pet.evolving() || pet.wantEvolveButton()) return false;
   return true;
 }
@@ -5698,9 +5660,12 @@ void keyboardTap(int16_t x, int16_t y) {
 #define GAL_X 89
 #define GAL_Y 82
 #define GAL_CELL 72
+#define GAL_COLS 4
+#define GAL_ROWS 3
+#define GAL_PAGE_SIZE (GAL_COLS * GAL_ROWS)
 
 int galleryPageCount() {
-  return (DEX_COUNT + 15) / 16;
+  return (DEX_COUNT + GAL_PAGE_SIZE - 1) / GAL_PAGE_SIZE;
 }
 
 int16_t galleryDexAt(uint16_t index) {
@@ -5809,22 +5774,8 @@ void renderGallery() {
       gfx->print("COMBAT");
     }
 #else
-    // Pokémon capturé : bouton pour le choisir comme compagnon actif.
-    if (caught || reg) {
-      bool active = (galleryDetail == pet.speciesId);
-      const char *care = active ? T(S_ACTIVE) : T(S_CARE_ACTION);
-      uint16_t bc = active ? UI_TRACK : UI_BAR_OK;
-      gfx->fillRoundRect(128, 386, 210, 42, 13, bc);
-      gfx->setTextColor(UI_WHITE);
-      gfx->setTextSize(2);
-      gfx->setCursor(CX - (int)strlen(care) * 6, 400);
-      gfx->print(care);
-    } else {
-      gfx->setTextColor(uiInk());
-      gfx->setTextSize(2);
-      gfx->setCursor(CX - strlen(T(S_DETAIL_BACK)) * 6, 408);
-      gfx->print(T(S_DETAIL_BACK));
-    }
+    // La fiche Pokedex reste purement informative. Le choix du compagnon
+    // se fait uniquement depuis la Boite.
 #endif
     gfx->flush();
     return;
@@ -5839,9 +5790,9 @@ void renderGallery() {
   gfx->setCursor(CX - 7 * 9, 28);
   gfx->print("POKEDEX");
 
-  for (int r = 0; r < 4; r++) {
-    for (int c = 0; c < 4; c++) {
-      int16_t dex = galleryDexAt(galleryPage * 16 + r * 4 + c);
+  for (int r = 0; r < GAL_ROWS; r++) {
+    for (int c = 0; c < GAL_COLS; c++) {
+      int16_t dex = galleryDexAt(galleryPage * GAL_PAGE_SIZE + r * GAL_COLS + c);
       if (dex <= 0) continue;
       int x = GAL_X + c * GAL_CELL, y = GAL_Y + r * GAL_CELL;
       const uint8_t *t = thumbs.get(dex);
@@ -5866,6 +5817,15 @@ void renderGallery() {
       }
     }
   }
+  // La quatrieme ligne est remplacee par le total reel des captures.
+  char caught[28];
+  snprintf(caught,sizeof(caught),T(S_CAUGHT_COUNT_FMT),(unsigned)pet.caughtCount());
+  gfx->fillRoundRect(103,306,260,54,14,uiPanel());
+  gfx->drawRoundRect(103,306,260,54,14,uiLine());
+  gfx->setTextColor(uiInk());
+  gfx->setTextSize(2);
+  gfx->setCursor(CX-(int)strlen(caught)*6,325);
+  gfx->print(caught);
   // Navigation latérale : aucune rangée de petites billes.
   int pages = galleryPageCount();
   if (galleryPage > 0) {
@@ -5939,25 +5899,7 @@ void galleryTap(int16_t x, int16_t y) {
       return;
     }
 #else
-    // Le bouton S'OCCUPER est disponible pour les Pokémon capturés OU déjà élevés.
-    if ((pet.isCaught(galleryDetail) || pet.isRegistered(galleryDetail)) && y >= 378 && y <= 438 && x >= 112 && x <= 354) {
-      if (galleryDetail == pet.speciesId) {
-        sfxPlay(SFX_TAP);
-        return;
-      }
-      if (pet.switchToCaught(galleryDetail)) {
-        galleryOpen = false;
-        galleryDetail = 0;
-        galleryPmd.unload();
-        sdDirty = true;
-        markUiDirty();
-        lockTouchBrief();
-        sfxPlay(SFX_CATCH_OK);
-      } else {
-        sfxPlay(SFX_DENY);
-      }
-      return;
-    }
+    // Aucun bouton invisible : toucher la fiche revient simplement à la grille.
 #endif
     // Toucher ailleurs revient à la grille.
     galleryDetail = 0;
@@ -5997,8 +5939,8 @@ void galleryTap(int16_t x, int16_t y) {
 
   if (x < GAL_X || y < GAL_Y) return;
   int c = (x - GAL_X) / GAL_CELL, r = (y - GAL_Y) / GAL_CELL;
-  if (c < 0 || c > 3 || r < 0 || r > 3) return;
-  int16_t dex = galleryDexAt(galleryPage * 16 + r * 4 + c);
+  if (c < 0 || c >= GAL_COLS || r < 0 || r >= GAL_ROWS) return;
+  int16_t dex = galleryDexAt(galleryPage * GAL_PAGE_SIZE + r * GAL_COLS + c);
   if (dex <= 0) return;
   galleryDetail = dex;
   spriteAuditShiny = false;

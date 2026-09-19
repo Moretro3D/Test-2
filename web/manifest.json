@@ -1,25 +1,25 @@
 {
-  "name": "PokeTama Moretro3D - V10.08 Badges Kanto HD",
-  "version": "1.46.87-moretro3d-v10.08-hd-badges",
+  "name": "PokeTama Moretro3D - V10.09 Correctifs Boite",
+  "version": "1.46.88-moretro3d-v10.09-box-fixes",
   "new_install_prompt_erase": true,
   "builds": [
     {
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/poketama-1.46.87-moretro3d-v10.08-hd-badges-bootloader.bin",
+          "path": "firmware/poketama-1.46.88-moretro3d-v10.09-box-fixes-bootloader.bin",
           "offset": 0
         },
         {
-          "path": "firmware/poketama-1.46.87-moretro3d-v10.08-hd-badges-partitions.bin",
+          "path": "firmware/poketama-1.46.88-moretro3d-v10.09-box-fixes-partitions.bin",
           "offset": 32768
         },
         {
-          "path": "firmware/poketama-1.46.87-moretro3d-v10.08-hd-badges-boot_app0.bin",
+          "path": "firmware/poketama-1.46.88-moretro3d-v10.09-box-fixes-boot_app0.bin",
           "offset": 57344
         },
         {
-          "path": "firmware/poketama-1.46.87-moretro3d-v10.08-hd-badges-app.bin",
+          "path": "firmware/poketama-1.46.88-moretro3d-v10.09-box-fixes-app.bin",
           "offset": 65536
         }
       ]
