@@ -1,25 +1,25 @@
 {
-  "name": "PokeTama Moretro3D - V10.11 Animation Capture",
-  "version": "1.46.90-moretro3d-v10.11-catch-animation",
+  "name": "PokeTama Moretro3D - V10.12 Pokeball Capture Remontee",
+  "version": "1.46.91-moretro3d-v10.12-catch-ball-raised",
   "new_install_prompt_erase": true,
   "builds": [
     {
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/poketama-1.46.90-moretro3d-v10.11-catch-animation-bootloader.bin",
+          "path": "firmware/poketama-1.46.91-moretro3d-v10.12-catch-ball-raised-bootloader.bin",
           "offset": 0
         },
         {
-          "path": "firmware/poketama-1.46.90-moretro3d-v10.11-catch-animation-partitions.bin",
+          "path": "firmware/poketama-1.46.91-moretro3d-v10.12-catch-ball-raised-partitions.bin",
           "offset": 32768
         },
         {
-          "path": "firmware/poketama-1.46.90-moretro3d-v10.11-catch-animation-boot_app0.bin",
+          "path": "firmware/poketama-1.46.91-moretro3d-v10.12-catch-ball-raised-boot_app0.bin",
           "offset": 57344
         },
         {
-          "path": "firmware/poketama-1.46.90-moretro3d-v10.11-catch-animation-app.bin",
+          "path": "firmware/poketama-1.46.91-moretro3d-v10.12-catch-ball-raised-app.bin",
           "offset": 65536
         }
       ]

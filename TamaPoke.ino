@@ -36,7 +36,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.46.90-moretro3d-v10.11-catch-animation"
+#define FW_VERSION "1.46.91-moretro3d-v10.12-catch-ball-raised"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -643,7 +643,8 @@ void loop() {
     if (battleCatchAnimPhase == 1 || battleCatchAnimPhase == 2) {
       uint32_t elapsed = now - battleCatchAnimStart;
       battleCatchAnimPhase = elapsed < 650UL ? 1 : 2;
-      if (elapsed >= 2700UL) {
+      // Laisse la Ball fermee assez longtemps pour que la capture soit lisible.
+      if (elapsed >= 4000UL) {
         battleCatchAnimPhase = battleCatchSuccess ? 3 : 4;
         battleCatchDone = true;
         galleryDirty = true;
@@ -3572,11 +3573,13 @@ void drawBattleShinyEntrance(int cx,int cy) {
 void drawBattleCatchAnimation() {
   if (!battleCatchAnimPhase || battleCatchAnimPhase == 4) return;
   uint32_t elapsed=millis()-battleCatchAnimStart;
-  int x=354, y=190;
+  // Centre visuel du socle adverse : la Ball reste au-dessus de sa bordure
+  // basse et ne donne plus l'impression de tomber sous le terrain.
+  int x=354, y=166;
   if(battleCatchAnimPhase==1) {
     uint32_t t=min(elapsed,650UL);
     x=125+(int)(229UL*t/650UL);
-    y=280-(int)(90UL*t/650UL);
+    y=266-(int)(100UL*t/650UL);
     // Arc simple en entiers : la Ball monte puis retombe sur le Pokemon.
     y-=(int)(70UL*4UL*t*(650UL-t)/(650UL*650UL));
   } else if(battleCatchAnimPhase==2) {
