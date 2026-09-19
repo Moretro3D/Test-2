@@ -35,7 +35,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.46.83-moretro3d-v10.04-kanto-detail"
+#define FW_VERSION "1.46.84-moretro3d-v10.05-kanto-progress"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -185,6 +185,8 @@ bool battleArenaBadgeWon = false;
 int8_t kantoArenaDetail = -1;
 static const int16_t KANTO_LEADER_DEX[8] = { 95, 121, 26, 45, 110, 65, 59, 112 };
 static const uint8_t KANTO_LEADER_LEVEL[8] = { 12, 18, 24, 30, 36, 42, 48, 55 };
+static const uint8_t KANTO_REQUIRED_LEVEL[8] = { 10, 18, 25, 32, 40, 50, 60, 75 };
+static const uint8_t KANTO_REQUIRED_CAUGHT[8] = { 3, 8, 15, 25, 40, 60, 85, 110 };
 
 #define WILD_COOLDOWN_MS (20UL * 60UL * 1000UL)
 #define WILD_PROMPT_MS 20000UL
@@ -1281,7 +1283,12 @@ void onTap(int16_t x, int16_t y) {
         int arena = row * 2 + col;
         uint8_t unlocked = 0;
         for (uint8_t i = 0; i < 8; i++) if (pet.hasKantoBadge(i)) unlocked++;
-        if (col >= 0 && row >= 0 && row < 4 && arena <= unlocked) {
+        bool earned = arena >= 0 && arena < 8 && pet.hasKantoBadge((uint8_t)arena);
+        bool nextArena = arena == unlocked;
+        bool requirementsMet = arena >= 0 && arena < 8 &&
+          pet.level() >= KANTO_REQUIRED_LEVEL[arena] &&
+          kantoCaughtCount() >= KANTO_REQUIRED_CAUGHT[arena];
+        if (col >= 0 && row >= 0 && row < 4 && (earned || (nextArena && requirementsMet))) {
           kantoArenaDetail = arena;
           galleryPmd.unload();
           galleryPmd.load(KANTO_LEADER_DEX[arena], false);
@@ -2952,6 +2959,11 @@ void startBattle() {
 
 void startKantoArenaBattle(uint8_t index) {
   if (index >= 8) return;
+  if (pet.level() < KANTO_REQUIRED_LEVEL[index] ||
+      kantoCaughtCount() < KANTO_REQUIRED_CAUGHT[index]) {
+    sfxPlay(SFX_DENY);
+    return;
+  }
   startBattleWith(KANTO_LEADER_DEX[index], KANTO_LEADER_LEVEL[index], 0);
   if (!battleOpen) return;
   battleArena = true;
@@ -5477,6 +5489,12 @@ uint8_t kantoBadgeCount() {
   return n;
 }
 
+uint8_t kantoCaughtCount() {
+  uint8_t count=0;
+  for(int16_t dex=1;dex<=151;dex++) if(pet.isCaught(dex)) count++;
+  return count;
+}
+
 void renderCardKantoGyms() {
   uint8_t unlocked = kantoBadgeCount();
 
@@ -5516,15 +5534,21 @@ void renderCardKantoGyms() {
   gfx->setCursor(CX-(int)strlen(count)*6,64); gfx->print(count);
   for(uint8_t i=0;i<8;i++) {
     int x=(i&1)?242:54, y=94+(i/2)*52;
-    bool earned=pet.hasKantoBadge(i), available=i<=unlocked;
+    bool earned=pet.hasKantoBadge(i);
+    bool requirementsMet=pet.level()>=KANTO_REQUIRED_LEVEL[i] && kantoCaughtCount()>=KANTO_REQUIRED_CAUGHT[i];
+    bool available=earned || (i==unlocked && requirementsMet);
+    bool nextLocked=!earned && i==unlocked && !requirementsMet;
     uint16_t bg=earned?C565(0x19,0x4e,0x45):(available?uiPanel():UI_TRACK);
     gfx->fillRoundRect(x,y,170,46,11,bg);
     gfx->drawRoundRect(x,y,170,46,11,earned?UI_BAR_OK:(available?uiInk():uiSub()));
     drawKantoBadge(x+27,y+23,i,earned);
     gfx->setTextColor(available?uiContrastText(bg):uiSub()); gfx->setTextSize(1);
-    const char *name=available?kantoLeaderName(i):"VERROUILLE";
+    const char *name=(available||nextLocked)?kantoLeaderName(i):"VERROUILLE";
     gfx->setCursor(x+52,y+11); gfx->print(name);
-    gfx->setCursor(x+52,y+28); gfx->print(earned?"OK":(available?dexName(KANTO_LEADER_DEX[i]):"---"));
+    char requirement[22];
+    snprintf(requirement,sizeof(requirement),"N%u CAP%u",KANTO_REQUIRED_LEVEL[i],KANTO_REQUIRED_CAUGHT[i]);
+    gfx->setCursor(x+52,y+28);
+    gfx->print(earned?"OK":(available?dexName(KANTO_LEADER_DEX[i]):(nextLocked?requirement:"---")));
   }
 }
 

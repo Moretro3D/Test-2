@@ -18,12 +18,12 @@ def ok(cond,msg):
         raise SystemExit("FAIL V9: "+msg)
     print("OK  ",msg)
 
-ok("1.46.83-moretro3d-v10.04-kanto-detail" in ino and
-   "1.46.83-moretro3d-v10.04-kanto-detail" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
-   "1.46.83-moretro3d-v10.04-kanto-detail" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "1.46.83-moretro3d-v10.04-kanto-detail" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
-   "1.46.83-moretro3d-v10.04-kanto-detail" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
-   "version 1.46.83 coherente et caches installateur invalides")
+ok("1.46.84-moretro3d-v10.05-kanto-progress" in ino and
+   "1.46.84-moretro3d-v10.05-kanto-progress" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.46.84-moretro3d-v10.05-kanto-progress" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.46.84-moretro3d-v10.05-kanto-progress" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   "1.46.84-moretro3d-v10.05-kanto-progress" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.46.84 coherente et caches installateur invalides")
 ok('gfx->setCursor(CX - 18, 366); gfx->print("V10")' in ino and
    '<div class="version">Firmware V10</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    '<div class="version">Firmware V10</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
@@ -37,7 +37,7 @@ ok("github.repository == 'Moretro3D/Test-2'" in workflow and
    "! grep -q 'location.replace' web/index.html" in workflow,
    "Test-2 affiche son Web Flasher sans redirection Shopify")
 test2_launcher=(ROOT/"OUVRIR_WEB_FLASHER_TEST_2.bat").read_text(encoding="utf-8")
-ok("https://moretro3d.github.io/Test-2/?v=1.46.83-moretro3d-v10.04-kanto-detail" in test2_launcher,
+ok("https://moretro3d.github.io/Test-2/?v=1.46.84-moretro3d-v10.05-kanto-progress" in test2_launcher,
    "lanceur direct Test-2 avec contournement du cache")
 
 ok('snprintf(caught, sizeof(caught), T(S_CAUGHT_COUNT_FMT), (unsigned)pet.caughtCount());' in ino and
@@ -84,9 +84,15 @@ ok("const char *title=kantoArenaTitle()" in ino and
    ino.index("const char *title=kantoArenaTitle()") > ino.index("if (kantoArenaDetail >= 0)") and
    "gfx->setCursor(CX-(int)strlen(count)*6,64)" in ino,
    "titre Arenes Kanto conserve sur la liste et retire de la fiche champion")
-ok("kantoArenaDetail" in ino and "arena <= unlocked" in ino and
+ok("kantoArenaDetail" in ino and "earned || (nextArena && requirementsMet)" in ino and
    "startKantoArenaBattle" in ino,
    "champions deverrouilles progressivement avec confirmation de combat")
+ok("KANTO_REQUIRED_LEVEL[8] = { 10, 18, 25, 32, 40, 50, 60, 75 }" in ino and
+   "KANTO_REQUIRED_CAUGHT[8] = { 3, 8, 15, 25, 40, 60, 85, 110 }" in ino and
+   "kantoCaughtCount() < KANTO_REQUIRED_CAUGHT[index]" in ino and
+   "for(int16_t dex=1;dex<=151;dex++) if(pet.isCaught(dex))" in ino and
+   'snprintf(requirement,sizeof(requirement),"N%u CAP%u"' in ino,
+   "chaque arene exige un niveau et des captures Kanto visibles")
 ok("gfx->fillRect(x+px*2,y+py*2,2,2,color)" in ino and
    "galleryPmd.load(KANTO_LEADER_DEX[arena], false)" in ino and
    "drawBattlePmd(galleryPmd,KANTO_LEADER_DEX[i],334,264,108" in ino and
