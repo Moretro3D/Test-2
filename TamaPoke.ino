@@ -36,7 +36,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.46.88-moretro3d-v10.09-box-fixes"
+#define FW_VERSION "1.46.89-moretro3d-v10.10-info-popups"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -83,6 +83,7 @@ bool galleryOpen = false;
 bool galleryDirty = false;
 int galleryPage = 0;        // 10 paginas de 16
 int16_t galleryDetail = 0;  // dex en vista detalle, 0 = rejilla
+bool galleryInfoOpen = false;
 
 bool screenOff = false;       // pulsacion corta del boton PWR
 bool cardOpen = false;        // ficha del bicho (deslizar vertical)
@@ -93,6 +94,7 @@ uint8_t nameLen = 0;
 uint8_t cardPage = 0;         // 0 profil, 1 caractere, 2 quotidien, 3 boite, 4 combat, 5 medailles, 6 progres, 7 expedition, 8 records, 9 arenes Kanto
 uint8_t boxPage = 0;
 uint8_t boxSort = 0;          // 0 dex, 1 tipo, 2 criados primero
+int16_t boxSelectionDex = 0;  // popup de choix, sans quitter la Boite
 bool expeditionTrainChoiceOpen = false;
 bool clockOpen = false;       // pantalla de ajuste de hora (deslizar abajo)
 int clockH = 12, clockM = 0;  // hora en edicion
@@ -1216,7 +1218,22 @@ void onTap(int16_t x, int16_t y) {
     }
     if (cardPage == 0 && y < 84) openKeyboard();  // tocar el nombre = renombrar
     else if (cardPage == 3) {
-      if (x >= 76 && x <= 170 && y >= 300 && y <= 350) {
+      if(boxSelectionDex>0) {
+        if(x>=68 && x<=220 && y>=292 && y<=356) {
+          boxSelectionDex=0;
+          cardDirty=true;
+          sfxPlay(SFX_TAP);
+        } else if(x>=222 && x<=398 && y>=292 && y<=356) {
+          int16_t dex=boxSelectionDex;
+          if(dex==pet.speciesId || pet.switchToCaught(dex)) {
+            sdDirty=true;
+            boxSelectionDex=0;
+            cardDirty=true;
+            sfxPlay(dex==pet.speciesId?SFX_TAP:SFX_CATCH_OK);
+          } else sfxPlay(SFX_DENY);
+        }
+        lockTouchBrief();
+      } else if (x >= 76 && x <= 170 && y >= 300 && y <= 350) {
         if (boxPage > 0) { boxPage--; cardDirty = true; }
         sfxPlay(SFX_TAP);
       } else if (x >= 296 && x <= 390 && y >= 300 && y <= 350) {
@@ -1231,14 +1248,9 @@ void onTap(int16_t x, int16_t y) {
             y >= 112 + row * 74 && y <= 176 + row * 74) {
           int16_t dex = boxDexAt((uint16_t)boxPage * 8 + row * 4 + col);
           if (dex > 0) {
-            // La Boite est désormais le seul endroit pour choisir son
-            // compagnon. La selection reste sur cette page et ne bascule
-            // plus vers la fiche Pokedex.
-            if (dex == pet.speciesId || pet.switchToCaught(dex)) {
-              sdDirty = true;
-              cardDirty = true;
-              sfxPlay(dex == pet.speciesId ? SFX_TAP : SFX_CATCH_OK);
-            } else sfxPlay(SFX_DENY);
+            boxSelectionDex=dex;
+            cardDirty=true;
+            sfxPlay(SFX_MENU);
             lockTouchBrief();
           }
         } else if (y >= 400) {
@@ -5012,6 +5024,25 @@ void renderCardBox() {
   gfx->setTextSize(2);
   gfx->setCursor(CX - strlen(pg) * 6, 318);
   gfx->print(pg);
+
+  if(boxSelectionDex>0) {
+    gfx->fillRoundRect(62,76,342,286,20,C565(0x16,0x22,0x35));
+    gfx->drawRoundRect(62,76,342,286,20,DEX_TBL[boxSelectionDex].accent);
+    const char *name=dexName(boxSelectionDex);
+    gfx->setTextColor(UI_WHITE); gfx->setTextSize(3);
+    gfx->setCursor(CX-(int)strlen(name)*9,94); gfx->print(name);
+    const uint8_t *thumb=thumbs.get(boxSelectionDex);
+    if(thumb) drawStarterThumbCentered(thumb,boxSelectionDex,CX,218,5);
+    gfx->fillRoundRect(78,302,134,44,12,UI_TRACK);
+    gfx->fillRoundRect(228,302,160,44,12,UI_BAR_OK);
+    gfx->setTextSize(1);
+    const char *back=T(S_LAN_BACK);
+    gfx->setTextColor(uiContrastText(UI_TRACK));
+    gfx->setCursor(145-(int)strlen(back)*3,318); gfx->print(back);
+    const char *care=T(S_CARE_ACTION);
+    gfx->setTextColor(uiContrastText(UI_BAR_OK));
+    gfx->setCursor(308-(int)strlen(care)*3,318); gfx->print(care);
+  }
 }
 
 // pagina 3: combate (4 barras + botones)
@@ -5541,6 +5572,7 @@ void renderCardKantoGyms() {
 
 void renderCard() {
   cardDirty = false;
+  if(cardPage!=3) boxSelectionDex=0;
   gfx->fillScreen(uiBg());
   // Mode cover : 600x432, centré et rogné par l'écran rond. Le décor déborde
   // volontairement à gauche, à droite et en haut pour ne laisser aucune marge.
@@ -5717,6 +5749,58 @@ void drawPokedexShell(bool detail) {
   gfx->fillRoundRect(189,441,88,4,2,darkRed);
 }
 
+const char *pokedexInfoLabel() {
+  static const char *const L[LANG_COUNT]={"INFORMACION","INFORMATION","INFORMATIONS","INFORMATION","INFORMAZIONI","INFORMACOES"};
+  return L[gLang<LANG_COUNT?gLang:LANG_EN];
+}
+
+const char *pokedexHabitatLabel() {
+  static const char *const L[LANG_COUNT]={"HABITAT","HABITAT","HABITAT","LEBENSRAUM","HABITAT","HABITAT"};
+  return L[gLang<LANG_COUNT?gLang:LANG_EN];
+}
+
+const char *pokedexHabitatName(uint8_t biome) {
+  static const char *const L[LANG_COUNT][6]={
+    {"PRADERA","PLAYA","BOSQUE","VOLCAN","MONTANA","NIEVE"},
+    {"GRASS","BEACH","FOREST","VOLCANO","MOUNTAIN","SNOW"},
+    {"PRAIRIE","PLAGE","FORET","VOLCAN","MONTAGNE","NEIGE"},
+    {"WIESE","STRAND","WALD","VULKAN","BERG","SCHNEE"},
+    {"PRATO","SPIAGGIA","BOSCO","VULCANO","MONTAGNA","NEVE"},
+    {"CAMPO","PRAIA","FLORESTA","VULCAO","MONTANHA","NEVE"}
+  };
+  uint8_t lang=gLang<LANG_COUNT?gLang:LANG_EN;
+  return L[lang][biome<6?biome:0];
+}
+
+void drawPokedexInfoPopup(int16_t dex) {
+  const DexEntry &d=DEX_TBL[dex];
+  gfx->fillRoundRect(66,104,334,264,18,C565(0x16,0x22,0x35));
+  gfx->drawRoundRect(66,104,334,264,18,C565(0x52,0xd5,0xe8));
+  gfx->setTextColor(UI_WHITE); gfx->setTextSize(2);
+  const char *title=pokedexInfoLabel();
+  gfx->setCursor(CX-(int)strlen(title)*6,120); gfx->print(title);
+  gfx->drawFastHLine(94,148,278,C565(0x52,0xd5,0xe8));
+  char line[40];
+  snprintf(line,sizeof(line),"N.%03u  %s",displayedDexNumber(dex),dexName(dex));
+  gfx->setCursor(92,162); gfx->print(line);
+  char types[24]; typeText(types,sizeof(types),d);
+  snprintf(line,sizeof(line),"TYPE: %s",types);
+  gfx->setCursor(92,188); gfx->print(line);
+  snprintf(line,sizeof(line),"%s: %s",pokedexHabitatLabel(),pokedexHabitatName(d.biome));
+  gfx->setCursor(92,214); gfx->print(line);
+  snprintf(line,sizeof(line),"PV %u  ATK %u",d.bHp,d.bAtk);
+  gfx->setCursor(92,240); gfx->print(line);
+  snprintf(line,sizeof(line),"DEF %u  VIT %u",d.bDef,d.bSpe);
+  gfx->setCursor(92,266); gfx->print(line);
+  if(d.evolvesTo) snprintf(line,sizeof(line),"EVOL: %s N.%u",dexName(d.evolvesTo),d.evolveLevel);
+  else snprintf(line,sizeof(line),"EVOL: --");
+  gfx->setCursor(92,292); gfx->print(line);
+  gfx->fillRoundRect(136,320,194,38,11,UI_BAR_BAD);
+  gfx->setTextColor(UI_WHITE);
+  const char *closeText=T(S_LAN_BACK);
+  gfx->setCursor(CX-(int)strlen(closeText)*6,332); gfx->print(closeText);
+}
+
 void renderGallery() {
   if (galleryDetail) {  // vista detalle: se redibuja siempre (animada)
     drawPokedexShell(true);
@@ -5774,9 +5858,14 @@ void renderGallery() {
       gfx->print("COMBAT");
     }
 #else
-    // La fiche Pokedex reste purement informative. Le choix du compagnon
-    // se fait uniquement depuis la Boite.
+    if(known && !galleryInfoOpen) {
+      const char *info=pokedexInfoLabel();
+      gfx->fillRoundRect(128,386,210,42,13,C565(0x36,0x78,0xd9));
+      gfx->setTextColor(UI_WHITE); gfx->setTextSize(1);
+      gfx->setCursor(CX-(int)strlen(info)*3,402); gfx->print(info);
+    }
 #endif
+    if(galleryInfoOpen && known) drawPokedexInfoPopup(galleryDetail);
     gfx->flush();
     return;
   }
@@ -5859,9 +5948,19 @@ void renderGallery() {
 
 void galleryTap(int16_t x, int16_t y) {
   if (galleryDetail) {
+    bool known=pet.isRegistered(galleryDetail)||pet.isCaught(galleryDetail);
+    if(galleryInfoOpen) {
+      if(x>=120 && x<=346 && y>=306 && y<=370) {
+        galleryInfoOpen=false;
+        lockTouchBrief();
+        sfxPlay(SFX_TAP);
+      }
+      return;
+    }
     // RETOUR explicite vers la grille.
     if (x >= 12 && x <= 88 && y >= 10 && y <= 66) {
       galleryDetail = 0;
+      galleryInfoOpen = false;
       galleryPmd.unload();
       galleryDirty = true;
       lockTouchBrief();
@@ -5899,10 +5998,16 @@ void galleryTap(int16_t x, int16_t y) {
       return;
     }
 #else
-    // Aucun bouton invisible : toucher la fiche revient simplement à la grille.
+    if(known && y>=378 && y<=438 && x>=112 && x<=354) {
+      galleryInfoOpen=true;
+      lockTouchBrief();
+      sfxPlay(SFX_MENU);
+      return;
+    }
 #endif
     // Toucher ailleurs revient à la grille.
     galleryDetail = 0;
+    galleryInfoOpen = false;
     galleryPmd.unload();
     galleryDirty = true;
     sfxPlay(SFX_TAP);
@@ -5943,6 +6048,7 @@ void galleryTap(int16_t x, int16_t y) {
   int16_t dex = galleryDexAt(galleryPage * GAL_PAGE_SIZE + r * GAL_COLS + c);
   if (dex <= 0) return;
   galleryDetail = dex;
+  galleryInfoOpen = false;
   spriteAuditShiny = false;
   galleryPmd.load(dex, false);
   sfxPlay(SFX_MENU);
