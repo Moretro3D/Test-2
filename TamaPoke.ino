@@ -35,7 +35,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.46.82-moretro3d-v10.03-kanto-layout"
+#define FW_VERSION "1.46.83-moretro3d-v10.04-kanto-detail"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -1266,7 +1266,7 @@ void onTap(int16_t x, int16_t y) {
       expeditionCardTap(x, y);
     } else if (cardPage == 9) {
       if (kantoArenaDetail >= 0) {
-        if (x >= 136 && x <= 330 && y >= 292 && y <= 342) {
+        if (x >= 136 && x <= 330 && y >= 302 && y <= 348) {
           uint8_t arena = (uint8_t)kantoArenaDetail;
           cardOpen = false;
           kantoArenaDetail = -1;
@@ -5479,39 +5479,41 @@ uint8_t kantoBadgeCount() {
 
 void renderCardKantoGyms() {
   uint8_t unlocked = kantoBadgeCount();
+
+  if (kantoArenaDetail >= 0) {
+    uint8_t i=(uint8_t)kantoArenaDetail;
+    drawKantoLeaderSprite(42,110,i);
+    drawKantoBadge(106,246,i,pet.hasKantoBadge(i));
+    gfx->setTextColor(uiInk()); gfx->setTextSize(3);
+    const char *leader=kantoLeaderName(i);
+    gfx->setCursor(106-(int)strlen(leader)*9,80); gfx->print(leader);
+    gfx->setTextSize(2); gfx->setTextColor(uiSub());
+    const char *mon=dexName(KANTO_LEADER_DEX[i]);
+    gfx->setCursor(334-(int)strlen(mon)*6,88); gfx->print(mon);
+    char lv[12]; snprintf(lv,sizeof(lv),"NIV. %u",KANTO_LEADER_LEVEL[i]);
+    gfx->setCursor(334-(int)strlen(lv)*6,112); gfx->print(lv);
+    if(galleryPmd.loaded) drawBattlePmd(galleryPmd,KANTO_LEADER_DEX[i],334,264,108,false,false);
+    else {
+      const uint8_t *th=thumbs.get(KANTO_LEADER_DEX[i]);
+      if(th) drawBattleThumb(th,KANTO_LEADER_DEX[i],334,264,100,false,false);
+    }
+    gfx->setTextColor(uiInk()); gfx->setTextSize(2);
+    const char *question=kantoFightText();
+    gfx->setCursor(CX-(int)strlen(question)*6,278); gfx->print(question);
+    gfx->fillRoundRect(136,302,194,46,12,UI_BAR_BAD);
+    gfx->setTextColor(uiContrastText(UI_BAR_BAD)); gfx->setCursor(CX-12,316); gfx->print("OK");
+    return;
+  }
+
+  // Le titre reste sur la liste des arenes, mais disparait de la fiche du
+  // champion afin de laisser toute la hauteur aux deux grands sprites.
   gfx->setTextColor(uiInk());
   gfx->setTextSize(3);
   const char *title=kantoArenaTitle();
   gfx->setCursor(CX-(int)strlen(title)*9,38); gfx->print(title);
-
-  if (kantoArenaDetail >= 0) {
-    uint8_t i=(uint8_t)kantoArenaDetail;
-    drawKantoLeaderSprite(42,94,i);
-    drawKantoBadge(106,230,i,pet.hasKantoBadge(i));
-    gfx->setTextColor(uiInk()); gfx->setTextSize(3);
-    const char *leader=kantoLeaderName(i);
-    gfx->setCursor(324-(int)strlen(leader)*9,86); gfx->print(leader);
-    gfx->setTextSize(2); gfx->setTextColor(uiSub());
-    const char *mon=dexName(KANTO_LEADER_DEX[i]);
-    gfx->setCursor(324-(int)strlen(mon)*6,126); gfx->print(mon);
-    char lv[12]; snprintf(lv,sizeof(lv),"NIV. %u",KANTO_LEADER_LEVEL[i]);
-    gfx->setCursor(324-(int)strlen(lv)*6,150); gfx->print(lv);
-    if(galleryPmd.loaded) drawBattlePmd(galleryPmd,KANTO_LEADER_DEX[i],334,246,108,false,false);
-    else {
-      const uint8_t *th=thumbs.get(KANTO_LEADER_DEX[i]);
-      if(th) drawBattleThumb(th,KANTO_LEADER_DEX[i],334,246,100,false,false);
-    }
-    gfx->setTextColor(uiInk()); gfx->setTextSize(2);
-    const char *question=kantoFightText();
-    gfx->setCursor(CX-(int)strlen(question)*6,267); gfx->print(question);
-    gfx->fillRoundRect(136,292,194,50,12,UI_BAR_BAD);
-    gfx->setTextColor(uiContrastText(UI_BAR_BAD)); gfx->setCursor(CX-12,309); gfx->print("OK");
-    return;
-  }
-
   char count[18]; snprintf(count,sizeof(count),"BADGES %u/8",unlocked);
   gfx->setTextColor(uiSub()); gfx->setTextSize(2);
-  gfx->setCursor(CX-(int)strlen(count)*6,72); gfx->print(count);
+  gfx->setCursor(CX-(int)strlen(count)*6,64); gfx->print(count);
   for(uint8_t i=0;i<8;i++) {
     int x=(i&1)?242:54, y=94+(i/2)*52;
     bool earned=pet.hasKantoBadge(i), available=i<=unlocked;

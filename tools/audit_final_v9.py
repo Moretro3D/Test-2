@@ -18,12 +18,12 @@ def ok(cond,msg):
         raise SystemExit("FAIL V9: "+msg)
     print("OK  ",msg)
 
-ok("1.46.82-moretro3d-v10.03-kanto-layout" in ino and
-   "1.46.82-moretro3d-v10.03-kanto-layout" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
-   "1.46.82-moretro3d-v10.03-kanto-layout" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "1.46.82-moretro3d-v10.03-kanto-layout" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
-   "1.46.82-moretro3d-v10.03-kanto-layout" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
-   "version 1.46.82 coherente et caches installateur invalides")
+ok("1.46.83-moretro3d-v10.04-kanto-detail" in ino and
+   "1.46.83-moretro3d-v10.04-kanto-detail" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.46.83-moretro3d-v10.04-kanto-detail" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.46.83-moretro3d-v10.04-kanto-detail" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   "1.46.83-moretro3d-v10.04-kanto-detail" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.46.83 coherente et caches installateur invalides")
 ok('gfx->setCursor(CX - 18, 366); gfx->print("V10")' in ino and
    '<div class="version">Firmware V10</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    '<div class="version">Firmware V10</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
@@ -77,14 +77,20 @@ ok('const char *cardBack=T(S_LAN_BACK)' in ino, "bouton RETOUR fiche traduit")
 ok("#define CARD_COUNT 10" in ino and "renderCardKantoGyms" in ino and
    "KANTO_LEADER_DEX[8] = { 95, 121, 26, 45, 110, 65, 59, 112 }" in ino,
    "page des huit arenes de Kanto et Pokemon emblematiques")
+ok("const char *title=kantoArenaTitle()" in ino and
+   ino.index("const char *title=kantoArenaTitle()") > ino.index("if (kantoArenaDetail >= 0)") and
+   "gfx->setCursor(CX-(int)strlen(count)*6,64)" in ino,
+   "titre Arenes Kanto conserve sur la liste et retire de la fiche champion")
 ok("kantoArenaDetail" in ino and "arena <= unlocked" in ino and
    "startKantoArenaBattle" in ino,
    "champions deverrouilles progressivement avec confirmation de combat")
 ok("gfx->fillRect(x+px*2,y+py*2,2,2,color)" in ino and
    "galleryPmd.load(KANTO_LEADER_DEX[arena], false)" in ino and
-   "drawBattlePmd(galleryPmd,KANTO_LEADER_DEX[i],334,246,108" in ino,
+   "drawBattlePmd(galleryPmd,KANTO_LEADER_DEX[i],334,264,108" in ino and
+   "drawKantoLeaderSprite(42,110,i)" in ino and
+   "gfx->setCursor(106-(int)strlen(leader)*9,80)" in ino,
    "champions agrandis et Pokemon emblematiques affiches en PMD complet")
-ok("gfx->fillRoundRect(136,292,194,50,12,UI_BAR_BAD)" in ino and
+ok("gfx->fillRoundRect(136,302,194,46,12,UI_BAR_BAD)" in ino and
    "cardPage == 9 && kantoArenaDetail >= 0" in ino and
    "int x=(i&1)?242:54, y=94+(i/2)*52" in ino,
    "retour doublon retire, retour inferieur actif et badges agrandis descendus")
