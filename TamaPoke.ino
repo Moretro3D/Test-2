@@ -36,7 +36,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.46.91-moretro3d-v10.12-catch-ball-raised"
+#define FW_VERSION "1.46.92-moretro3d-v10.13-catch-timing-fix"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -638,10 +638,14 @@ void loop() {
   bool battleVisualAnim = battleOpen &&
     ((battleShinyFxUntil && now < battleShinyFxUntil) ||
      battleCatchAnimPhase == 1 || battleCatchAnimPhase == 2);
-  if (battleVisualAnim && now - lastBattleVisualFrame >= 240UL) {
-    lastBattleVisualFrame = now;
+  // handleTouch() peut demarrer la capture apres la lecture de `now` faite en
+  // tete de boucle. On relit donc l'heure ici : sinon la premiere soustraction
+  // non signee deborde et la capture saute directement au resultat "Fuit".
+  uint32_t battleAnimNow = millis();
+  if (battleVisualAnim && battleAnimNow - lastBattleVisualFrame >= 240UL) {
+    lastBattleVisualFrame = battleAnimNow;
     if (battleCatchAnimPhase == 1 || battleCatchAnimPhase == 2) {
-      uint32_t elapsed = now - battleCatchAnimStart;
+      uint32_t elapsed = battleAnimNow - battleCatchAnimStart;
       battleCatchAnimPhase = elapsed < 650UL ? 1 : 2;
       // Laisse la Ball fermee assez longtemps pour que la capture soit lisible.
       if (elapsed >= 4000UL) {
