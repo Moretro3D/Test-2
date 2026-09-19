@@ -18,11 +18,11 @@ def ok(cond,msg):
         raise SystemExit("FAIL V9: "+msg)
     print("OK  ",msg)
 
-ok("1.46.77-moretro3d-v9.98-sun-path" in ino and
-   "1.46.77-moretro3d-v9.98-sun-path" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
-   "1.46.77-moretro3d-v9.98-sun-path" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "1.46.77-moretro3d-v9.98-sun-path" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
-   "version 1.46.77 coherente et cache installateur invalide")
+ok("1.46.79-moretro3d-v10-battle-layout" in ino and
+   "1.46.79-moretro3d-v10-battle-layout" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.46.79-moretro3d-v10-battle-layout" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.46.79-moretro3d-v10-battle-layout" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.46.79 coherente et cache installateur invalide")
 
 ok('snprintf(caught, sizeof(caught), T(S_CAUGHT_COUNT_FMT), (unsigned)pet.caughtCount());' in ino and
    '#define POKETAMA_UNLOCK_ALL_386 0' in pet_h and
@@ -235,9 +235,14 @@ ok("#define MAX_LEVEL 100" in pet_h and
    "if (maxLevel) snprintf(nx, sizeof(nx), \"MAX\")" in ino,
    "niveau reel plafonne a 100 et page Progres adaptee")
 ok("gfx->fillRect(0, 320, 466, 146" in ino and
-   "gfx->drawFastHLine(0,320,466" in ino and
-   "drawBattleButtonLabel(240,396,154,T(S_RUN_BATTLE))" in ino,
-   "bandeau combat classique pleine largeur et menu 2x2")
+   "gfx->fillRect(0,320,466,5,UI_INK)" in ino and
+   "drawBattleButtonLabel(240,399,158,T(S_RUN_BATTLE))" in ino,
+   "bandeau combat separe par une barre noire et menu 2x2")
+ok("gfx->setCursor(msgX,306); gfx->print(battleMsg);" in ino and
+   "int msgX=396-msgW;" in ino and "if (msgX < 238) msgX=238;" in ino and
+   "x >= 40 && x <= 232 && y >= 326 && y <= 381" in ino and
+   "x >= 233 && x <= 426 && y >= 382 && y <= 452" in ino,
+   "effets de combat remontes a droite et quatre grandes zones tactiles")
 ok('#include "battle_bases.h"' in ino and
    "drawBattleBaseFor(battleGroundStyleFor(foe.type1,foe.type2),true)" in ino and
    "drawBattleBaseFor(battleGroundStyleFor(mine.type1,mine.type2),false)" in ino and
