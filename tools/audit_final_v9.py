@@ -36,6 +36,9 @@ ok("github.repository == 'Moretro3D/Test-2'" in workflow and
    "sed -i '/http-equiv=\"refresh\"/d' web/index.html" in workflow and
    "! grep -q 'location.replace' web/index.html" in workflow,
    "Test-2 affiche son Web Flasher sans redirection Shopify")
+test2_launcher=(ROOT/"OUVRIR_WEB_FLASHER_TEST_2.bat").read_text(encoding="utf-8")
+ok("https://moretro3d.github.io/Test-2/?v=1.46.83-moretro3d-v10.04-kanto-detail" in test2_launcher,
+   "lanceur direct Test-2 avec contournement du cache")
 
 ok('snprintf(caught, sizeof(caught), T(S_CAUGHT_COUNT_FMT), (unsigned)pet.caughtCount());' in ino and
    '#define POKETAMA_UNLOCK_ALL_386 0' in pet_h and

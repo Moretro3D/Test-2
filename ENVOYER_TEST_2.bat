@@ -43,6 +43,7 @@ git -c safe.directory="%CD%" -c http.sslBackend=openssl push origin HEAD:main
 if errorlevel 1 goto :connexion
 echo.
 echo TERMINE : ouvre https://github.com/Moretro3D/Test-2/actions
+echo Quand l'action est verte, lance OUVRIR_WEB_FLASHER_TEST_2.bat.
 pause
 exit /b 0
 
