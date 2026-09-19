@@ -84,7 +84,9 @@ ok((ROOT/"assets/design/badges-kanto-recolores.png").exists(),
 ok('#include "kanto_leader_sprites.h"' in ino and
    "KANTO_LEADER_PIXELS" in ino and
    (ROOT/"kanto_leader_sprites.h").exists() and
-   (ROOT/"assets/design/champions-kanto-recolores.png").exists(),
+   (ROOT/"assets/design/champions-kanto-recolores.png").exists() and
+   (ROOT/"assets/design/champions-kanto-recolores-hd.png").exists() and
+   (ROOT/"tools/prepare_kanto_leaders_hd.py").exists(),
    "huit sprites recolores des champions integres sans fond")
 ok('gfx->setCursor(96, navY + 11); gfx->print("<")' in ino and
    'gfx->setCursor(354, navY + 11); gfx->print(">")' in ino and
