@@ -31,6 +31,7 @@
 #include "battle_backgrounds.h"
 #include "box_backgrounds.h"
 #include "battle_sprite_layout.h"
+#include "kanto_leader_sprites.h"
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
@@ -5452,20 +5453,17 @@ void drawKantoBadge(int cx, int cy, uint8_t index, bool earned) {
   }
 }
 
-// Portraits pixel-art originaux : silhouette distincte et palette du champion,
-// sans bitmap lourd afin de preserver la place disponible pour les Pokemon.
 void drawKantoLeaderSprite(int x, int y, uint8_t index) {
-  static const uint16_t hair[8] = { 0x39E7, 0xFBCF, 0xFFE0, 0x4208, 0x8010, 0x780F, 0xFFFF, 0x2104 };
-  static const uint16_t suit[8] = { 0x632C, 0x2D7F, 0xFFE0, 0x7C4F, 0x8010, 0xA01F, 0xFFFF, 0x3186 };
-  uint16_t skin=C565(0xf2,0xbd,0x91), h=hair[index], s=suit[index];
-  gfx->fillRect(x+12,y,28,6,h); gfx->fillRect(x+8,y+6,36,18,h);
-  gfx->fillRect(x+13,y+11,26,22,skin); gfx->fillRect(x+8,y+10,6,15,h); gfx->fillRect(x+38,y+10,6,15,h);
-  gfx->fillRect(x+18,y+19,4,4,UI_INK); gfx->fillRect(x+31,y+19,4,4,UI_INK);
-  gfx->fillRect(x+22,y+28,10,3,index==1?C565(0xe8,0x62,0x73):UI_INK);
-  gfx->fillRect(x+15,y+33,22,7,skin); gfx->fillRect(x+7,y+40,38,22,s);
-  gfx->fillRect(x,y+43,9,17,s); gfx->fillRect(x+43,y+43,9,17,s);
-  if(index==5) { gfx->fillRect(x+15,y+17,22,3,C565(0xd9,0x48,0x9e)); gfx->drawRect(x+15,y+14,22,10,UI_INK); }
-  if(index==6) { gfx->drawFastHLine(x+10,y+9,32,UI_WHITE); gfx->fillRect(x+42,y+4,5,22,UI_WHITE); }
+  if (index >= 8) return;
+  uint32_t base=(uint32_t)index*KANTO_LEADER_W*KANTO_LEADER_H;
+  for(uint8_t py=0;py<KANTO_LEADER_H;py++) {
+    for(uint8_t px=0;px<KANTO_LEADER_W;px++) {
+      uint8_t pi=pgm_read_byte(&KANTO_LEADER_PIXELS[base+(uint32_t)py*KANTO_LEADER_W+px]);
+      if(!pi) continue;
+      uint16_t color=pgm_read_word(&KANTO_LEADER_PALETTES[index][pi-1]);
+      gfx->drawPixel(x+px,y+py,color);
+    }
+  }
 }
 
 uint8_t kantoBadgeCount() {
