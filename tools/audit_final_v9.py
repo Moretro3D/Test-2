@@ -18,12 +18,12 @@ def ok(cond,msg):
         raise SystemExit("FAIL V9: "+msg)
     print("OK  ",msg)
 
-ok("1.46.81-moretro3d-v10.02-kanto-gyms" in ino and
-   "1.46.81-moretro3d-v10.02-kanto-gyms" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
-   "1.46.81-moretro3d-v10.02-kanto-gyms" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "1.46.81-moretro3d-v10.02-kanto-gyms" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
-   "1.46.81-moretro3d-v10.02-kanto-gyms" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
-   "version 1.46.81 coherente et caches installateur invalides")
+ok("1.46.82-moretro3d-v10.03-kanto-layout" in ino and
+   "1.46.82-moretro3d-v10.03-kanto-layout" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.46.82-moretro3d-v10.03-kanto-layout" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.46.82-moretro3d-v10.03-kanto-layout" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   "1.46.82-moretro3d-v10.03-kanto-layout" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.46.82 coherente et caches installateur invalides")
 ok('gfx->setCursor(CX - 18, 366); gfx->print("V10")' in ino and
    '<div class="version">Firmware V10</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    '<div class="version">Firmware V10</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
@@ -80,6 +80,14 @@ ok("#define CARD_COUNT 10" in ino and "renderCardKantoGyms" in ino and
 ok("kantoArenaDetail" in ino and "arena <= unlocked" in ino and
    "startKantoArenaBattle" in ino,
    "champions deverrouilles progressivement avec confirmation de combat")
+ok("gfx->fillRect(x+px*2,y+py*2,2,2,color)" in ino and
+   "galleryPmd.load(KANTO_LEADER_DEX[arena], false)" in ino and
+   "drawBattlePmd(galleryPmd,KANTO_LEADER_DEX[i],334,246,108" in ino,
+   "champions agrandis et Pokemon emblematiques affiches en PMD complet")
+ok("gfx->fillRoundRect(136,292,194,50,12,UI_BAR_BAD)" in ino and
+   "cardPage == 9 && kantoArenaDetail >= 0" in ino and
+   "int x=(i&1)?242:54, y=94+(i/2)*52" in ino,
+   "retour doublon retire, retour inferieur actif et badges agrandis descendus")
 ok('prefs.putUChar("kbadge", kantoBadges)' in pet and
    'prefs.getUChar("kbadge", 0)' in pet and "awardKantoBadge" in pet and
    "battleCatchOffered = !battleArena" in ino,
