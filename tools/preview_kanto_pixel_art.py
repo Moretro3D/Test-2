@@ -29,18 +29,18 @@ canvas=Image.new('RGB',(1200,650),(17,21,35)); d=ImageDraw.Draw(canvas)
 d.text((36,22),"APERÇU PIXEL ART — ARÈNES KANTO",fill=(255,255,255),font=ImageFont.load_default())
 leaders=Image.open(ROOT/'assets/design/champions-kanto-recolores.png').convert('RGBA')
 badges=Image.open(ROOT/'assets/design/badges-kanto-originaux.png').convert('RGBA')
-bg=badges.getpixel((0,0))[:3]
+badge_boxes=[
+    (150,145,410,390), (660,145,890,390), (1100,125,1390,405), (1600,125,1920,405),
+    (150,495,425,765), (650,490,900,750), (1135,480,1410,750), (1625,485,1955,785),
+]
 
 for i in range(8):
     col=i%4; row=i//4; x=35+col*290; y=70+row*280
     d.rounded_rectangle((x,y,x+260,y+245),18,fill=(31,39,61),outline=(81,102,145),width=2)
-    bcol,brow=i%4,i//4
-    badge=badges.crop((bcol*32+8,brow*26+8,bcol*32+24,brow*26+24))
-    pix=badge.load()
-    for py in range(16):
-        for px in range(16):
-            if sum(abs(pix[px,py][k]-bg[k]) for k in range(3))<18: pix[px,py]=(0,0,0,0)
-    badge=badge.resize((48,48),Image.Resampling.NEAREST)
+    badge=badges.crop(badge_boxes[i])
+    alpha=badge.getchannel('A').getbbox()
+    badge=badge.crop(alpha)
+    badge.thumbnail((54,54),Image.Resampling.NEAREST)
     canvas.paste(badge,(x+18,y+16),badge)
     champ=leaders.crop((i*64,0,i*64+64,56)).resize((128,112),Image.Resampling.NEAREST)
     canvas.paste(champ,(x+8,y+80),champ)

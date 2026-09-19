@@ -36,7 +36,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.46.86-moretro3d-v10.07-original-badges"
+#define FW_VERSION "1.46.87-moretro3d-v10.08-hd-badges"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -5449,7 +5449,7 @@ void drawKantoBadge(int cx, int cy, uint8_t index, bool earned) {
         uint8_t gray=(uint8_t)((r*3+g*6+b)/10);
         color=C565(gray/2,gray/2,gray/2);
       }
-      gfx->fillRect(cx-16+px*2,cy-16+py*2,2,2,color);
+      gfx->drawPixel(cx-16+px,cy-16+py,color);
     }
   }
 }
