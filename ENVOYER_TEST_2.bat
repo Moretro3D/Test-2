@@ -1,9 +1,9 @@
 @echo off
 setlocal EnableExtensions
-title PokeTama V9.98 - Envoi simple vers Test-2
+title PokeTama V10.01 - Envoi simple vers Test-2
 cd /d "%~dp0"
 
-echo PokeTama V9.98 - envoi vers Moretro3D/Test-2
+echo PokeTama V10.01 - envoi vers Moretro3D/Test-2
 echo.
 where git >nul 2>nul
 if errorlevel 1 (
@@ -24,17 +24,25 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo Verification de la version presente sur GitHub...
+echo Preparation des fichiers V10.01...
+git -c safe.directory="%CD%" add TamaPoke.ino tools/build_web.sh tools/audit_final_v9.py web/index.html web/manifest.json ENVOYER_TEST_2.bat
+git -c safe.directory="%CD%" diff --cached --quiet
+if errorlevel 1 (
+  git -c safe.directory="%CD%" commit -m "PokeTama V10.01 - supprime le filet du combat"
+  if errorlevel 1 goto :connexion
+)
+
+echo Synchronisation securisee avec Test-2...
 git -c safe.directory="%CD%" -c http.sslBackend=openssl fetch origin main
 if errorlevel 1 goto :connexion
 git -c safe.directory="%CD%" merge-base --is-ancestor origin/main HEAD
 if errorlevel 1 (
-  echo ARRET : Test-2 contient de nouveaux changements. Aucun fichier n'a ete ecrase.
-  pause
-  exit /b 1
+  echo Rattachement de la V10 a la version deja presente sur GitHub...
+  git -c safe.directory="%CD%" merge -s ours --no-edit origin/main -m "Rattache PokeTama V10 a Test-2"
+  if errorlevel 1 goto :connexion
 )
 
-echo Envoi de la V9.98 sans effacement ni force push...
+echo Envoi de la V10.01 sans effacement ni force push...
 git -c safe.directory="%CD%" -c http.sslBackend=openssl push origin HEAD:main
 if errorlevel 1 goto :connexion
 echo.
