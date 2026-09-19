@@ -18,12 +18,12 @@ def ok(cond,msg):
         raise SystemExit("FAIL V9: "+msg)
     print("OK  ",msg)
 
-ok("1.46.89-moretro3d-v10.10-info-popups" in ino and
-   "1.46.89-moretro3d-v10.10-info-popups" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
-   "1.46.89-moretro3d-v10.10-info-popups" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "1.46.89-moretro3d-v10.10-info-popups" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
-   "1.46.89-moretro3d-v10.10-info-popups" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
-   "version 1.46.89 coherente et caches installateur invalides")
+ok("1.46.90-moretro3d-v10.11-catch-animation" in ino and
+   "1.46.90-moretro3d-v10.11-catch-animation" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.46.90-moretro3d-v10.11-catch-animation" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.46.90-moretro3d-v10.11-catch-animation" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   "1.46.90-moretro3d-v10.11-catch-animation" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.46.90 coherente et caches installateur invalides")
 ok('gfx->setCursor(CX - 18, 366); gfx->print("V10")' in ino and
    '<div class="version">Firmware V10</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    '<div class="version">Firmware V10</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
@@ -37,7 +37,7 @@ ok("github.repository == 'Moretro3D/Test-2'" in workflow and
    "! grep -q 'location.replace' web/index.html" in workflow,
    "Test-2 affiche son Web Flasher sans redirection Shopify")
 test2_launcher=(ROOT/"OUVRIR_WEB_FLASHER_TEST_2.bat").read_text(encoding="utf-8")
-ok("https://moretro3d.github.io/Test-2/?v=1.46.89-moretro3d-v10.10-info-popups" in test2_launcher,
+ok("https://moretro3d.github.io/Test-2/?v=1.46.90-moretro3d-v10.11-catch-animation" in test2_launcher,
    "lanceur direct Test-2 avec contournement du cache")
 
 ok('snprintf(caught, sizeof(caught), T(S_CAUGHT_COUNT_FMT), (unsigned)pet.caughtCount());' in ino and
@@ -79,6 +79,15 @@ ok("boxSelectionDex=dex" in ino and
    "popup S'occuper selectionne le compagnon sans quitter la Boite")
 ok("confirmUntil" not in ino and "pet.release();" not in ino,
    "relachement par appui long totalement retire de l'accueil")
+ok("if (battleOpen) return !battleDirty" in ino and
+   "void performBattleAction(BattleAction action)" in ino and
+   "battleDirty = true;" in ino[ino.index("void performBattleAction"):ino.index("void battleTap")],
+   "combat redessine uniquement lors des changements pour eviter les flashs noirs")
+ok("battleCatchAnimPhase" in ino and "drawBattleCatchAnimation()" in ino and
+   "elapsed >= 2700UL" in ino and
+   "battleCatchAnimPhase = battleCatchSuccess ? 3 : 4" in ino and
+   "bool hideEnemy = battleCatchAnimPhase==2 || battleCatchAnimPhase==3" in ino,
+   "capture animee avec Ball fermee en succes et reapparition en echec")
 
 # Aide : meme structure dans les six langues et lignes lisibles sur le rond.
 help_match=re.search(r'HELP_LINES\[LANG_COUNT\]\[HELP_PAGE_COUNT\]\[HELP_LINE_COUNT\]\s*=\s*\{(.*?)\n\};', ino, re.S)

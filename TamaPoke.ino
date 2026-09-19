@@ -36,7 +36,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.46.89-moretro3d-v10.10-info-popups"
+#define FW_VERSION "1.46.90-moretro3d-v10.11-catch-animation"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -178,6 +178,8 @@ bool battleCatchDone = false;
 bool battleCatchSuccess = false;
 bool battleRespectCatch = false;
 uint8_t battleCatchChance = 0;
+uint8_t battleCatchAnimPhase = 0; // 0 rien, 1 lancer, 2 attente, 3 capture, 4 echec
+uint32_t battleCatchAnimStart = 0;
 bool battleLowHpWarned = false;
 bool battleEnemyShiny = false;
 uint32_t battleShinyFxUntil = 0;
@@ -392,7 +394,7 @@ const char *screenName() {
 bool staticScreenClean() {
   if (pet.awaitingStarter()) return !starterDirty;
   if (galleryOpen && !galleryDetail) return !galleryDirty;
-  if (battleOpen && battleResolved) return !battleDirty;
+  if (battleOpen) return !battleDirty;
   if (kbOpen) return !keyboardDirty;
   if (helpOpen) return !helpDirty;
   if (clockOpen) return !clockDirty;
@@ -628,6 +630,28 @@ void loop() {
   maybeOfferWildEncounter(now);
   maybeOfferPetEvent(now);
   maybePlayAmbientSound(now);
+
+  // Le combat est statique entre deux actions. Seules l'entree Shiny et la
+  // capture demandent quelques images espacees, afin d'eviter les flashs noirs
+  // provoques par des transferts plein ecran continus.
+  static uint32_t lastBattleVisualFrame = 0;
+  bool battleVisualAnim = battleOpen &&
+    ((battleShinyFxUntil && now < battleShinyFxUntil) ||
+     battleCatchAnimPhase == 1 || battleCatchAnimPhase == 2);
+  if (battleVisualAnim && now - lastBattleVisualFrame >= 240UL) {
+    lastBattleVisualFrame = now;
+    if (battleCatchAnimPhase == 1 || battleCatchAnimPhase == 2) {
+      uint32_t elapsed = now - battleCatchAnimStart;
+      battleCatchAnimPhase = elapsed < 650UL ? 1 : 2;
+      if (elapsed >= 2700UL) {
+        battleCatchAnimPhase = battleCatchSuccess ? 3 : 4;
+        battleCatchDone = true;
+        galleryDirty = true;
+        sfxPlay(battleCatchSuccess ? SFX_CATCH_OK : SFX_CATCH_FAIL);
+      }
+    }
+    battleDirty = true;
+  }
 
   // Die Expeditionskarte bleibt sonst als statischer Screen stehen. Ein
   // sekundenweises Dirty-Render ist nur aktiv, waehrend ihr Countdown sichtbar ist.
@@ -2872,6 +2896,8 @@ void closeBattle() {
   battleCatchSuccess = false;
   battleRespectCatch = false;
   battleCatchChance = 0;
+  battleCatchAnimPhase = 0;
+  battleCatchAnimStart = 0;
   battleArena = false;
   battleArenaBadgeWon = false;
   wildPmd.unload();
@@ -2919,6 +2945,8 @@ void startBattleWith(int16_t forcedDex, uint8_t forcedLevel, int8_t forcedShiny)
   battleCatchSuccess = false;
   battleRespectCatch = false;
   battleCatchChance = 0;
+  battleCatchAnimPhase = 0;
+  battleCatchAnimStart = 0;
   battleResolved = false;
   battleOpen = true;
   battleDirty = true;
@@ -2975,6 +3003,7 @@ void finishBattle() {
 
 void performBattleAction(BattleAction action) {
   if (battleResolved) return;
+  battleDirty = true;
   battleAttackMenuUntil = 0;
   battleLastAction = action;
   battleTurn = stepBattle(battleRun, action, (uint8_t)random(100));
@@ -3018,11 +3047,11 @@ void performBattleAction(BattleAction action) {
 
 void battleTap(int16_t x, int16_t y) {
   if (battleResolved) {
+    if (battleCatchAnimPhase == 1 || battleCatchAnimPhase == 2) return;
     if (battleCatchOffered && !battleCatchDone) {
       if (x >= 76 && x <= 224 && y >= 392 && y <= 448) {
         bool closeWin = battleRun.playerHp <= battleRun.playerMaxHp / 3;
         battleCatchTried = true;
-        battleCatchDone = true;
         if (battleRespectCatch) {
           battleCatchSuccess = pet.tryRespectCatchWild(battleDex, battleLevel, battlePlayer.level, (uint8_t)random(100), battleEnemyShiny);
           battleCatchChance = pet.respectCatchChanceForWild(battleDex, battleLevel, battlePlayer.level);
@@ -3030,8 +3059,9 @@ void battleTap(int16_t x, int16_t y) {
           battleCatchSuccess = pet.tryCatchWild(battleDex, battleLevel, battlePlayer.level, closeWin, (uint8_t)random(100), battleEnemyShiny);
           battleCatchChance = pet.catchChanceForWild(battleDex, battleLevel, battlePlayer.level, closeWin);
         }
-        sfxPlay(battleCatchSuccess ? SFX_CATCH_OK : SFX_CATCH_FAIL);
-        galleryDirty = true;
+        battleCatchAnimPhase = 1;
+        battleCatchAnimStart = millis();
+        sfxPlay(SFX_TAP);
         battleDirty = true;
         return;
       }
@@ -3539,8 +3569,25 @@ void drawBattleShinyEntrance(int cx,int cy) {
   }
 }
 
+void drawBattleCatchAnimation() {
+  if (!battleCatchAnimPhase || battleCatchAnimPhase == 4) return;
+  uint32_t elapsed=millis()-battleCatchAnimStart;
+  int x=354, y=190;
+  if(battleCatchAnimPhase==1) {
+    uint32_t t=min(elapsed,650UL);
+    x=125+(int)(229UL*t/650UL);
+    y=280-(int)(90UL*t/650UL);
+    // Arc simple en entiers : la Ball monte puis retombe sur le Pokemon.
+    y-=(int)(70UL*4UL*t*(650UL-t)/(650UL*650UL));
+  } else if(battleCatchAnimPhase==2) {
+    static const int8_t wobble[4]={-6,0,6,0};
+    x+=wobble[(elapsed/240UL)&3];
+  }
+  drawBattleCaughtBall(x,y,34,36);
+}
+
 void renderBattle() {
-  if (battleResolved) battleDirty = false;
+  battleDirty = false;
   int16_t playerDex = pet.speciesId;
   const DexEntry &mine = DEX_TBL[playerDex];
   const DexEntry &foe = DEX_TBL[battleDex];
@@ -3561,14 +3608,18 @@ void renderBattle() {
   snprintf(enemyName,sizeof(enemyName),"%s%s",battleEnemyShiny?"*":"",dexName(battleDex));
   drawBattleStatusBar(enemyName,battleLevel,enemySex,82,66,190,battleRun.enemyHp,battleRun.enemyMaxHp,
                       battleEnemyShiny?UI_BAR_WARN:nameColor);
-  if(pet.isCaught(battleDex)) drawBattleCaughtBall(102,137);
+  if(pet.isCaught(battleDex) && (battleCatchAnimPhase==0 || battleCatchAnimPhase>=3)) drawBattleCaughtBall(102,137);
   drawBattleStatusBar(pet.nick[0]?pet.nick:dexName(pet.speciesId),battlePlayer.level,playerSex,220,234,220,battleRun.playerHp,battleRun.playerMaxHp,nameColor);
 
   // Sprites standardisés dans une boîte visuelle ~82 px, quelle que soit l'espèce.
-  if (wildPmd.loaded) drawBattlePmd(wildPmd, battleDex, 354, 190, 84, false, false);
-  else {
-    const uint8_t *th=thumbs.get(battleDex);
-    if (th) drawBattleThumb(th,battleDex,354,190,84,false,false);
+  bool hideEnemy = battleCatchAnimPhase==2 || battleCatchAnimPhase==3 ||
+                   (battleCatchAnimPhase==1 && millis()-battleCatchAnimStart>420UL);
+  if(!hideEnemy) {
+    if (wildPmd.loaded) drawBattlePmd(wildPmd, battleDex, 354, 190, 84, false, false);
+    else {
+      const uint8_t *th=thumbs.get(battleDex);
+      if (th) drawBattleThumb(th,battleDex,354,190,84,false,false);
+    }
   }
   drawBattleShinyEntrance(354,146);
   if (pmd.loaded) drawBattlePmd(pmd, playerDex, 110, 302, 104, true, false);
@@ -3576,6 +3627,7 @@ void renderBattle() {
     const uint8_t *th=thumbs.get(playerDex);
     if (th) drawBattleThumb(th,playerDex,110,302,104,true,false);
   }
+  drawBattleCatchAnimation();
 
   if (battleResolved) {
     // Carte de résultat compacte : plus de tours/dégâts empilés au centre.
@@ -3613,7 +3665,11 @@ void renderBattle() {
       gfx->print(T(S_CLOSE_CHANCE));
     }
 
-    if (battleCatchOffered && !battleCatchDone) {
+    if ((battleCatchAnimPhase==1 || battleCatchAnimPhase==2) && battleCatchTried) {
+      gfx->setTextColor(UI_WHITE); gfx->setTextSize(2);
+      const char *waitMsg=". . .";
+      gfx->setCursor(CX-(int)strlen(waitMsg)*6,407); gfx->print(waitMsg);
+    } else if (battleCatchOffered && !battleCatchDone) {
       gfx->fillRoundRect(88, 394, 138, 44, 13, UI_BAR_OK);
       gfx->fillRoundRect(240, 394, 138, 44, 13, UI_TRACK);
       gfx->setTextColor(uiContrastText(UI_BAR_OK));

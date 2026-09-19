@@ -1,25 +1,25 @@
 {
-  "name": "PokeTama Moretro3D - V10.10 Informations Pokedex",
-  "version": "1.46.89-moretro3d-v10.10-info-popups",
+  "name": "PokeTama Moretro3D - V10.11 Animation Capture",
+  "version": "1.46.90-moretro3d-v10.11-catch-animation",
   "new_install_prompt_erase": true,
   "builds": [
     {
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/poketama-1.46.89-moretro3d-v10.10-info-popups-bootloader.bin",
+          "path": "firmware/poketama-1.46.90-moretro3d-v10.11-catch-animation-bootloader.bin",
           "offset": 0
         },
         {
-          "path": "firmware/poketama-1.46.89-moretro3d-v10.10-info-popups-partitions.bin",
+          "path": "firmware/poketama-1.46.90-moretro3d-v10.11-catch-animation-partitions.bin",
           "offset": 32768
         },
         {
-          "path": "firmware/poketama-1.46.89-moretro3d-v10.10-info-popups-boot_app0.bin",
+          "path": "firmware/poketama-1.46.90-moretro3d-v10.11-catch-animation-boot_app0.bin",
           "offset": 57344
         },
         {
-          "path": "firmware/poketama-1.46.89-moretro3d-v10.10-info-popups-app.bin",
+          "path": "firmware/poketama-1.46.90-moretro3d-v10.11-catch-animation-app.bin",
           "offset": 65536
         }
       ]
