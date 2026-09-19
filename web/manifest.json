@@ -1,25 +1,25 @@
 {
-  "name": "PokeTama Moretro3D - V9.98 Soleil",
-  "version": "1.46.77-moretro3d-v9.98-sun-path",
+  "name": "PokeTama Moretro3D - V9.99 Combat tactile",
+  "version": "1.46.78-moretro3d-v9.99-battle-touch",
   "new_install_prompt_erase": true,
   "builds": [
     {
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/poketama-1.46.77-moretro3d-v9.98-sun-path-bootloader.bin",
+          "path": "firmware/poketama-1.46.78-moretro3d-v9.99-battle-touch-bootloader.bin",
           "offset": 0
         },
         {
-          "path": "firmware/poketama-1.46.77-moretro3d-v9.98-sun-path-partitions.bin",
+          "path": "firmware/poketama-1.46.78-moretro3d-v9.99-battle-touch-partitions.bin",
           "offset": 32768
         },
         {
-          "path": "firmware/poketama-1.46.77-moretro3d-v9.98-sun-path-boot_app0.bin",
+          "path": "firmware/poketama-1.46.78-moretro3d-v9.99-battle-touch-boot_app0.bin",
           "offset": 57344
         },
         {
-          "path": "firmware/poketama-1.46.77-moretro3d-v9.98-sun-path-app.bin",
+          "path": "firmware/poketama-1.46.78-moretro3d-v9.99-battle-touch-app.bin",
           "offset": 65536
         }
       ]

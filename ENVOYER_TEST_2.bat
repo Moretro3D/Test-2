@@ -1,9 +1,9 @@
 @echo off
 setlocal EnableExtensions
-title PokeTama V9.98 - Envoi simple vers Test-2
+title PokeTama V9.99 - Envoi simple vers Test-2
 cd /d "%~dp0"
 
-echo PokeTama V9.98 - envoi vers Moretro3D/Test-2
+echo PokeTama V9.99 - envoi vers Moretro3D/Test-2
 echo.
 where git >nul 2>nul
 if errorlevel 1 (
@@ -34,7 +34,15 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo Envoi de la V9.98 sans effacement ni force push...
+echo Preparation des fichiers V9.99...
+git -c safe.directory="%CD%" add TamaPoke.ino tools/build_web.sh tools/audit_final_v9.py web/index.html web/manifest.json ENVOYER_TEST_2.bat
+git -c safe.directory="%CD%" diff --cached --quiet
+if errorlevel 1 (
+  git -c safe.directory="%CD%" commit -m "PokeTama V9.99 - combat tactile ameliore"
+  if errorlevel 1 goto :connexion
+)
+
+echo Envoi de la V9.99 sans effacement ni force push...
 git -c safe.directory="%CD%" -c http.sslBackend=openssl push origin HEAD:main
 if errorlevel 1 goto :connexion
 echo.
