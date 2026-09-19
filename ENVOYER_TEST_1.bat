@@ -33,7 +33,7 @@ git -c safe.directory="%CD%" -c http.sslBackend=openssl fetch origin main
 if errorlevel 1 goto :connexion
 git -c safe.directory="%CD%" merge-base --is-ancestor origin/main HEAD
 if errorlevel 1 (
-  git -c safe.directory="%CD%" merge -s ours --no-edit origin/main -m "Rattache PokeTama V10 a Test-1"
+  git -c safe.directory="%CD%" merge -s ours --allow-unrelated-histories --no-edit origin/main -m "Rattache PokeTama V10 a Test-1"
   if errorlevel 1 goto :connexion
 )
 
@@ -48,7 +48,7 @@ exit /b 0
 
 :connexion
 echo.
-echo ECHEC : connecte-toi a GitHub si une fenetre de connexion s'affiche.
+echo ECHEC : consulte le message Git affiche juste au-dessus.
 echo Aucun force push ni effacement n'a ete effectue.
 pause
 exit /b 1
