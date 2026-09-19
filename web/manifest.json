@@ -1,25 +1,25 @@
 {
-  "name": "PokeTama Moretro3D - V10.05 Arenes Kanto",
-  "version": "1.46.84-moretro3d-v10.05-kanto-progress",
+  "name": "PokeTama Moretro3D - V10.06 Fonds Arenes Kanto",
+  "version": "1.46.85-moretro3d-v10.06-kanto-backgrounds",
   "new_install_prompt_erase": true,
   "builds": [
     {
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/poketama-1.46.84-moretro3d-v10.05-kanto-progress-bootloader.bin",
+          "path": "firmware/poketama-1.46.85-moretro3d-v10.06-kanto-backgrounds-bootloader.bin",
           "offset": 0
         },
         {
-          "path": "firmware/poketama-1.46.84-moretro3d-v10.05-kanto-progress-partitions.bin",
+          "path": "firmware/poketama-1.46.85-moretro3d-v10.06-kanto-backgrounds-partitions.bin",
           "offset": 32768
         },
         {
-          "path": "firmware/poketama-1.46.84-moretro3d-v10.05-kanto-progress-boot_app0.bin",
+          "path": "firmware/poketama-1.46.85-moretro3d-v10.06-kanto-backgrounds-boot_app0.bin",
           "offset": 57344
         },
         {
-          "path": "firmware/poketama-1.46.84-moretro3d-v10.05-kanto-progress-app.bin",
+          "path": "firmware/poketama-1.46.85-moretro3d-v10.06-kanto-backgrounds-app.bin",
           "offset": 65536
         }
       ]

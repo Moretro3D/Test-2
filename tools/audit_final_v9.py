@@ -18,12 +18,12 @@ def ok(cond,msg):
         raise SystemExit("FAIL V9: "+msg)
     print("OK  ",msg)
 
-ok("1.46.84-moretro3d-v10.05-kanto-progress" in ino and
-   "1.46.84-moretro3d-v10.05-kanto-progress" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
-   "1.46.84-moretro3d-v10.05-kanto-progress" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "1.46.84-moretro3d-v10.05-kanto-progress" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
-   "1.46.84-moretro3d-v10.05-kanto-progress" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
-   "version 1.46.84 coherente et caches installateur invalides")
+ok("1.46.85-moretro3d-v10.06-kanto-backgrounds" in ino and
+   "1.46.85-moretro3d-v10.06-kanto-backgrounds" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.46.85-moretro3d-v10.06-kanto-backgrounds" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.46.85-moretro3d-v10.06-kanto-backgrounds" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   "1.46.85-moretro3d-v10.06-kanto-backgrounds" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.46.85 coherente et caches installateur invalides")
 ok('gfx->setCursor(CX - 18, 366); gfx->print("V10")' in ino and
    '<div class="version">Firmware V10</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    '<div class="version">Firmware V10</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
@@ -37,7 +37,7 @@ ok("github.repository == 'Moretro3D/Test-2'" in workflow and
    "! grep -q 'location.replace' web/index.html" in workflow,
    "Test-2 affiche son Web Flasher sans redirection Shopify")
 test2_launcher=(ROOT/"OUVRIR_WEB_FLASHER_TEST_2.bat").read_text(encoding="utf-8")
-ok("https://moretro3d.github.io/Test-2/?v=1.46.84-moretro3d-v10.05-kanto-progress" in test2_launcher,
+ok("https://moretro3d.github.io/Test-2/?v=1.46.85-moretro3d-v10.06-kanto-backgrounds" in test2_launcher,
    "lanceur direct Test-2 avec contournement du cache")
 
 ok('snprintf(caught, sizeof(caught), T(S_CAUGHT_COUNT_FMT), (unsigned)pet.caughtCount());' in ino and
@@ -96,9 +96,16 @@ ok("KANTO_REQUIRED_LEVEL[8] = { 10, 18, 25, 32, 40, 50, 60, 75 }" in ino and
 ok("gfx->fillRect(x+px*2,y+py*2,2,2,color)" in ino and
    "galleryPmd.load(KANTO_LEADER_DEX[arena], false)" in ino and
    "drawBattlePmd(galleryPmd,KANTO_LEADER_DEX[i],334,264,108" in ino and
-   "drawKantoLeaderSprite(42,110,i)" in ino and
-   "gfx->setCursor(106-(int)strlen(leader)*9,80)" in ino,
+   "drawKantoLeaderSprite(56,110,i)" in ino and
+   "gfx->setCursor(124-(int)strlen(leader)*9,80)" in ino,
    "champions agrandis et Pokemon emblematiques affiches en PMD complet")
+ok("void drawKantoArenaBackground(uint8_t index)" in ino and
+   "static const uint16_t sky[8]" in ino and
+   "static const uint16_t wall[8]" in ino and
+   "static const uint16_t floorCol[8]" in ino and
+   "drawKantoArenaBackground(i)" in ino and
+   "drawKantoBadge(120,246,i" in ino,
+   "huit fonds d'arene thematiques et champion decale dans le cadre")
 ok("gfx->fillRoundRect(136,302,194,46,12,UI_BAR_BAD)" in ino and
    "cardPage == 9 && kantoArenaDetail >= 0" in ino and
    "int x=(i&1)?242:54, y=94+(i/2)*52" in ino,

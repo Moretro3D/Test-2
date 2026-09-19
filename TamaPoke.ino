@@ -35,7 +35,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.46.84-moretro3d-v10.05-kanto-progress"
+#define FW_VERSION "1.46.85-moretro3d-v10.06-kanto-backgrounds"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -5495,17 +5495,58 @@ uint8_t kantoCaughtCount() {
   return count;
 }
 
+void drawKantoArenaBackground(uint8_t index) {
+  static const uint16_t sky[8]={
+    C565(0x92,0x9a,0xa3), C565(0x4a,0xb9,0xe8), C565(0xf0,0xd3,0x3d), C565(0x79,0xc8,0x68),
+    C565(0x86,0x55,0xa8), C565(0xc0,0x69,0xc8), C565(0xef,0x72,0x35), C565(0xa5,0x75,0x45)
+  };
+  static const uint16_t wall[8]={
+    C565(0x66,0x6d,0x76), C565(0x18,0x78,0xb0), C565(0xb8,0x8d,0x18), C565(0x35,0x82,0x49),
+    C565(0x4f,0x2f,0x6d), C565(0x78,0x38,0x91), C565(0xa9,0x35,0x22), C565(0x69,0x48,0x2f)
+  };
+  static const uint16_t floorCol[8]={
+    C565(0x3e,0x46,0x50), C565(0x0b,0x55,0x86), C565(0x72,0x5b,0x14), C565(0x20,0x5b,0x38),
+    C565(0x35,0x24,0x4c), C565(0x4e,0x28,0x67), C565(0x72,0x28,0x1d), C565(0x48,0x35,0x28)
+  };
+  index%=8;
+  gfx->fillScreen(sky[index]);
+  gfx->fillRect(0,72,466,224,wall[index]);
+  gfx->fillRect(0,296,466,64,floorCol[index]);
+
+  // Motifs pixel-art propres a chaque arene.
+  for(uint8_t n=0;n<9;n++) {
+    int x=34+n*52, y=96+(n%3)*48;
+    if(index==0) { gfx->drawRect(x,y,38,30,C565(0xb8,0xbe,0xc5)); gfx->drawFastHLine(x,y+15,38,C565(0x4b,0x52,0x5b)); }
+    else if(index==1) { gfx->drawFastHLine(x,y+8,36,UI_WHITE); gfx->drawFastHLine(x+8,y+14,28,C565(0x79,0xdb,0xf4)); }
+    else if(index==2) { gfx->fillTriangle(x+12,y,x+28,y,x+17,y+15,UI_WHITE); gfx->fillTriangle(x+17,y+14,x+25,y+14,x+8,y+31,UI_WHITE); }
+    else if(index==3) { gfx->fillCircle(x+12,y+12,8,C565(0xa5,0xe0,0x77)); gfx->fillCircle(x+27,y+20,7,C565(0x57,0xa9,0x58)); }
+    else if(index==4) { gfx->drawCircle(x+14,y+14,8,C565(0xd1,0x87,0xe3)); gfx->drawCircle(x+29,y+25,5,C565(0xa9,0x6d,0xc7)); }
+    else if(index==5) { gfx->drawRect(x+8,y+5,20,20,C565(0xef,0xb2,0xf5)); gfx->drawLine(x+8,y+5,x+28,y+25,UI_WHITE); gfx->drawLine(x+28,y+5,x+8,y+25,UI_WHITE); }
+    else if(index==6) { gfx->fillTriangle(x+7,y+28,x+18,y+4,x+25,y+28,C565(0xff,0xc1,0x36)); gfx->fillTriangle(x+17,y+28,x+28,y+11,x+35,y+28,C565(0xff,0x50,0x28)); }
+    else { gfx->drawFastHLine(x,y+10,34,C565(0xd0,0xa0,0x62)); gfx->drawLine(x+8,y+10,x+18,y+27,C565(0x3e,0x2d,0x22)); }
+  }
+
+  // Socles et cartouches reprennent la couleur de l'arene, sans fond noir.
+  uint16_t panel=floorCol[index];
+  gfx->fillRoundRect(42,72,164,32,10,panel);
+  gfx->fillRoundRect(254,72,166,66,10,panel);
+  gfx->fillRoundRect(40,224,166,30,14,floorCol[index]);
+  gfx->fillRoundRect(248,244,178,28,14,floorCol[index]);
+  gfx->fillRoundRect(132,268,202,28,10,panel);
+}
+
 void renderCardKantoGyms() {
   uint8_t unlocked = kantoBadgeCount();
 
   if (kantoArenaDetail >= 0) {
     uint8_t i=(uint8_t)kantoArenaDetail;
-    drawKantoLeaderSprite(42,110,i);
-    drawKantoBadge(106,246,i,pet.hasKantoBadge(i));
-    gfx->setTextColor(uiInk()); gfx->setTextSize(3);
+    drawKantoArenaBackground(i);
+    drawKantoLeaderSprite(56,110,i);
+    drawKantoBadge(120,246,i,pet.hasKantoBadge(i));
+    gfx->setTextColor(UI_WHITE); gfx->setTextSize(3);
     const char *leader=kantoLeaderName(i);
-    gfx->setCursor(106-(int)strlen(leader)*9,80); gfx->print(leader);
-    gfx->setTextSize(2); gfx->setTextColor(uiSub());
+    gfx->setCursor(124-(int)strlen(leader)*9,80); gfx->print(leader);
+    gfx->setTextSize(2); gfx->setTextColor(UI_WHITE);
     const char *mon=dexName(KANTO_LEADER_DEX[i]);
     gfx->setCursor(334-(int)strlen(mon)*6,88); gfx->print(mon);
     char lv[12]; snprintf(lv,sizeof(lv),"NIV. %u",KANTO_LEADER_LEVEL[i]);
@@ -5515,7 +5556,7 @@ void renderCardKantoGyms() {
       const uint8_t *th=thumbs.get(KANTO_LEADER_DEX[i]);
       if(th) drawBattleThumb(th,KANTO_LEADER_DEX[i],334,264,100,false,false);
     }
-    gfx->setTextColor(uiInk()); gfx->setTextSize(2);
+    gfx->setTextColor(UI_WHITE); gfx->setTextSize(2);
     const char *question=kantoFightText();
     gfx->setCursor(CX-(int)strlen(question)*6,278); gfx->print(question);
     gfx->fillRoundRect(136,302,194,46,12,UI_BAR_BAD);
