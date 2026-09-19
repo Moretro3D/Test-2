@@ -32,10 +32,11 @@
 #include "box_backgrounds.h"
 #include "battle_sprite_layout.h"
 #include "kanto_leader_sprites.h"
+#include "kanto_badge_sprites.h"
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.46.85-moretro3d-v10.06-kanto-backgrounds"
+#define FW_VERSION "1.46.86-moretro3d-v10.07-original-badges"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -5435,38 +5436,21 @@ const char *kantoFightText() {
   return L[gLang < LANG_COUNT ? gLang : LANG_EN];
 }
 
-// Huit mini-sprites recolores, concus pour rester lisibles sur l'ecran rond.
+// Sprites originaux de la planche Kanto fournie, agrandis en pixel-perfect.
 void drawKantoBadge(int cx, int cy, uint8_t index, bool earned) {
-  static const uint16_t mainCol[8] = {
-    C565(0x9d,0xa6,0xb0), C565(0x38,0xa9,0xe8), C565(0xf2,0xc4,0x2c), C565(0x76,0xc9,0x54),
-    C565(0xf0,0x6d,0x9c), C565(0xf4,0xd3,0x4f), C565(0xef,0x62,0x2f), C565(0x62,0xb8,0x77)
-  };
-  uint16_t c = earned ? mainCol[index] : C565(0x55,0x5c,0x68);
-  uint16_t hi = earned ? UI_WHITE : C565(0x79,0x80,0x8b);
-  uint16_t edge = earned ? UI_INK : C565(0x31,0x35,0x3d);
-  if (index == 0) { // Roche
-    gfx->fillRect(cx-10,cy-7,20,14,c); gfx->fillRect(cx-6,cy-11,12,22,c);
-    gfx->drawRect(cx-10,cy-7,20,14,edge); gfx->fillRect(cx-4,cy-6,8,4,hi);
-  } else if (index == 1) { // Cascade
-    gfx->fillCircle(cx,cy,11,c); gfx->fillTriangle(cx-10,cy-1,cx,cy-14,cx+10,cy-1,c);
-    gfx->fillCircle(cx-3,cy-3,4,hi); gfx->drawCircle(cx,cy,11,edge);
-  } else if (index == 2) { // Foudre
-    gfx->fillTriangle(cx-4,cy-14,cx+9,cy-14,cx,cy,c); gfx->fillTriangle(cx,cy,cx+5,cy+13,cx-9,cy+13,c);
-    gfx->drawFastVLine(cx,cy-9,18,hi);
-  } else if (index == 3) { // Prisme/Fleur
-    static const int8_t dx[6]={0,9,9,0,-9,-9},dy[6]={-10,-5,6,10,6,-5};
-    for(uint8_t i=0;i<6;i++) gfx->fillCircle(cx+dx[i],cy+dy[i],5,earned?(uint16_t)(mainCol[i%8]):c);
-    gfx->fillCircle(cx,cy,5,earned?C565(0xff,0xd3,0x3b):hi);
-  } else if (index == 4) { // Ame
-    gfx->fillCircle(cx-6,cy-5,7,c); gfx->fillCircle(cx+6,cy-5,7,c);
-    gfx->fillTriangle(cx-12,cy-2,cx+12,cy-2,cx,cy+13,c); gfx->fillCircle(cx,cy+5,2,hi);
-  } else if (index == 5) { // Marais
-    gfx->fillCircle(cx,cy,13,c); gfx->fillCircle(cx,cy,8,earned?C565(0xf9,0xe8,0x89):hi); gfx->drawCircle(cx,cy,13,edge);
-  } else if (index == 6) { // Volcan
-    gfx->fillTriangle(cx-12,cy+12,cx-3,cy-13,cx+2,cy+4,c); gfx->fillTriangle(cx-3,cy+12,cx+9,cy-9,cx+12,cy+12,c);
-    gfx->fillTriangle(cx-4,cy+9,cx+1,cy-5,cx+5,cy+9,earned?C565(0xff,0xc4,0x2f):hi);
-  } else { // Terre
-    gfx->fillTriangle(cx-13,cy-9,cx+13,cy,cx-10,cy+12,c); gfx->fillTriangle(cx-8,cy-5,cx+7,cy,cx-6,cy+7,hi);
+  if (index >= 8) return;
+  uint32_t base=(uint32_t)index*KANTO_BADGE_W*KANTO_BADGE_H;
+  for(uint8_t py=0;py<KANTO_BADGE_H;py++) {
+    for(uint8_t px=0;px<KANTO_BADGE_W;px++) {
+      uint16_t color=pgm_read_word(&KANTO_BADGE_PIXELS[base+(uint32_t)py*KANTO_BADGE_W+px]);
+      if(!color) continue;
+      if(!earned) {
+        uint8_t r=((color>>11)&31)<<3, g=((color>>5)&63)<<2, b=(color&31)<<3;
+        uint8_t gray=(uint8_t)((r*3+g*6+b)/10);
+        color=C565(gray/2,gray/2,gray/2);
+      }
+      gfx->fillRect(cx-16+px*2,cy-16+py*2,2,2,color);
+    }
   }
 }
 
