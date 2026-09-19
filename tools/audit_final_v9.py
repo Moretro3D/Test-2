@@ -31,6 +31,11 @@ ok('gfx->setCursor(CX - 18, 366); gfx->print("V10")' in ino and
 ok('location.replace("https://moretro3d.fr/pages/poketama")' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    'https://moretro3d.github.io/Test-1/manifest.json' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
    "GitHub Pages redirige vers Shopify et conserve le Web Flasher officiel")
+workflow=(ROOT/".github/workflows/pages.yml").read_text(encoding="utf-8")
+ok("github.repository == 'Moretro3D/Test-2'" in workflow and
+   "sed -i '/http-equiv=\"refresh\"/d' web/index.html" in workflow and
+   "! grep -q 'location.replace' web/index.html" in workflow,
+   "Test-2 affiche son Web Flasher sans redirection Shopify")
 
 ok('snprintf(caught, sizeof(caught), T(S_CAUGHT_COUNT_FMT), (unsigned)pet.caughtCount());' in ino and
    '#define POKETAMA_UNLOCK_ALL_386 0' in pet_h and

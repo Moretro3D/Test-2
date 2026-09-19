@@ -1,4 +1,4 @@
-name: PokeTama V10 - Web Flasher officiel
+name: PokeTama V10 - Web Flasher
 on:
   push:
     branches: ["main"]
@@ -67,6 +67,13 @@ jobs:
         run: python3 tools/audit_battle_sprite_sizes.py
       - name: Verifier la page et les binaires
         run: python3 tools/verify_web.py
+      - name: Afficher directement le Web Flasher sur Test-2
+        if: github.repository == 'Moretro3D/Test-2'
+        run: |
+          sed -i '/http-equiv="refresh"/d' web/index.html
+          sed -i '/location.replace("https:\/\/moretro3d.fr\/pages\/poketama");/d' web/index.html
+          grep -q '<esp-web-install-button' web/index.html
+          ! grep -q 'location.replace' web/index.html
       - uses: actions/configure-pages@v5
       - name: Preparer GitHub Pages
         uses: actions/upload-pages-artifact@v4
@@ -80,6 +87,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - name: Publier le Web Flasher Test-1
+      - name: Publier le Web Flasher
         id: deployment
         uses: actions/deploy-pages@v4
