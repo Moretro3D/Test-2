@@ -1,25 +1,25 @@
 {
-  "name": "PokeTama Moretro3D - V10.01 Combat",
-  "version": "1.46.80-moretro3d-v10.01-battle-seam",
+  "name": "PokeTama Moretro3D - V10.02 Arenes Kanto",
+  "version": "1.46.81-moretro3d-v10.02-kanto-gyms",
   "new_install_prompt_erase": true,
   "builds": [
     {
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/poketama-1.46.80-moretro3d-v10.01-battle-seam-bootloader.bin",
+          "path": "firmware/poketama-1.46.81-moretro3d-v10.02-kanto-gyms-bootloader.bin",
           "offset": 0
         },
         {
-          "path": "firmware/poketama-1.46.80-moretro3d-v10.01-battle-seam-partitions.bin",
+          "path": "firmware/poketama-1.46.81-moretro3d-v10.02-kanto-gyms-partitions.bin",
           "offset": 32768
         },
         {
-          "path": "firmware/poketama-1.46.80-moretro3d-v10.01-battle-seam-boot_app0.bin",
+          "path": "firmware/poketama-1.46.81-moretro3d-v10.02-kanto-gyms-boot_app0.bin",
           "offset": 57344
         },
         {
-          "path": "firmware/poketama-1.46.80-moretro3d-v10.01-battle-seam-app.bin",
+          "path": "firmware/poketama-1.46.81-moretro3d-v10.02-kanto-gyms-app.bin",
           "offset": 65536
         }
       ]

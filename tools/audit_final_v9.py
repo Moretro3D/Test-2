@@ -18,11 +18,12 @@ def ok(cond,msg):
         raise SystemExit("FAIL V9: "+msg)
     print("OK  ",msg)
 
-ok("1.46.80-moretro3d-v10.01-battle-seam" in ino and
-   "1.46.80-moretro3d-v10.01-battle-seam" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
-   "1.46.80-moretro3d-v10.01-battle-seam" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "1.46.80-moretro3d-v10.01-battle-seam" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
-   "version 1.46.80 coherente et cache installateur invalide")
+ok("1.46.81-moretro3d-v10.02-kanto-gyms" in ino and
+   "1.46.81-moretro3d-v10.02-kanto-gyms" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.46.81-moretro3d-v10.02-kanto-gyms" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.46.81-moretro3d-v10.02-kanto-gyms" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   "1.46.81-moretro3d-v10.02-kanto-gyms" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.46.81 coherente et caches installateur invalides")
 ok('gfx->setCursor(CX - 18, 366); gfx->print("V10")' in ino and
    '<div class="version">Firmware V10</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    '<div class="version">Firmware V10</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
@@ -68,6 +69,18 @@ ok("light sleep" not in ino and "Sans erase garde save" not in ino and
 
 # Fiche
 ok('const char *cardBack=T(S_LAN_BACK)' in ino, "bouton RETOUR fiche traduit")
+ok("#define CARD_COUNT 10" in ino and "renderCardKantoGyms" in ino and
+   "KANTO_LEADER_DEX[8] = { 95, 121, 26, 45, 110, 65, 59, 112 }" in ino,
+   "page des huit arenes de Kanto et Pokemon emblematiques")
+ok("kantoArenaDetail" in ino and "arena <= unlocked" in ino and
+   "startKantoArenaBattle" in ino,
+   "champions deverrouilles progressivement avec confirmation de combat")
+ok('prefs.putUChar("kbadge", kantoBadges)' in pet and
+   'prefs.getUChar("kbadge", 0)' in pet and "awardKantoBadge" in pet and
+   "battleCatchOffered = !battleArena" in ino,
+   "badges persistants compatibles anciennes sauvegardes et sans capture d'arene")
+ok((ROOT/"assets/design/badges-kanto-recolores.png").exists(),
+   "planche recolorisee des badges archivee avec les sources")
 ok('gfx->setCursor(96, navY + 11); gfx->print("<")' in ino and
    'gfx->setCursor(354, navY + 11); gfx->print(">")' in ino and
    'dotsX' not in ino,

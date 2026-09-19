@@ -856,6 +856,14 @@ void Pet::applyBattleLoss() {
   save();
 }
 
+void Pet::awardKantoBadge(uint8_t index) {
+  if (index >= 8) return;
+  uint8_t bit = (uint8_t)(1U << index);
+  if (kantoBadges & bit) return;
+  kantoBadges |= bit;
+  save();
+}
+
 uint8_t Pet::expeditionEnergyCost(uint8_t minutes) {
   if (minutes == 15) return 12;
   if (minutes == 30) return 20;
@@ -1163,6 +1171,7 @@ void Pet::save() {
   prefs.putUShort("bloss", battleLosses);
   prefs.putUShort("bstk", battleStreak);
   prefs.putUShort("bbstk", bestBattleStreak);
+  prefs.putUChar("kbadge", kantoBadges);
   prefs.putUChar("cfrm", collectionFrame);
   prefs.putUChar("boxbg", boxBackground);
   prefs.putUInt("pimin", lastPetInteractMinute);
@@ -1246,6 +1255,7 @@ void Pet::load() {
   battleLosses = prefs.getUShort("bloss", 0);
   battleStreak = prefs.getUShort("bstk", 0);
   bestBattleStreak = prefs.getUShort("bbstk", 0);
+  kantoBadges = prefs.getUChar("kbadge", 0);
   collectionFrame = prefs.getUChar("cfrm", 0);
   if (collectionFrame >= unlockedCollectionFrameCount()) collectionFrame = 0;
   boxBackground = prefs.getUChar("boxbg", 0);

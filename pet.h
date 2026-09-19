@@ -147,6 +147,10 @@ public:
   uint16_t typeHi = 0;     // record del minijuego type match
   uint16_t battleWins = 0, battleLosses = 0;
   uint16_t battleStreak = 0, bestBattleStreak = 0;
+  // Badges d'arene de Kanto (bits 0..7). Ce champ est global au joueur et
+  // utilise une cle NVS dediee afin de rester compatible avec toutes les
+  // sauvegardes PokeTama anterieures.
+  uint8_t kantoBadges = 0;
   uint8_t collectionFrame = 0;  // 0=Basis, weitere Rahmen ueber Dex-Meilensteine
   uint8_t boxBackground = 0;    // fond pixel-art sélectionné pour la Boîte (0..15)
   uint32_t lastPetInteractMinute = 0;
@@ -293,6 +297,8 @@ public:
   uint8_t respectCatchChanceForWild(int16_t wildDex, uint8_t wildLevel, uint8_t petLevel) const;
   bool tryCatchWild(int16_t wildDex, uint8_t wildLevel, uint8_t petLevel, bool closeWin, uint8_t luckRoll, bool wildShiny = false);
   bool tryRespectCatchWild(int16_t wildDex, uint8_t wildLevel, uint8_t petLevel, uint8_t luckRoll, bool wildShiny = false);
+  bool hasKantoBadge(uint8_t index) const { return index < 8 && (kantoBadges & (1U << index)); }
+  void awardKantoBadge(uint8_t index);
   bool lineHasUnregistered(int16_t base) const;
   uint8_t eggRarity() const;       // rareza del huevo actual (sin revelar especie)
   int16_t pickEggSpecies();        // publica para poder simular tiradas (EGGS)

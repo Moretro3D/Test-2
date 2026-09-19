@@ -34,7 +34,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.46.80-moretro3d-v10.01-battle-seam"
+#define FW_VERSION "1.46.81-moretro3d-v10.02-kanto-gyms"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -87,8 +87,8 @@ bool cardOpen = false;        // ficha del bicho (deslizar vertical)
 bool kbOpen = false;          // teclado para renombrar al bicho
 char nameBuf[12] = "";
 uint8_t nameLen = 0;
-#define CARD_COUNT 9
-uint8_t cardPage = 0;         // 0 profil, 1 caractere, 2 quotidien, 3 boite, 4 combat, 5 medailles, 6 progres, 7 expedition, 8 records
+#define CARD_COUNT 10
+uint8_t cardPage = 0;         // 0 profil, 1 caractere, 2 quotidien, 3 boite, 4 combat, 5 medailles, 6 progres, 7 expedition, 8 records, 9 arenes Kanto
 uint8_t boxPage = 0;
 uint8_t boxSort = 0;          // 0 dex, 1 tipo, 2 criados primero
 bool expeditionTrainChoiceOpen = false;
@@ -178,6 +178,10 @@ bool battleLowHpWarned = false;
 bool battleEnemyShiny = false;
 uint32_t battleShinyFxUntil = 0;
 uint8_t battlePlayerSex = 2, battleEnemySex = 2; // 0 mâle, 1 femelle, 2 sans sexe
+bool battleArena = false;
+uint8_t battleArenaIndex = 0;
+bool battleArenaBadgeWon = false;
+int8_t kantoArenaDetail = -1;
 
 #define WILD_COOLDOWN_MS (20UL * 60UL * 1000UL)
 #define WILD_PROMPT_MS 20000UL
@@ -1005,7 +1009,7 @@ void onSwipe(int dir) {
     int p = (int)cardPage + (dir > 0 ? -1 : 1);  // izquierda avanza
     uint8_t old = cardPage;
     cardPage = p < 0 ? 0 : (p >= CARD_COUNT ? CARD_COUNT - 1 : p);
-    if (cardPage != old) { expeditionTrainChoiceOpen = false; cardDirty = true; sfxPlay(SFX_MENU); }
+    if (cardPage != old) { expeditionTrainChoiceOpen = false; kantoArenaDetail = -1; cardDirty = true; sfxPlay(SFX_MENU); }
     return;
   }
   if (!galleryOpen) {
@@ -1179,6 +1183,7 @@ void onTap(int16_t x, int16_t y) {
       if (cardPage > 0) {
         cardPage--;
         expeditionTrainChoiceOpen = false;
+        kantoArenaDetail = -1;
         cardDirty = true;
         sfxPlay(SFX_MENU);
       } else sfxPlay(SFX_DENY);
@@ -1189,6 +1194,7 @@ void onTap(int16_t x, int16_t y) {
       if (cardPage + 1 < CARD_COUNT) {
         cardPage++;
         expeditionTrainChoiceOpen = false;
+        kantoArenaDetail = -1;
         cardDirty = true;
         sfxPlay(SFX_MENU);
       } else sfxPlay(SFX_DENY);
@@ -1247,6 +1253,34 @@ void onTap(int16_t x, int16_t y) {
       startSack();
     } else if (cardPage == 7) {
       expeditionCardTap(x, y);
+    } else if (cardPage == 9) {
+      if (kantoArenaDetail >= 0) {
+        if (x >= 244 && x <= 390 && y >= 292 && y <= 342) {
+          uint8_t arena = (uint8_t)kantoArenaDetail;
+          cardOpen = false;
+          kantoArenaDetail = -1;
+          markUiDirty();
+          lockTouchBrief();
+          startKantoArenaBattle(arena);
+        } else if (x >= 76 && x <= 222 && y >= 292 && y <= 342) {
+          kantoArenaDetail = -1;
+          cardDirty = true;
+          lockTouchBrief();
+          sfxPlay(SFX_TAP);
+        }
+      } else if (y >= 82 && y <= 266) {
+        int col = x >= 242 ? 1 : (x >= 54 && x <= 224 ? 0 : -1);
+        int row = (y - 82) / 47;
+        int arena = row * 2 + col;
+        uint8_t unlocked = 0;
+        for (uint8_t i = 0; i < 8; i++) if (pet.hasKantoBadge(i)) unlocked++;
+        if (col >= 0 && row >= 0 && row < 4 && arena <= unlocked) {
+          kantoArenaDetail = arena;
+          cardDirty = true;
+          sfxPlay(SFX_MENU);
+        } else sfxPlay(SFX_DENY);
+        lockTouchBrief();
+      }
     } else if (y >= 400) {
       cardOpen = false;
       markUiDirty();
@@ -2837,6 +2871,7 @@ void acceptPetEvent() {
 }
 
 void closeBattle() {
+  bool returnToArena = battleArena;
   battleOpen = false;
   battleResolved = false;
   battleAttackMenuUntil = 0;
@@ -2846,7 +2881,14 @@ void closeBattle() {
   battleCatchSuccess = false;
   battleRespectCatch = false;
   battleCatchChance = 0;
+  battleArena = false;
+  battleArenaBadgeWon = false;
   wildPmd.unload();
+  if (returnToArena) {
+    cardOpen = true;
+    cardPage = 9;
+    cardDirty = true;
+  }
   markUiDirty();
   lockTouchBrief();
 }
@@ -2854,6 +2896,8 @@ void closeBattle() {
 void startBattleWith(int16_t forcedDex, uint8_t forcedLevel, int8_t forcedShiny) {
   if (!canStartWildBattle(pet.isEgg(), pet.sleeping, pet.ceremony)) return;
   wildPromptUntil = 0;
+  battleArena = false;
+  battleArenaBadgeWon = false;
   scheduleNextWild(millis());
   if (forcedDex >= 1 && forcedDex <= DEX_COUNT) {
     battleDex = forcedDex;
@@ -2897,6 +2941,18 @@ void startBattle() {
   startBattleWith(0, 0, -1);
 }
 
+static const int16_t KANTO_LEADER_DEX[8] = { 95, 121, 26, 45, 110, 65, 59, 112 };
+static const uint8_t KANTO_LEADER_LEVEL[8] = { 12, 18, 24, 30, 36, 42, 48, 55 };
+
+void startKantoArenaBattle(uint8_t index) {
+  if (index >= 8) return;
+  startBattleWith(KANTO_LEADER_DEX[index], KANTO_LEADER_LEVEL[index], 0);
+  if (!battleOpen) return;
+  battleArena = true;
+  battleArenaIndex = index;
+  battleArenaBadgeWon = false;
+}
+
 void finishBattle() {
   if (battleResolved) return;
   battleResolved = true;
@@ -2904,16 +2960,21 @@ void finishBattle() {
   if (battleTurn.playerWon) {
     bool closeWin = battleRun.playerHp <= battleRun.playerMaxHp / 3;
     battleReward = pet.applyBattleWin(battleDex, closeWin);
-    battleCatchOffered = true;
+    battleCatchOffered = !battleArena;
     battleRespectCatch = false;
     battleCatchChance = pet.catchChanceForWild(battleDex, battleLevel, battlePlayer.level, closeWin);
+    if (battleArena) {
+      pet.awardKantoBadge(battleArenaIndex);
+      battleArenaBadgeWon = true;
+      battleCatchChance = 0;
+    }
     sfxPlay(SFX_BATTLE_WIN);
   } else {
     battleReward = {};
     pet.applyBattleLoss();
     bool closeLoss = battleRun.enemyHp > 0 && battleRun.enemyHp * 100UL <= battleRun.enemyMaxHp * 30UL;
     battleCatchChance = closeLoss ? pet.respectCatchChanceForWild(battleDex, battleLevel, battlePlayer.level) : 0;
-    battleCatchOffered = battleCatchChance > 0;
+    battleCatchOffered = !battleArena && battleCatchChance > 0;
     battleRespectCatch = battleCatchOffered;
     sfxPlay(SFX_BATTLE_LOSS);
   }
@@ -3536,7 +3597,14 @@ void renderBattle() {
     gfx->print(res);
 
     int infoY = 373;
-    if (battleTurn.playerWon) {
+    if (battleArena && battleTurn.playerWon && battleArenaBadgeWon) {
+      static const char *const WON[LANG_COUNT]={"INSIGNIA GANADA","BADGE EARNED","BADGE OBTENU","ORDEN ERHALTEN","MEDAGLIA OTTENUTA","INSIGNIA OBTIDA"};
+      const char *won=WON[gLang<LANG_COUNT?gLang:LANG_EN];
+      gfx->setTextColor(UI_BAR_WARN);
+      gfx->setTextSize(2);
+      gfx->setCursor(CX-(int)strlen(won)*6,infoY);
+      gfx->print(won);
+    } else if (battleTurn.playerWon) {
       char reward[20];
       battleRewardText(reward, sizeof(reward));
       if (reward[0]) {
@@ -5325,6 +5393,135 @@ void expeditionCardTap(int16_t x, int16_t y) {
   }
 }
 
+static const char *const KANTO_LEADER_NAMES[LANG_COUNT][8] = {
+  { "BROCK", "MISTY", "LT. SURGE", "ERIKA", "KOGA", "SABRINA", "BLAINE", "GIOVANNI" },
+  { "BROCK", "MISTY", "LT. SURGE", "ERIKA", "KOGA", "SABRINA", "BLAINE", "GIOVANNI" },
+  { "PIERRE", "ONDINE", "MAJOR BOB", "ERIKA", "KOGA", "MORGANE", "AUGUSTE", "GIOVANNI" },
+  { "ROCKO", "MISTY", "MAJOR BOB", "ERIKA", "KOGA", "SABRINA", "PYRO", "GIOVANNI" },
+  { "BROCK", "MISTY", "LT. SURGE", "ERIKA", "KOGA", "SABRINA", "BLAINE", "GIOVANNI" },
+  { "BROCK", "MISTY", "LT. SURGE", "ERIKA", "KOGA", "SABRINA", "BLAINE", "GIOVANNI" }
+};
+
+const char *kantoLeaderName(uint8_t index) {
+  uint8_t lang = gLang < LANG_COUNT ? (uint8_t)gLang : (uint8_t)LANG_EN;
+  return index < 8 ? KANTO_LEADER_NAMES[lang][index] : "?";
+}
+
+const char *kantoArenaTitle() {
+  static const char *const L[LANG_COUNT] = { "LIGAS KANTO", "KANTO GYMS", "ARENES KANTO", "KANTO-ARENEN", "PALESTRE KANTO", "GINASIOS KANTO" };
+  return L[gLang < LANG_COUNT ? gLang : LANG_EN];
+}
+
+const char *kantoFightText() {
+  static const char *const L[LANG_COUNT] = { "COMBATIR?", "BATTLE?", "COMBATTRE ?", "KAMPFEN?", "LOTTARE?", "LUTAR?" };
+  return L[gLang < LANG_COUNT ? gLang : LANG_EN];
+}
+
+// Huit mini-sprites recolores, concus pour rester lisibles sur l'ecran rond.
+void drawKantoBadge(int cx, int cy, uint8_t index, bool earned) {
+  static const uint16_t mainCol[8] = {
+    C565(0x9d,0xa6,0xb0), C565(0x38,0xa9,0xe8), C565(0xf2,0xc4,0x2c), C565(0x76,0xc9,0x54),
+    C565(0xf0,0x6d,0x9c), C565(0xf4,0xd3,0x4f), C565(0xef,0x62,0x2f), C565(0x62,0xb8,0x77)
+  };
+  uint16_t c = earned ? mainCol[index] : C565(0x55,0x5c,0x68);
+  uint16_t hi = earned ? UI_WHITE : C565(0x79,0x80,0x8b);
+  uint16_t edge = earned ? UI_INK : C565(0x31,0x35,0x3d);
+  if (index == 0) { // Roche
+    gfx->fillRect(cx-8,cy-6,16,12,c); gfx->fillRect(cx-5,cy-9,10,18,c);
+    gfx->drawRect(cx-8,cy-6,16,12,edge); gfx->fillRect(cx-3,cy-5,6,3,hi);
+  } else if (index == 1) { // Cascade
+    gfx->fillCircle(cx,cy,9,c); gfx->fillTriangle(cx-8,cy-1,cx,cy-12,cx+8,cy-1,c);
+    gfx->fillCircle(cx-2,cy-2,3,hi); gfx->drawCircle(cx,cy,9,edge);
+  } else if (index == 2) { // Foudre
+    gfx->fillTriangle(cx-3,cy-11,cx+7,cy-11,cx,cy,c); gfx->fillTriangle(cx,cy,cx+4,cy+10,cx-7,cy+10,c);
+    gfx->drawFastVLine(cx,cy-7,14,hi);
+  } else if (index == 3) { // Prisme/Fleur
+    static const int8_t dx[6]={0,7,7,0,-7,-7},dy[6]={-8,-4,5,8,5,-4};
+    for(uint8_t i=0;i<6;i++) gfx->fillCircle(cx+dx[i],cy+dy[i],4,earned?(uint16_t)(mainCol[i%8]):c);
+    gfx->fillCircle(cx,cy,4,earned?C565(0xff,0xd3,0x3b):hi);
+  } else if (index == 4) { // Ame
+    gfx->fillCircle(cx-5,cy-4,6,c); gfx->fillCircle(cx+5,cy-4,6,c);
+    gfx->fillTriangle(cx-10,cy-2,cx+10,cy-2,cx,cy+10,c); gfx->drawPixel(cx,cy+6,hi);
+  } else if (index == 5) { // Marais
+    gfx->fillCircle(cx,cy,10,c); gfx->fillCircle(cx,cy,6,earned?C565(0xf9,0xe8,0x89):hi); gfx->drawCircle(cx,cy,10,edge);
+  } else if (index == 6) { // Volcan
+    gfx->fillTriangle(cx-9,cy+9,cx-2,cy-10,cx+2,cy+3,c); gfx->fillTriangle(cx-2,cy+9,cx+7,cy-7,cx+9,cy+9,c);
+    gfx->fillTriangle(cx-3,cy+7,cx+1,cy-4,cx+4,cy+7,earned?C565(0xff,0xc4,0x2f):hi);
+  } else { // Terre
+    gfx->fillTriangle(cx-10,cy-7,cx+10,cy,cx-8,cy+9,c); gfx->fillTriangle(cx-6,cy-4,cx+5,cy,cx-5,cy+5,hi);
+  }
+}
+
+// Portraits pixel-art originaux : silhouette distincte et palette du champion,
+// sans bitmap lourd afin de preserver la place disponible pour les Pokemon.
+void drawKantoLeaderSprite(int x, int y, uint8_t index) {
+  static const uint16_t hair[8] = { 0x39E7, 0xFBCF, 0xFFE0, 0x4208, 0x8010, 0x780F, 0xFFFF, 0x2104 };
+  static const uint16_t suit[8] = { 0x632C, 0x2D7F, 0xFFE0, 0x7C4F, 0x8010, 0xA01F, 0xFFFF, 0x3186 };
+  uint16_t skin=C565(0xf2,0xbd,0x91), h=hair[index], s=suit[index];
+  gfx->fillRect(x+12,y,28,6,h); gfx->fillRect(x+8,y+6,36,18,h);
+  gfx->fillRect(x+13,y+11,26,22,skin); gfx->fillRect(x+8,y+10,6,15,h); gfx->fillRect(x+38,y+10,6,15,h);
+  gfx->fillRect(x+18,y+19,4,4,UI_INK); gfx->fillRect(x+31,y+19,4,4,UI_INK);
+  gfx->fillRect(x+22,y+28,10,3,index==1?C565(0xe8,0x62,0x73):UI_INK);
+  gfx->fillRect(x+15,y+33,22,7,skin); gfx->fillRect(x+7,y+40,38,22,s);
+  gfx->fillRect(x,y+43,9,17,s); gfx->fillRect(x+43,y+43,9,17,s);
+  if(index==5) { gfx->fillRect(x+15,y+17,22,3,C565(0xd9,0x48,0x9e)); gfx->drawRect(x+15,y+14,22,10,UI_INK); }
+  if(index==6) { gfx->drawFastHLine(x+10,y+9,32,UI_WHITE); gfx->fillRect(x+42,y+4,5,22,UI_WHITE); }
+}
+
+uint8_t kantoBadgeCount() {
+  uint8_t n=0;
+  for(uint8_t i=0;i<8;i++) if(pet.hasKantoBadge(i)) n++;
+  return n;
+}
+
+void renderCardKantoGyms() {
+  uint8_t unlocked = kantoBadgeCount();
+  gfx->setTextColor(uiInk());
+  gfx->setTextSize(3);
+  const char *title=kantoArenaTitle();
+  gfx->setCursor(CX-(int)strlen(title)*9,38); gfx->print(title);
+
+  if (kantoArenaDetail >= 0) {
+    uint8_t i=(uint8_t)kantoArenaDetail;
+    drawKantoLeaderSprite(74,100,i);
+    drawKantoBadge(100,190,i,pet.hasKantoBadge(i));
+    gfx->setTextColor(uiInk()); gfx->setTextSize(3);
+    const char *leader=kantoLeaderName(i);
+    gfx->setCursor(250-(int)strlen(leader)*9/2,86); gfx->print(leader);
+    gfx->setTextSize(2); gfx->setTextColor(uiSub());
+    const char *mon=dexName(KANTO_LEADER_DEX[i]);
+    gfx->setCursor(292-(int)strlen(mon)*6,126); gfx->print(mon);
+    char lv[12]; snprintf(lv,sizeof(lv),"NIV. %u",KANTO_LEADER_LEVEL[i]);
+    gfx->setCursor(292-(int)strlen(lv)*6,150); gfx->print(lv);
+    const uint8_t *th=thumbs.get(KANTO_LEADER_DEX[i]);
+    if(th) drawBattleThumb(th,KANTO_LEADER_DEX[i],330,236,82,false,false);
+    gfx->setTextColor(uiInk()); gfx->setTextSize(2);
+    const char *question=kantoFightText();
+    gfx->setCursor(CX-(int)strlen(question)*6,257); gfx->print(question);
+    gfx->fillRoundRect(76,292,146,50,12,UI_TRACK);
+    gfx->fillRoundRect(244,292,146,50,12,UI_BAR_BAD);
+    gfx->setTextColor(uiContrastText(UI_TRACK)); gfx->setCursor(119,309); gfx->print(T(S_BACK));
+    gfx->setTextColor(uiContrastText(UI_BAR_BAD)); gfx->setCursor(279,309); gfx->print("OK");
+    return;
+  }
+
+  char count[18]; snprintf(count,sizeof(count),"BADGES %u/8",unlocked);
+  gfx->setTextColor(uiSub()); gfx->setTextSize(2);
+  gfx->setCursor(CX-(int)strlen(count)*6,66); gfx->print(count);
+  for(uint8_t i=0;i<8;i++) {
+    int x=(i&1)?242:54, y=82+(i/2)*47;
+    bool earned=pet.hasKantoBadge(i), available=i<=unlocked;
+    uint16_t bg=earned?C565(0x19,0x4e,0x45):(available?uiPanel():UI_TRACK);
+    gfx->fillRoundRect(x,y,170,40,10,bg);
+    gfx->drawRoundRect(x,y,170,40,10,earned?UI_BAR_OK:(available?uiInk():uiSub()));
+    drawKantoBadge(x+24,y+20,i,earned);
+    gfx->setTextColor(available?uiContrastText(bg):uiSub()); gfx->setTextSize(1);
+    const char *name=available?kantoLeaderName(i):"VERROUILLE";
+    gfx->setCursor(x+45,y+10); gfx->print(name);
+    gfx->setCursor(x+45,y+24); gfx->print(earned?"OK":(available?dexName(KANTO_LEADER_DEX[i]):"---"));
+  }
+}
+
 void renderCard() {
   cardDirty = false;
   gfx->fillScreen(uiBg());
@@ -5339,7 +5536,8 @@ void renderCard() {
   else if (cardPage == 5) renderCardMedals();
   else if (cardPage == 6) renderCardProgress();
   else if (cardPage == 7) renderCardExpedition();
-  else renderCardRecords();
+  else if (cardPage == 8) renderCardRecords();
+  else renderCardKantoGyms();
 
   // Pages remontées + vrai bouton RETOUR.
   int navY = 360;
