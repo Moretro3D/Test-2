@@ -1,0 +1,8 @@
+PokeTama Moretro3D V10
+
+DEPLOIEMENT OFFICIEL :
+1. Extraire entierement le ZIP.
+2. Double-cliquer sur ENVOYER_TEST_1.bat.
+3. Suivre la compilation sur https://github.com/Moretro3D/Test-1/actions
+
+L'installation sans effacement conserve le Pokemon et la sauvegarde.
