@@ -10,8 +10,8 @@
     ],
     "player_bbox": [
       4,
-      72,
-      172,
+      76,
+      154,
       108
     ],
     "enemy_bbox": [
@@ -20,7 +20,7 @@
       252,
       48
     ],
-    "player_sha1": "aa519bf74e23d662a1a2fab4a78dc09c29838a56",
+    "player_sha1": "fd7830c43845173997b1491abf337a9d4606a513",
     "enemy_sha1": "2d2716c1d75f52fbdaf65478d3b9d590aef8a5a2",
     "enemy_bottom_pixels": 26
   },
@@ -35,8 +35,8 @@
     ],
     "player_bbox": [
       4,
-      72,
-      172,
+      76,
+      154,
       108
     ],
     "enemy_bbox": [
@@ -45,7 +45,7 @@
       252,
       48
     ],
-    "player_sha1": "fb8322aee4708cb71d9f75d90eb9c834fc09598b",
+    "player_sha1": "cc4d8cd128318f713e0b8a3588209d86dbb534c2",
     "enemy_sha1": "7cb96c8664ce3d2b1582409c7f211aa5233888fd",
     "enemy_bottom_pixels": 22
   },
@@ -60,8 +60,8 @@
     ],
     "player_bbox": [
       4,
-      72,
-      172,
+      76,
+      154,
       108
     ],
     "enemy_bbox": [
@@ -70,7 +70,7 @@
       252,
       48
     ],
-    "player_sha1": "5dc7d4d4b407661d89ec72d5d319fdebde543f45",
+    "player_sha1": "a03cc485da0a3f4b8e2a5e4fdb3bf288ac7d807a",
     "enemy_sha1": "5d6f88a15d9816a2fe8733503edfbecd7b663bb9",
     "enemy_bottom_pixels": 37
   },
@@ -85,8 +85,8 @@
     ],
     "player_bbox": [
       4,
-      72,
-      172,
+      76,
+      154,
       108
     ],
     "enemy_bbox": [
@@ -95,7 +95,7 @@
       252,
       48
     ],
-    "player_sha1": "47521ed8f3106b02301dd2ac824e515c45f5c492",
+    "player_sha1": "db7605a3cfcefec7236979bf4db180751172c4f6",
     "enemy_sha1": "48bccd2db06c833be0153b47806981cfad1d4fd9",
     "enemy_bottom_pixels": 37
   },
@@ -110,8 +110,8 @@
     ],
     "player_bbox": [
       4,
-      72,
-      172,
+      76,
+      154,
       108
     ],
     "enemy_bbox": [
@@ -120,7 +120,7 @@
       252,
       48
     ],
-    "player_sha1": "bfea61d5b9bcf63ef2f7dd56988db65605a8e798",
+    "player_sha1": "55fa738090dae5f1433cedcf3623e804e8e86115",
     "enemy_sha1": "8f0b0061537f69e67f72c8967160f84c3549f50b",
     "enemy_bottom_pixels": 9
   },
@@ -135,8 +135,8 @@
     ],
     "player_bbox": [
       4,
-      72,
-      172,
+      76,
+      154,
       108
     ],
     "enemy_bbox": [
@@ -145,7 +145,7 @@
       252,
       48
     ],
-    "player_sha1": "636861e8a6695579e5593905c5a95c41fff5a8a8",
+    "player_sha1": "883ec94f48eb9b8d8de0048304c31c8490fdc019",
     "enemy_sha1": "bb96e72090cdca489468741307fead5d00d61e69",
     "enemy_bottom_pixels": 56
   },
@@ -160,8 +160,8 @@
     ],
     "player_bbox": [
       4,
-      72,
-      172,
+      76,
+      154,
       108
     ],
     "enemy_bbox": [
@@ -170,7 +170,7 @@
       252,
       48
     ],
-    "player_sha1": "fc1fc4528b242f3eaacf1cd0640bc52ccf6364f9",
+    "player_sha1": "7a8da420497a700eab5fbeefaeee99e8d56dec08",
     "enemy_sha1": "d7fc7d8abae3c042659bb7b24ea2de14c8d31ab5",
     "enemy_bottom_pixels": 22
   }

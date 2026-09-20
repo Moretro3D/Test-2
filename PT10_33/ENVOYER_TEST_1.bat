@@ -1,9 +1,9 @@
 @echo off
 setlocal EnableExtensions
-title PokeTama V10.32 - Envoi vers Test-2
+title PokeTama V10.33 - Deploiement officiel Test-1
 cd /d "%~dp0"
 
-echo PokeTama V10.32 - envoi vers Moretro3D/Test-2
+echo PokeTama V10 - deploiement officiel vers Moretro3D/Test-1
 echo.
 where git >nul 2>nul
 if errorlevel 1 (
@@ -19,34 +19,34 @@ git -c safe.directory="%CD%" branch -M main
 git -c safe.directory="%CD%" config user.name >nul 2>nul || git -c safe.directory="%CD%" config user.name "Moretro3D"
 git -c safe.directory="%CD%" config user.email >nul 2>nul || git -c safe.directory="%CD%" config user.email "contact@moretro3d.fr"
 git -c safe.directory="%CD%" remote remove origin >nul 2>nul
-git -c safe.directory="%CD%" remote add origin https://github.com/Moretro3D/Test-2.git
+git -c safe.directory="%CD%" remote add origin https://github.com/Moretro3D/Test-1.git
 
-echo Recuperation securisee de Test-2...
+echo Recuperation securisee de Test-1...
 git -c safe.directory="%CD%" -c http.sslBackend=openssl fetch origin main
 if errorlevel 1 goto :connexion
 git -c safe.directory="%CD%" reset --mixed origin/main
 if errorlevel 1 goto :connexion
 
-echo Preparation des fichiers V10.32...
+echo Preparation de la version officielle V10.33...
 git -c safe.directory="%CD%" add -A
 git -c safe.directory="%CD%" diff --cached --quiet
 if errorlevel 1 (
-  git -c safe.directory="%CD%" commit -m "PokeTama V10.32 - sept sols de combat et mapping 386 Pokemon"
+  git -c safe.directory="%CD%" commit -m "PokeTama V10.33 - demi-sols joueur compacts"
   if errorlevel 1 goto :connexion
 )
 
-echo Envoi de la V10.32 sans effacement ni force push...
+echo Envoi officiel de la V10 sans effacement ni force push...
 git -c safe.directory="%CD%" -c http.sslBackend=openssl push -u origin main
 if errorlevel 1 goto :connexion
 echo.
-echo TERMINE : ouvre https://github.com/Moretro3D/Test-2/actions
-echo Quand l'action est verte, lance OUVRIR_WEB_FLASHER_TEST_2.bat.
+echo TERMINE : la V10 officielle est envoyee sur Test-1.
+echo Ouvre https://github.com/Moretro3D/Test-1/actions pour suivre la compilation.
 pause
 exit /b 0
 
 :connexion
 echo.
 echo ECHEC : consulte le message Git affiche juste au-dessus.
-echo Aucun force push ni effacement n'a ete effectue. Relance ensuite ce fichier.
+echo Aucun force push ni effacement n'a ete effectue.
 pause
 exit /b 1

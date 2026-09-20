@@ -1,6 +1,6 @@
 POKETAMA TEST-2 - VERSION NORMALE COMPLETE 386 POKEMON
 
-VERSION INTERNE : 1.46.111 / V10.32 (sept sols de combat)
+VERSION INTERNE : 1.46.112 / V10.33 (demi-sols joueur compacts)
 
 Cette version conserve l'interface et le fonctionnement normaux. Les sprites
 des 386 Pokémon restent installés, mais la Boîte n'ouvre plus artificiellement

@@ -1,12 +1,13 @@
-PokeTama Moretro3D V10.32
+PokeTama Moretro3D V10.33
 
-VERSION INTERNE : 1.46.111-moretro3d-v10.32-seven-battle-grounds
+VERSION INTERNE : 1.46.112-moretro3d-v10.33-compact-player-grounds
 
 NOUVEAUTES :
 - Sept sols de combat pixel art : Plante, Eau, Feu, Normal, Roche, Glace, Nuages.
 - Demi-sol joueur et plateforme adverse alignes sur des positions fixes.
 - Affectation verifiee individuellement pour les 386 Pokemon.
 - Sol Roche de l'accueil remonte de 4 pixels.
+- Demi-sols du joueur réduits pour mieux respirer dans l'écran rond.
 
 DEPLOIEMENT OFFICIEL :
 1. Extraire entierement le ZIP.

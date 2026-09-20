@@ -39,7 +39,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.46.111-moretro3d-v10.32-seven-battle-grounds"
+#define FW_VERSION "1.46.112-moretro3d-v10.33-compact-player-grounds"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 

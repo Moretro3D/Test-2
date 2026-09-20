@@ -18,12 +18,12 @@ def ok(cond,msg):
         raise SystemExit("FAIL V9: "+msg)
     print("OK  ",msg)
 
-ok("1.46.111-moretro3d-v10.32-seven-battle-grounds" in ino and
-   "1.46.111-moretro3d-v10.32-seven-battle-grounds" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
-   "1.46.111-moretro3d-v10.32-seven-battle-grounds" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "1.46.111-moretro3d-v10.32-seven-battle-grounds" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
-   "1.46.111-moretro3d-v10.32-seven-battle-grounds" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
-   "version 1.46.111 coherente et caches installateur invalides")
+ok("1.46.112-moretro3d-v10.33-compact-player-grounds" in ino and
+   "1.46.112-moretro3d-v10.33-compact-player-grounds" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.46.112-moretro3d-v10.33-compact-player-grounds" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.46.112-moretro3d-v10.33-compact-player-grounds" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   "1.46.112-moretro3d-v10.33-compact-player-grounds" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.46.112 coherente et caches installateur invalides")
 ok('gfx->setCursor(CX - 18, 366); gfx->print("V10")' in ino and
    '<div class="version">Firmware V10</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    '<div class="version">Firmware V10</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
@@ -37,7 +37,7 @@ ok("github.repository == 'Moretro3D/Test-2'" in workflow and
    "! grep -q 'location.replace' web/index.html" in workflow,
    "Test-2 affiche son Web Flasher sans redirection Shopify")
 test2_launcher=(ROOT/"OUVRIR_WEB_FLASHER_TEST_2.bat").read_text(encoding="utf-8")
-ok("https://moretro3d.github.io/Test-2/?v=1.46.111-moretro3d-v10.32-seven-battle-grounds" in test2_launcher,
+ok("https://moretro3d.github.io/Test-2/?v=1.46.112-moretro3d-v10.33-compact-player-grounds" in test2_launcher,
    "lanceur direct Test-2 avec contournement du cache")
 scene=ino[ino.index("void drawScene("):ino.index("void drawStarterPokeball(")]
 ok("HORIZON-38" not in scene and "uint16_t sea=" not in scene and

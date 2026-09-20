@@ -124,9 +124,11 @@ for name, source_path in SETS:
     if not upper_box or not lower_box:
         raise SystemExit(f"Plateformes {name} incomplètes")
     enemy_art = upper.crop(upper_box).resize((120, 40), Image.Resampling.NEAREST)
-    player_art = lower.crop(lower_box).resize((168, 36), Image.Resampling.NEAREST)
+    # Demi-sol joueur volontairement plus compact : il reste lisible sous le
+    # sprite sans traverser visuellement tout le bas de l'écran rond.
+    player_art = lower.crop(lower_box).resize((150, 32), Image.Resampling.NEAREST)
     enemy = Image.new("RGBA", (128, 48), (0, 0, 0, 0))
-    player = Image.new("RGBA", (176, 40), (0, 0, 0, 0))
+    player = Image.new("RGBA", (158, 36), (0, 0, 0, 0))
     enemy.alpha_composite(enemy_art, (4, 4))
     player.alpha_composite(player_art, (4, 2))
     enemy_source_bbox = enemy.getbbox()
