@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "assets" / "home_gym_source_v10_17.png"
 PREVIEW = ROOT / "assets" / "home_gym_sprite_v10_17_preview.png"
 HEADER = ROOT / "home_gym_sprite.h"
-MAX_W, MAX_H = 144, 126
+MAX_W, MAX_H = 156, 136
 
 im = Image.open(SOURCE).convert("RGBA")
 alpha = im.getchannel("A")

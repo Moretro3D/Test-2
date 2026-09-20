@@ -1,9 +1,9 @@
 @echo off
 setlocal EnableExtensions
-title PokeTama V10.27 - Envoi vers Test-2
+title PokeTama V10.29 - Envoi vers Test-2
 cd /d "%~dp0"
 
-echo PokeTama V10.27 - envoi vers Moretro3D/Test-2
+echo PokeTama V10.29 - envoi vers Moretro3D/Test-2
 echo.
 where git >nul 2>nul
 if errorlevel 1 (
@@ -27,15 +27,15 @@ if errorlevel 1 goto :connexion
 git -c safe.directory="%CD%" reset --mixed origin/main
 if errorlevel 1 goto :connexion
 
-echo Preparation des fichiers V10.27...
+echo Preparation des fichiers V10.29...
 git -c safe.directory="%CD%" add -A
 git -c safe.directory="%CD%" diff --cached --quiet
 if errorlevel 1 (
-  git -c safe.directory="%CD%" commit -m "PokeTama V10.27 - arene agrandie au premier plan"
+  git -c safe.directory="%CD%" commit -m "PokeTama V10.29 - sol roche colle a la separation"
   if errorlevel 1 goto :connexion
 )
 
-echo Envoi de la V10.27 sans effacement ni force push...
+echo Envoi de la V10.29 sans effacement ni force push...
 git -c safe.directory="%CD%" -c http.sslBackend=openssl push -u origin main
 if errorlevel 1 goto :connexion
 echo.

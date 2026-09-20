@@ -120,9 +120,9 @@
     ],
     "player_bbox": [
       15,
-      68,
+      72,
       161,
-      108
+      112
     ],
     "enemy_bbox": [
       129,
@@ -130,7 +130,7 @@
       255,
       48
     ],
-    "player_sha1": "ddc327653c3828f9e6afbe6fa2b5d43cc84dc5c6",
+    "player_sha1": "8ea4791342db72299446dbf7e71a8ebf2f013e97",
     "enemy_sha1": "bc4635621d5a73e7f87e5b372a1519a1041d9b73",
     "enemy_bottom_pixels": 44
   },

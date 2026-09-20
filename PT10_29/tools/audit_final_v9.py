@@ -18,12 +18,12 @@ def ok(cond,msg):
         raise SystemExit("FAIL V9: "+msg)
     print("OK  ",msg)
 
-ok("1.46.106-moretro3d-v10.27-foreground-gym" in ino and
-   "1.46.106-moretro3d-v10.27-foreground-gym" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
-   "1.46.106-moretro3d-v10.27-foreground-gym" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "1.46.106-moretro3d-v10.27-foreground-gym" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
-   "1.46.106-moretro3d-v10.27-foreground-gym" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
-   "version 1.46.106 coherente et caches installateur invalides")
+ok("1.46.108-moretro3d-v10.29-rock-anchor" in ino and
+   "1.46.108-moretro3d-v10.29-rock-anchor" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.46.108-moretro3d-v10.29-rock-anchor" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.46.108-moretro3d-v10.29-rock-anchor" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   "1.46.108-moretro3d-v10.29-rock-anchor" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.46.108 coherente et caches installateur invalides")
 ok('gfx->setCursor(CX - 18, 366); gfx->print("V10")' in ino and
    '<div class="version">Firmware V10</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    '<div class="version">Firmware V10</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
@@ -37,7 +37,7 @@ ok("github.repository == 'Moretro3D/Test-2'" in workflow and
    "! grep -q 'location.replace' web/index.html" in workflow,
    "Test-2 affiche son Web Flasher sans redirection Shopify")
 test2_launcher=(ROOT/"OUVRIR_WEB_FLASHER_TEST_2.bat").read_text(encoding="utf-8")
-ok("https://moretro3d.github.io/Test-2/?v=1.46.106-moretro3d-v10.27-foreground-gym" in test2_launcher,
+ok("https://moretro3d.github.io/Test-2/?v=1.46.108-moretro3d-v10.29-rock-anchor" in test2_launcher,
    "lanceur direct Test-2 avec contournement du cache")
 scene=ino[ino.index("void drawScene("):ino.index("void drawStarterPokeball(")]
 ok("HORIZON-38" not in scene and "uint16_t sea=" not in scene and
@@ -277,8 +277,8 @@ ok("void drawHomeGymCabin(uint8_t phase, uint8_t biome)" in ino and
    '#include "home_gym_sprite.h"' in ino and
    "HOME_GYM_PIXELS" in ino and "HOME_GYM_PALETTE" in ino and
    (ROOT/"home_gym_sprite.h").exists() and
-   "x >= 161 && x <= 305 && y >= 129 && y <= 265" in ino and
-   "const int16_t x0=161, y0=133" in ino and
+   "x >= 155 && x <= 311 && y >= 122 && y <= 270" in ino and
+   "const int16_t x0=155, y0=128" in ino and
    "const int x=318, y=132" in ino and
    "Toit rouge étagé, large et immédiatement lisible" in ino and
    "Grand emblème Poké Ball centré dans le fronton" in ino and
@@ -297,9 +297,10 @@ ok('#include "home_habitat_sprites.h"' in ino and
        for name in ("meadow","water","forest","volcano","mountain","snow")),
    "six sols pixel art detailles integres sur l'accueil selon le biome")
 ok("void drawHomeGymPlatform(uint8_t biome, uint8_t phase)" in ino and
-   "if (biome!=1) return" in ino and
+   "if (biome==1)" in ino and "else if (biome==4)" in ino and
+   "gfx->fillRoundRect(129,242,208,38,13,edge)" in ino and
    scene.index("drawHomeHabitatGround(b);") < scene.index("drawHomeGymPlatform(b,phase);") < scene.index("drawHomeGymCabin(phase,b);"),
-   "volcan releve, ilot herbeux aquatique et arene agrandie au premier plan")
+   "volcan releve, plateformes eau et roche, arene encore agrandie au premier plan")
 ok("STARTER_DEX[3][3]" in ino and "{ 252, 255, 258 }" in ino,
    "starters 1G, 2G et 3G presents")
 ok("#define SPRITE_AUDIT_BUILD 0" in ino and
@@ -388,7 +389,8 @@ ok('#include "battle_bases.h"' in ino and
    "gfx->fillRect(-23+sx*2,102+sy*2,take*2,2,color)" in ino,
    "sol de chaque Pokemon choisi independamment selon ses types")
 ok("paste_on_fixed_baseline(scene, enemy, 128, 48)" in (ROOT/"tools/make_battle_bases.py").read_text(encoding="utf-8") and
-   "paste_on_fixed_baseline(scene, player, 0, 108)" in (ROOT/"tools/make_battle_bases.py").read_text(encoding="utf-8"),
+   'player_baseline = 112 if name == "ROCHE" else 108' in (ROOT/"tools/make_battle_bases.py").read_text(encoding="utf-8") and
+   "paste_on_fixed_baseline(scene, player, 0, player_baseline)" in (ROOT/"tools/make_battle_bases.py").read_text(encoding="utf-8"),
    "sols joueur et adversaire verrouilles sur une ligne de base fixe")
 ground_generator=(ROOT/"tools/make_battle_bases.py").read_text(encoding="utf-8")
 ok('("HERBE",   0, 0, 0)' in ground_generator and

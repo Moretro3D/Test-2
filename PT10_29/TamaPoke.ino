@@ -38,7 +38,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.46.106-moretro3d-v10.27-foreground-gym"
+#define FW_VERSION "1.46.108-moretro3d-v10.29-rock-anchor"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -1422,7 +1422,7 @@ void onTap(int16_t x, int16_t y) {
     return;
   }
   // Raccourci permanent : toucher la cabane du décor ouvre les arènes.
-  if (x >= 161 && x <= 305 && y >= 129 && y <= 265) {
+  if (x >= 155 && x <= 311 && y >= 122 && y <= 270) {
     cardOpen = true;
     cardPage = 9;
     kantoArenaDetail = -1;
@@ -1622,7 +1622,7 @@ void drawHomeGymCabinLegacy(uint8_t phase, uint8_t biome) {
 void drawHomeGymCabin(uint8_t phase, uint8_t biome) {
   (void)phase;
   (void)biome;
-  const int16_t x0=161, y0=133;
+  const int16_t x0=155, y0=128;
   for (uint8_t y=0; y<HOME_GYM_H; y++) {
     uint8_t x=0;
     while (x<HOME_GYM_W) {
@@ -1664,15 +1664,25 @@ void drawHomeHabitatGround(uint8_t biome) {
 // Sur le décor aquatique, l'arène repose sur un petit îlot herbeux plutôt
 // que directement dans le lac. La forme reste volontairement pixelisée.
 void drawHomeGymPlatform(uint8_t biome, uint8_t phase) {
-  if (biome!=1) return;
-  uint16_t edge=(phase==3)?C565(0x16,0x35,0x2c):C565(0x28,0x62,0x35);
-  uint16_t grass=(phase==3)?C565(0x25,0x58,0x3b):C565(0x63,0xa8,0x42);
-  uint16_t light=(phase==3)?C565(0x36,0x70,0x47):C565(0x91,0xce,0x58);
-  gfx->fillRoundRect(137,239,192,36,16,edge);
-  gfx->fillRoundRect(141,235,184,34,15,grass);
-  gfx->fillRect(151,237,164,5,light);
-  for (int x=151;x<=311;x+=20)
-    gfx->fillTriangle(x,241,x+5,231,x+10,241,light);
+  if (biome==1) {
+    uint16_t edge=(phase==3)?C565(0x16,0x35,0x2c):C565(0x28,0x62,0x35);
+    uint16_t grass=(phase==3)?C565(0x25,0x58,0x3b):C565(0x63,0xa8,0x42);
+    uint16_t light=(phase==3)?C565(0x36,0x70,0x47):C565(0x91,0xce,0x58);
+    gfx->fillRoundRect(131,242,204,38,17,edge);
+    gfx->fillRoundRect(135,237,196,36,16,grass);
+    gfx->fillRect(147,239,172,5,light);
+    for (int x=147;x<=307;x+=20)
+      gfx->fillTriangle(x,243,x+5,233,x+10,243,light);
+  } else if (biome==4) {
+    uint16_t edge=(phase==3)?C565(0x20,0x25,0x35):C565(0x45,0x4b,0x58);
+    uint16_t rock=(phase==3)?C565(0x3c,0x43,0x55):C565(0x78,0x7f,0x88);
+    uint16_t light=(phase==3)?C565(0x58,0x60,0x72):C565(0xa9,0xae,0xb3);
+    gfx->fillRoundRect(129,242,208,38,13,edge);
+    gfx->fillRoundRect(135,237,196,34,11,rock);
+    gfx->fillTriangle(145,254,168,232,192,254,light);
+    gfx->fillTriangle(274,254,297,233,321,254,light);
+    gfx->fillRect(184,243,98,16,rock);
+  }
 }
 
 void drawScene(uint8_t biome, uint32_t now, bool night) {
