@@ -1,6 +1,6 @@
-PokeTama Moretro3D V10.34
+PokeTama Moretro3D V10.35
 
-VERSION INTERNE : 1.46.113-moretro3d-v10.34-box-visuals
+VERSION INTERNE : 1.46.114-moretro3d-v10.35-box-popup-sprites
 
 NOUVEAUTES :
 - Sept sols de combat pixel art : Plante, Eau, Feu, Normal, Roche, Glace, Nuages.
@@ -8,7 +8,8 @@ NOUVEAUTES :
 - Affectation verifiee individuellement pour les 386 Pokemon.
 - Sol Roche de l'accueil remonte de 4 pixels.
 - Demi-sols du joueur réduits pour mieux respirer dans l'écran rond.
-- Miniatures de la Boite ajustees automatiquement sans rognage.
+- Vignettes de la grille conservees sans modification.
+- Grand sprite du popup ajuste proportionnellement sans ecrasement.
 - Boutons Retour et S'occuper uniformises.
 
 DEPLOIEMENT OFFICIEL :

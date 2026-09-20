@@ -39,7 +39,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.46.113-moretro3d-v10.34-box-visuals"
+#define FW_VERSION "1.46.114-moretro3d-v10.35-box-popup-sprites"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -1778,9 +1778,9 @@ void drawStarterThumbCentered(const uint8_t *b, int16_t dex, int cx, int cy, int
   }
 }
 
-// Miniature dédiée à la Boîte : choisit automatiquement une échelle entière
-// qui remplit la vignette sans jamais rogner les grands Pokémon.
-void drawBoxThumbCentered(const uint8_t *b, int cx, int cy) {
+// Grand sprite du popup de la Boîte : conserve strictement les proportions et
+// choisit une échelle entière adaptée à l'espace entre le nom et les boutons.
+void drawBoxSelectionThumbCentered(const uint8_t *b, int cx, int cy) {
   if (!b) return;
   uint8_t w=b[0], h=b[1], n=b[2];
   const uint8_t *pal=b+3;
@@ -1793,8 +1793,8 @@ void drawBoxThumbCentered(const uint8_t *b, int cx, int cy) {
   }
   if (maxX < minX || maxY < minY) return;
   int visibleW=maxX-minX+1, visibleH=maxY-minY+1;
-  int scale=min(52/visibleW,52/visibleH);
-  scale=min(scale,3);
+  int scale=min(144/visibleW,108/visibleH);
+  scale=min(scale,5);
   if (scale < 1) scale=1;
   int x0=cx-visibleW*scale/2-minX*scale;
   int y0=cy-visibleH*scale/2-minY*scale;
@@ -5241,7 +5241,7 @@ void renderCardBox() {
     gfx->fillRoundRect(x, y, 64, 64, 10, uiPanel());
     gfx->drawRoundRect(x, y, 64, 64, 10, d.accent);
     const uint8_t *thumb = thumbs.get(dex);
-    if (thumb) drawBoxThumbCentered(thumb, x + 32, y + 32);
+    if (thumb) drawStarterThumbCentered(thumb, dex, x + 32, y + 31, 2);
     if (pet.isShinyRegistered(dex)) {
       gfx->setTextColor(UI_BAR_WARN);
       gfx->setTextSize(1);
@@ -5293,7 +5293,7 @@ void renderCardBox() {
     gfx->setTextColor(UI_WHITE); gfx->setTextSize(3);
     gfx->setCursor(CX-(int)strlen(name)*9,94); gfx->print(name);
     const uint8_t *thumb=thumbs.get(boxSelectionDex);
-    if(thumb) drawStarterThumbCentered(thumb,boxSelectionDex,CX,194,4);
+    if(thumb) drawBoxSelectionThumbCentered(thumb,CX,194);
 
     uint16_t f1=pet.isBoxFavorite(0,boxSelectionDex)?UI_BAR_WARN:UI_TRACK;
     uint16_t f2=pet.isBoxFavorite(1,boxSelectionDex)?UI_BAR_WARN:UI_TRACK;
