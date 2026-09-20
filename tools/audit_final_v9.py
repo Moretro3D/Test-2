@@ -18,12 +18,12 @@ def ok(cond,msg):
         raise SystemExit("FAIL V9: "+msg)
     print("OK  ",msg)
 
-ok("1.46.92-moretro3d-v10.13-catch-timing-fix" in ino and
-   "1.46.92-moretro3d-v10.13-catch-timing-fix" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
-   "1.46.92-moretro3d-v10.13-catch-timing-fix" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "1.46.92-moretro3d-v10.13-catch-timing-fix" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
-   "1.46.92-moretro3d-v10.13-catch-timing-fix" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
-   "version 1.46.92 coherente et caches installateur invalides")
+ok("1.46.101-moretro3d-v10.22-transparent-habitats" in ino and
+   "1.46.101-moretro3d-v10.22-transparent-habitats" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.46.101-moretro3d-v10.22-transparent-habitats" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.46.101-moretro3d-v10.22-transparent-habitats" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   "1.46.101-moretro3d-v10.22-transparent-habitats" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.46.101 coherente et caches installateur invalides")
 ok('gfx->setCursor(CX - 18, 366); gfx->print("V10")' in ino and
    '<div class="version">Firmware V10</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    '<div class="version">Firmware V10</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
@@ -37,7 +37,7 @@ ok("github.repository == 'Moretro3D/Test-2'" in workflow and
    "! grep -q 'location.replace' web/index.html" in workflow,
    "Test-2 affiche son Web Flasher sans redirection Shopify")
 test2_launcher=(ROOT/"OUVRIR_WEB_FLASHER_TEST_2.bat").read_text(encoding="utf-8")
-ok("https://moretro3d.github.io/Test-2/?v=1.46.92-moretro3d-v10.13-catch-timing-fix" in test2_launcher,
+ok("https://moretro3d.github.io/Test-2/?v=1.46.101-moretro3d-v10.22-transparent-habitats" in test2_launcher,
    "lanceur direct Test-2 avec contournement du cache")
 
 ok('snprintf(caught, sizeof(caught), T(S_CAUGHT_COUNT_FMT), (unsigned)pet.caughtCount());' in ino and
@@ -260,6 +260,36 @@ ok("gfx->fillRoundRect(x, y, 64, 64, 10" in ino and
 ok('prefs.putUChar("boxbg", boxBackground)' in pet and
    'prefs.getUChar("boxbg", 0)' in pet,
    "fond de Boite memorise apres redemarrage")
+ok("int16_t boxFavorites[2][8]" in pet_h and
+   'prefs.putBytes("boxfav1"' in pet and 'prefs.putBytes("boxfav2"' in pet and
+   'prefs.getBytes("boxfav1"' in pet and 'prefs.getBytes("boxfav2"' in pet and
+   "toggleBoxFavorite" in pet and "boxFavoriteView" in ino and
+   'gfx->print("FAVORI 1")' in ino and 'gfx->print("FAVORI 2")' in ino and
+   "boxDisplayedDexAt" in ino,
+   "deux equipes favorites de huit Pokemon selectionnables et persistantes")
+ok("void drawHomeGymCabin(uint8_t phase, uint8_t biome)" in ino and
+   "drawHomeGymCabin(phase,b)" in ino and
+   '#include "home_gym_sprite.h"' in ino and
+   "HOME_GYM_PIXELS" in ino and "HOME_GYM_PALETTE" in ino and
+   (ROOT/"home_gym_sprite.h").exists() and
+   "x >= 318 && x <= 446 && y >= 128 && y <= 244" in ino and
+   "const int x=318, y=132" in ino and
+   "Toit rouge étagé, large et immédiatement lisible" in ino and
+   "Grand emblème Poké Ball centré dans le fronton" in ino and
+   "Deux colonnes épaisses encadrent les doubles portes" in ino and
+   "cardPage = 9" in ino and "kantoArenaDetail = -1" in ino,
+   "arene Pokemon pixel art tactile ouvrant directement les arenes Kanto")
+ok('#include "home_habitat_sprites.h"' in ino and
+   "void drawHomeHabitatGround(uint8_t biome)" in ino and
+   "drawHomeHabitatGround(b)" in ino and
+   "const int16_t x0=53, y0=210" in ino and
+   "gfx->fillRect(0,HORIZON,466,466-HORIZON,bot)" in ino and
+   "if (color)" in ino and
+   "HOME_HABITAT_PIXELS" in ino and "HOME_HABITAT_PALETTES" in ino and
+   (ROOT/"home_habitat_sprites.h").exists() and
+   all((ROOT/"assets/home_habitats_v10_19"/f"{name}.png").exists()
+       for name in ("meadow","water","forest","volcano","mountain","snow")),
+   "six sols pixel art detailles integres sur l'accueil selon le biome")
 ok("STARTER_DEX[3][3]" in ino and "{ 252, 255, 258 }" in ino,
    "starters 1G, 2G et 3G presents")
 ok("#define SPRITE_AUDIT_BUILD 0" in ino and
