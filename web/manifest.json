@@ -1,25 +1,25 @@
 {
-  "name": "PokeTama Moretro3D - V10.13 Correction Animation Capture",
-  "version": "1.46.92-moretro3d-v10.13-catch-timing-fix",
+  "name": "PokeTama Moretro3D - V10.23 Sols Accueil Larges Eau",
+  "version": "1.46.102-moretro3d-v10.23-wide-water-habitat",
   "new_install_prompt_erase": true,
   "builds": [
     {
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/poketama-1.46.92-moretro3d-v10.13-catch-timing-fix-bootloader.bin",
+          "path": "firmware/poketama-1.46.102-moretro3d-v10.23-wide-water-habitat-bootloader.bin",
           "offset": 0
         },
         {
-          "path": "firmware/poketama-1.46.92-moretro3d-v10.13-catch-timing-fix-partitions.bin",
+          "path": "firmware/poketama-1.46.102-moretro3d-v10.23-wide-water-habitat-partitions.bin",
           "offset": 32768
         },
         {
-          "path": "firmware/poketama-1.46.92-moretro3d-v10.13-catch-timing-fix-boot_app0.bin",
+          "path": "firmware/poketama-1.46.102-moretro3d-v10.23-wide-water-habitat-boot_app0.bin",
           "offset": 57344
         },
         {
-          "path": "firmware/poketama-1.46.92-moretro3d-v10.13-catch-timing-fix-app.bin",
+          "path": "firmware/poketama-1.46.102-moretro3d-v10.23-wide-water-habitat-app.bin",
           "offset": 65536
         }
       ]

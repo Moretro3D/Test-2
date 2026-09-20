@@ -856,6 +856,42 @@ void Pet::applyBattleLoss() {
   save();
 }
 
+bool Pet::isBoxFavorite(uint8_t list, int16_t dex) const {
+  if (list >= 2 || dex < 1 || dex > DEX_COUNT) return false;
+  for (uint8_t slot = 0; slot < 8; slot++)
+    if (boxFavorites[list][slot] == dex) return true;
+  return false;
+}
+
+uint8_t Pet::boxFavoriteCount(uint8_t list) const {
+  if (list >= 2) return 0;
+  uint8_t count = 0;
+  for (uint8_t slot = 0; slot < 8; slot++)
+    if (boxFavorites[list][slot] >= 1 && boxFavorites[list][slot] <= DEX_COUNT) count++;
+  return count;
+}
+
+int16_t Pet::boxFavoriteAt(uint8_t list, uint8_t slot) const {
+  if (list >= 2 || slot >= 8) return 0;
+  return boxFavorites[list][slot];
+}
+
+bool Pet::toggleBoxFavorite(uint8_t list, int16_t dex) {
+  if (list >= 2 || dex < 1 || dex > DEX_COUNT || !isCaught(dex)) return false;
+  for (uint8_t slot = 0; slot < 8; slot++) {
+    if (boxFavorites[list][slot] != dex) continue;
+    for (uint8_t i = slot; i < 7; i++) boxFavorites[list][i] = boxFavorites[list][i + 1];
+    boxFavorites[list][7] = 0;
+    save();
+    return true;
+  }
+  uint8_t count = boxFavoriteCount(list);
+  if (count >= 8) return false;
+  boxFavorites[list][count] = dex;
+  save();
+  return true;
+}
+
 void Pet::awardKantoBadge(uint8_t index) {
   if (index >= 8) return;
   uint8_t bit = (uint8_t)(1U << index);
@@ -1174,6 +1210,8 @@ void Pet::save() {
   prefs.putUChar("kbadge", kantoBadges);
   prefs.putUChar("cfrm", collectionFrame);
   prefs.putUChar("boxbg", boxBackground);
+  prefs.putBytes("boxfav1", boxFavorites[0], sizeof(boxFavorites[0]));
+  prefs.putBytes("boxfav2", boxFavorites[1], sizeof(boxFavorites[1]));
   prefs.putUInt("pimin", lastPetInteractMinute);
   prefs.putUChar("dxrew", dexRewardMask);
   prefs.putUInt("dgday", dailyGoalDay);
@@ -1260,6 +1298,23 @@ void Pet::load() {
   if (collectionFrame >= unlockedCollectionFrameCount()) collectionFrame = 0;
   boxBackground = prefs.getUChar("boxbg", 0);
   if (boxBackground >= 16) boxBackground = 0;
+  memset(boxFavorites, 0, sizeof(boxFavorites));
+  prefs.getBytes("boxfav1", boxFavorites[0], sizeof(boxFavorites[0]));
+  prefs.getBytes("boxfav2", boxFavorites[1], sizeof(boxFavorites[1]));
+  // Nettoie les anciennes valeurs invalides et compacte chaque liste sans
+  // toucher aux captures. Une sauvegarde antérieure obtient deux listes vides.
+  for (uint8_t list = 0; list < 2; list++) {
+    int16_t clean[8] = {0};
+    uint8_t used = 0;
+    for (uint8_t slot = 0; slot < 8; slot++) {
+      int16_t dex = boxFavorites[list][slot];
+      if (dex < 1 || dex > DEX_COUNT || !isCaught(dex)) continue;
+      bool duplicate = false;
+      for (uint8_t i = 0; i < used; i++) if (clean[i] == dex) duplicate = true;
+      if (!duplicate) clean[used++] = dex;
+    }
+    memcpy(boxFavorites[list], clean, sizeof(clean));
+  }
   lastPetInteractMinute = prefs.getUInt("pimin", 0);
   dexRewardMask = prefs.getUChar("dxrew", 0);
   dailyGoalDay = prefs.getUInt("dgday", 0);
