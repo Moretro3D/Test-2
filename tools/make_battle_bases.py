@@ -22,6 +22,12 @@ SETS = [
     ("NEIGE",   5, 1, 1),
 ]
 
+def flat_pixels(image):
+    """Compatibilité Pillow actuelle et future, sans avertissement getdata()."""
+    if hasattr(image, "get_flattened_data"):
+        return image.get_flattened_data()
+    return image.getdata()
+
 def rgb565(rgb):
     r, g, b = rgb
     return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3)
@@ -33,7 +39,7 @@ def crop_base(sheet, box):
     # Ne retire que le fond relié aux bords. Certaines bases utilisent elles-mêmes
     # du blanc ou du mauve clair : les supprimer partout produisait une palette vide.
     width, height = part.size
-    source = list(part.getdata())
+    source = list(flat_pixels(part))
     transparent = set()
     pending = []
     for x in range(width):
@@ -68,7 +74,7 @@ def encode(image):
     colors = []
     lookup = {}
     values = []
-    for r, g, b, a in image.getdata():
+    for r, g, b, a in flat_pixels(image):
         if not a:
             values.append(255)
             continue
@@ -133,7 +139,7 @@ for name, player_row, enemy_col, enemy_row in SETS:
         "enemy_bbox": list(enemy_layer.getbbox() or ()),
         "player_sha1": hashlib.sha1(player_layer.tobytes()).hexdigest(),
         "enemy_sha1": hashlib.sha1(enemy_layer.tobytes()).hexdigest(),
-        "enemy_bottom_pixels": sum(1 for px in enemy_layer.crop((0,47,256,48)).getdata() if px[3]),
+        "enemy_bottom_pixels": sum(1 for px in flat_pixels(enemy_layer.crop((0,47,256,48))) if px[3]),
     })
 
 AUDIT_DATA.write_text(json.dumps(audit, indent=2), encoding="utf-8")

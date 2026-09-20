@@ -390,8 +390,9 @@ ok('#include "battle_bases.h"' in ino and
    "sol de chaque Pokemon choisi independamment selon ses types")
 ok("paste_on_fixed_baseline(scene, enemy, 128, 48)" in (ROOT/"tools/make_battle_bases.py").read_text(encoding="utf-8") and
    'player_baseline = 112 if name == "ROCHE" else 108' in (ROOT/"tools/make_battle_bases.py").read_text(encoding="utf-8") and
-   "paste_on_fixed_baseline(scene, player, 0, player_baseline)" in (ROOT/"tools/make_battle_bases.py").read_text(encoding="utf-8"),
-   "sols joueur et adversaire verrouilles sur une ligne de base fixe")
+   "paste_on_fixed_baseline(scene, player, 0, player_baseline)" in (ROOT/"tools/make_battle_bases.py").read_text(encoding="utf-8") and
+   'expected_player_bottom = 112 if item["style"] == "ROCHE" else 108' in (ROOT/"tools/audit_battle_grounds.py").read_text(encoding="utf-8"),
+   "sols verrouilles, roche joueur seule descendue contre la separation")
 ground_generator=(ROOT/"tools/make_battle_bases.py").read_text(encoding="utf-8")
 ok('("HERBE",   0, 0, 0)' in ground_generator and
    '("EAU",     1, 1, 0)' in ground_generator and
