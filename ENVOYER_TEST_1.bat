@@ -1,6 +1,6 @@
 @echo off
 setlocal EnableExtensions
-title PokeTama V10.35 - Deploiement officiel Test-1
+title PokeTama V10.36 - Deploiement officiel Test-1
 cd /d "%~dp0"
 
 echo PokeTama V10 - deploiement officiel vers Moretro3D/Test-1
@@ -27,11 +27,11 @@ if errorlevel 1 goto :connexion
 git -c safe.directory="%CD%" reset --mixed origin/main
 if errorlevel 1 goto :connexion
 
-echo Preparation de la version officielle V10.35...
+echo Preparation de la version officielle V10.36...
 git -c safe.directory="%CD%" add -A
 git -c safe.directory="%CD%" diff --cached --quiet
 if errorlevel 1 (
-  git -c safe.directory="%CD%" commit -m "PokeTama V10.35 - sprites popup Boite proportionnels"
+  git -c safe.directory="%CD%" commit -m "PokeTama V10.36 - vrais sprites PMD dans le popup Boite"
   if errorlevel 1 goto :connexion
 )
 

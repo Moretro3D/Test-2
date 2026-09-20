@@ -39,7 +39,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.46.114-moretro3d-v10.35-box-popup-sprites"
+#define FW_VERSION "1.46.115-moretro3d-v10.36-box-pmd-sprites"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -1265,6 +1265,7 @@ void onTap(int16_t x, int16_t y) {
           } else sfxPlay(SFX_DENY);
         } else if(x>=82 && x<=226 && y>=302 && y<=346) {
           boxSelectionDex=0;
+          galleryPmd.unload();
           cardDirty=true;
           sfxPlay(SFX_TAP);
         } else if(x>=240 && x<=384 && y>=302 && y<=346) {
@@ -1272,6 +1273,7 @@ void onTap(int16_t x, int16_t y) {
           if(dex==pet.speciesId || pet.switchToCaught(dex)) {
             sdDirty=true;
             boxSelectionDex=0;
+            galleryPmd.unload();
             cardDirty=true;
             sfxPlay(dex==pet.speciesId?SFX_TAP:SFX_CATCH_OK);
           } else sfxPlay(SFX_DENY);
@@ -1307,6 +1309,8 @@ void onTap(int16_t x, int16_t y) {
           int16_t dex = boxDisplayedDexAt((uint16_t)boxPage * 8 + row * 4 + col);
           if (dex > 0) {
             boxSelectionDex=dex;
+            galleryPmd.unload();
+            galleryPmd.load(dex,pet.isShinyRegistered(dex));
             cardDirty=true;
             sfxPlay(SFX_MENU);
             lockTouchBrief();
@@ -1803,6 +1807,39 @@ void drawBoxSelectionThumbCentered(const uint8_t *b, int cx, int cy) {
     if (idx==0xFF || idx>=n) continue;
     uint16_t color=(uint16_t)pal[idx*2] | ((uint16_t)pal[idx*2+1]<<8);
     gfx->fillRect(x0+x*scale,y0+y*scale,scale,scale,color);
+  }
+}
+
+// Sprite PMD complet du popup de Boîte. Le cadre visible est recadré avant un
+// redimensionnement nearest-neighbour continu : largeur et hauteur utilisent
+// toujours le même ratio, donc aucune espèce ne peut être écrasée.
+void drawBoxSelectionPmd(PmdMon &m, int cx, int groundY) {
+  const PmdAct &a=m.acts[PMD_IDLE];
+  if (!a.frames) return;
+  const uint8_t *fr=a.data;
+  int minC=a.w, maxC=-1, minR=a.h, maxR=-1;
+  for (int r=0;r<a.h;r++) for (int c=0;c<a.w;c++) {
+    if (fr[r*a.w+c]==0xFF) continue;
+    minC=min(minC,c); maxC=max(maxC,c);
+    minR=min(minR,r); maxR=max(maxR,r);
+  }
+  if (maxC<minC || maxR<minR) return;
+  int visibleW=maxC-minC+1, visibleH=maxR-minR+1;
+  int drawW=144;
+  int drawH=max(1,visibleH*drawW/visibleW);
+  if (drawH>108) {
+    drawH=108;
+    drawW=max(1,visibleW*drawH/visibleH);
+  }
+  int x0=cx-drawW/2, y0=groundY-drawH;
+  for (int dy=0;dy<drawH;dy++) {
+    int r=minR+(int)((uint32_t)dy*visibleH/drawH);
+    const uint8_t *row=fr+r*a.w;
+    for (int dx=0;dx<drawW;dx++) {
+      int c=minC+(int)((uint32_t)dx*visibleW/drawW);
+      uint8_t idx=row[c];
+      if (idx!=0xFF) gfx->drawPixel(x0+dx,y0+dy,m.pal[idx]);
+    }
   }
 }
 
@@ -5292,8 +5329,11 @@ void renderCardBox() {
     const char *name=dexName(boxSelectionDex);
     gfx->setTextColor(UI_WHITE); gfx->setTextSize(3);
     gfx->setCursor(CX-(int)strlen(name)*9,94); gfx->print(name);
-    const uint8_t *thumb=thumbs.get(boxSelectionDex);
-    if(thumb) drawBoxSelectionThumbCentered(thumb,CX,194);
+    if(galleryPmd.loaded) drawBoxSelectionPmd(galleryPmd,CX,244);
+    else {
+      const uint8_t *thumb=thumbs.get(boxSelectionDex);
+      if(thumb) drawBoxSelectionThumbCentered(thumb,CX,194);
+    }
 
     uint16_t f1=pet.isBoxFavorite(0,boxSelectionDex)?UI_BAR_WARN:UI_TRACK;
     uint16_t f2=pet.isBoxFavorite(1,boxSelectionDex)?UI_BAR_WARN:UI_TRACK;
