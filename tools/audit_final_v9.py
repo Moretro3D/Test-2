@@ -300,6 +300,10 @@ ok((ROOT/"assets/home_habitat_mountain_v10_31.png").exists() and
    'MOUNTAIN_SOURCE = ROOT / "assets" / "home_habitat_mountain_v10_31.png"' in (ROOT/"tools/generate_home_habitat_sprites.py").read_text(encoding="utf-8") and
    "if row == 1 and col == 1 and MOUNTAIN_SOURCE.exists()" in (ROOT/"tools/generate_home_habitat_sprites.py").read_text(encoding="utf-8"),
    "plateforme rocheuse integree directement au pixel art montagne")
+ok((ROOT/"assets/battle_rock_custom_v10_31.png").exists() and
+   'ROCK_SOURCE = ROOT / "assets" / "battle_rock_custom_v10_31.png"' in (ROOT/"tools/make_battle_bases.py").read_text(encoding="utf-8") and
+   'if name == "ROCHE" and ROCK_SOURCE.exists()' in (ROOT/"tools/make_battle_bases.py").read_text(encoding="utf-8"),
+   "nouveaux pixel arts roche joueur et adversaire integres au combat")
 ok("void drawHomeGymPlatform(uint8_t biome, uint8_t phase)" in ino and
    "if (biome==1)" in ino and "else if (biome==4)" not in ino and
    "gfx->fillRoundRect(129,242,208,38,13,edge)" not in ino and

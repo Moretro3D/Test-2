@@ -11,6 +11,7 @@ OUTPUT = ROOT / "battle_bases.h"
 PREVIEW = ROOT / "assets" / "battle-bases-preview.png"
 FINAL_PREVIEW = ROOT / "assets" / "battle-combat-final-preview.png"
 AUDIT_DATA = ROOT / "assets" / "battle-bases-audit.json"
+ROCK_SOURCE = ROOT / "assets" / "battle_rock_custom_v10_31.png"
 
 # biome: (nom, rangée grande base joueur, colonne/rangée petite base adverse)
 SETS = [
@@ -107,15 +108,35 @@ layers = []
 audit = []
 for name, player_row, enemy_col, enemy_row in SETS:
     scene = Image.new("RGBA", (256, 112), (0, 0, 0, 0))
-    player = crop_base(sheet, (8, 8 + player_row * 48, 264, 48 + player_row * 48))
-    # Le premier plan original fait 256 px de large. Réduit à 176 px pour
-    # rester élégant dans le cercle sans traverser tout l'écran.
-    player = player.resize((176, 40), Image.Resampling.NEAREST)
-    enemy_x = 272 + enemy_col * 136
-    # La grille adverse commence à Y=16 et a un pas vertical réel de 72 px.
-    # Une autre valeur coupe l'ovale ou prélève un décor dans la rangée voisine.
-    enemy_y = 16 + enemy_row * 72
-    enemy = crop_base(sheet, (enemy_x, enemy_y, enemy_x + 128, enemy_y + 48))
+    if name == "ROCHE" and ROCK_SOURCE.exists():
+        custom = Image.open(ROCK_SOURCE).convert("RGBA").resize((256, 112), Image.Resampling.NEAREST)
+        alpha = custom.getchannel("A").point(lambda value: 255 if value >= 96 else 0)
+        rgb = Image.new("RGB", custom.size, (0, 0, 0))
+        rgb.paste(custom.convert("RGB"), mask=alpha)
+        custom = rgb.quantize(colors=31, method=Image.Quantize.MEDIANCUT,
+                              dither=Image.Dither.NONE).convert("RGBA")
+        custom.putalpha(alpha)
+        upper = custom.crop((0, 0, 256, 56))
+        lower = custom.crop((0, 56, 256, 112))
+        upper_box, lower_box = upper.getbbox(), lower.getbbox()
+        if not upper_box or not lower_box:
+            raise SystemExit("Plateformes roche personnalisées incomplètes")
+        enemy_art = upper.crop(upper_box).resize((120, 40), Image.Resampling.NEAREST)
+        player_art = lower.crop(lower_box).resize((168, 36), Image.Resampling.NEAREST)
+        enemy = Image.new("RGBA", (128, 48), (0, 0, 0, 0))
+        player = Image.new("RGBA", (176, 40), (0, 0, 0, 0))
+        enemy.alpha_composite(enemy_art, (4, 4))
+        player.alpha_composite(player_art, (4, 2))
+    else:
+        player = crop_base(sheet, (8, 8 + player_row * 48, 264, 48 + player_row * 48))
+        # Le premier plan original fait 256 px de large. Réduit à 176 px pour
+        # rester élégant dans le cercle sans traverser tout l'écran.
+        player = player.resize((176, 40), Image.Resampling.NEAREST)
+        enemy_x = 272 + enemy_col * 136
+        # La grille adverse commence à Y=16 et a un pas vertical réel de 72 px.
+        # Une autre valeur coupe l'ovale ou prélève un décor dans la rangée voisine.
+        enemy_y = 16 + enemy_row * 72
+        enemy = crop_base(sheet, (enemy_x, enemy_y, enemy_x + 128, enemy_y + 48))
     enemy_source_bbox = enemy.getbbox()
     paste_on_fixed_baseline(scene, enemy, 128, 48)
     player_baseline = 112 if name == "ROCHE" else 108

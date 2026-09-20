@@ -113,26 +113,26 @@
     "enemy_col": 0,
     "enemy_row": 1,
     "enemy_source_bbox": [
-      1,
-      8,
-      127,
-      40
+      4,
+      4,
+      124,
+      44
     ],
     "player_bbox": [
-      15,
-      72,
-      161,
+      4,
+      76,
+      172,
       112
     ],
     "enemy_bbox": [
-      129,
-      16,
-      255,
+      132,
+      8,
+      252,
       48
     ],
-    "player_sha1": "8ea4791342db72299446dbf7e71a8ebf2f013e97",
-    "enemy_sha1": "bc4635621d5a73e7f87e5b372a1519a1041d9b73",
-    "enemy_bottom_pixels": 44
+    "player_sha1": "f225e41bc6a0879f477f8d29ded2e83af5db2455",
+    "enemy_sha1": "3e4561f65940c6c44e13218c0c51fe89d7fd0894",
+    "enemy_bottom_pixels": 37
   },
   {
     "style": "NEIGE",
