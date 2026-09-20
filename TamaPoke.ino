@@ -38,7 +38,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.46.109-moretro3d-v10.30-native-rock-ground"
+#define FW_VERSION "1.46.110-moretro3d-v10.31-rock-platform-art"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 

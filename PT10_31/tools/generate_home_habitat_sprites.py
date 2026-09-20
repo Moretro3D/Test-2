@@ -6,6 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "assets" / "home_habitats_v10_19_concept.png"
 WATER_SOURCE = ROOT / "assets" / "home_habitat_water_v10_23.png"
 FOREST_SOURCE = ROOT / "assets" / "home_habitat_forest_v10_24.png"
+MOUNTAIN_SOURCE = ROOT / "assets" / "home_habitat_mountain_v10_31.png"
 HEADER = ROOT / "home_habitat_sprites.h"
 OUT_DIR = ROOT / "assets" / "home_habitats_v10_19"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -44,6 +45,8 @@ for row in range(2):
             tile = Image.open(WATER_SOURCE).convert("RGBA")
         if row == 0 and col == 2 and FOREST_SOURCE.exists():
             tile = Image.open(FOREST_SOURCE).convert("RGBA")
+        if row == 1 and col == 1 and MOUNTAIN_SOURCE.exists():
+            tile = Image.open(MOUNTAIN_SOURCE).convert("RGBA")
         bbox = visible_bbox(tile)
         if not bbox:
             raise SystemExit(f"empty habitat tile {row},{col}")

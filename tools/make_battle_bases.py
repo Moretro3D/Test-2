@@ -118,11 +118,12 @@ for name, player_row, enemy_col, enemy_row in SETS:
     enemy = crop_base(sheet, (enemy_x, enemy_y, enemy_x + 128, enemy_y + 48))
     enemy_source_bbox = enemy.getbbox()
     paste_on_fixed_baseline(scene, enemy, 128, 48)
-    paste_on_fixed_baseline(scene, player, 0, 108)
+    player_baseline = 112 if name == "ROCHE" else 108
+    paste_on_fixed_baseline(scene, player, 0, player_baseline)
     scenes.append((name, scene, *encode(scene)))
     player_layer=Image.new("RGBA",(256,112),(0,0,0,0))
     enemy_layer=Image.new("RGBA",(256,112),(0,0,0,0))
-    paste_on_fixed_baseline(player_layer,player,0,108)
+    paste_on_fixed_baseline(player_layer,player,0,player_baseline)
     paste_on_fixed_baseline(enemy_layer,enemy,128,48)
     layers.append((name,player_layer,enemy_layer))
     audit.append({

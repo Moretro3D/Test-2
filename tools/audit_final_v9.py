@@ -18,12 +18,12 @@ def ok(cond,msg):
         raise SystemExit("FAIL V9: "+msg)
     print("OK  ",msg)
 
-ok("1.46.109-moretro3d-v10.30-native-rock-ground" in ino and
-   "1.46.109-moretro3d-v10.30-native-rock-ground" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
-   "1.46.109-moretro3d-v10.30-native-rock-ground" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "1.46.109-moretro3d-v10.30-native-rock-ground" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
-   "1.46.109-moretro3d-v10.30-native-rock-ground" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
-   "version 1.46.109 coherente et caches installateur invalides")
+ok("1.46.110-moretro3d-v10.31-rock-platform-art" in ino and
+   "1.46.110-moretro3d-v10.31-rock-platform-art" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.46.110-moretro3d-v10.31-rock-platform-art" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.46.110-moretro3d-v10.31-rock-platform-art" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   "1.46.110-moretro3d-v10.31-rock-platform-art" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.46.110 coherente et caches installateur invalides")
 ok('gfx->setCursor(CX - 18, 366); gfx->print("V10")' in ino and
    '<div class="version">Firmware V10</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    '<div class="version">Firmware V10</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
@@ -37,7 +37,7 @@ ok("github.repository == 'Moretro3D/Test-2'" in workflow and
    "! grep -q 'location.replace' web/index.html" in workflow,
    "Test-2 affiche son Web Flasher sans redirection Shopify")
 test2_launcher=(ROOT/"OUVRIR_WEB_FLASHER_TEST_2.bat").read_text(encoding="utf-8")
-ok("https://moretro3d.github.io/Test-2/?v=1.46.109-moretro3d-v10.30-native-rock-ground" in test2_launcher,
+ok("https://moretro3d.github.io/Test-2/?v=1.46.110-moretro3d-v10.31-rock-platform-art" in test2_launcher,
    "lanceur direct Test-2 avec contournement du cache")
 scene=ino[ino.index("void drawScene("):ino.index("void drawStarterPokeball(")]
 ok("HORIZON-38" not in scene and "uint16_t sea=" not in scene and
@@ -296,6 +296,10 @@ ok('#include "home_habitat_sprites.h"' in ino and
    all((ROOT/"assets/home_habitats_v10_19"/f"{name}.png").exists()
        for name in ("meadow","water","forest","volcano","mountain","snow")),
    "six sols pixel art detailles integres sur l'accueil selon le biome")
+ok((ROOT/"assets/home_habitat_mountain_v10_31.png").exists() and
+   'MOUNTAIN_SOURCE = ROOT / "assets" / "home_habitat_mountain_v10_31.png"' in (ROOT/"tools/generate_home_habitat_sprites.py").read_text(encoding="utf-8") and
+   "if row == 1 and col == 1 and MOUNTAIN_SOURCE.exists()" in (ROOT/"tools/generate_home_habitat_sprites.py").read_text(encoding="utf-8"),
+   "plateforme rocheuse integree directement au pixel art montagne")
 ok("void drawHomeGymPlatform(uint8_t biome, uint8_t phase)" in ino and
    "if (biome==1)" in ino and "else if (biome==4)" not in ino and
    "gfx->fillRoundRect(129,242,208,38,13,edge)" not in ino and
@@ -389,9 +393,10 @@ ok('#include "battle_bases.h"' in ino and
    "gfx->fillRect(-23+sx*2,102+sy*2,take*2,2,color)" in ino,
    "sol de chaque Pokemon choisi independamment selon ses types")
 ok("paste_on_fixed_baseline(scene, enemy, 128, 48)" in (ROOT/"tools/make_battle_bases.py").read_text(encoding="utf-8") and
-   "paste_on_fixed_baseline(scene, player, 0, 108)" in (ROOT/"tools/make_battle_bases.py").read_text(encoding="utf-8") and
-   'if pb[3] != 108 or eb[3] != 48' in (ROOT/"tools/audit_battle_grounds.py").read_text(encoding="utf-8"),
-   "six sols joueur a Y108 et six sols adverses a Y48")
+   'player_baseline = 112 if name == "ROCHE" else 108' in (ROOT/"tools/make_battle_bases.py").read_text(encoding="utf-8") and
+   "paste_on_fixed_baseline(scene, player, 0, player_baseline)" in (ROOT/"tools/make_battle_bases.py").read_text(encoding="utf-8") and
+   'expected_player_bottom = 112 if item["style"] == "ROCHE" else 108' in (ROOT/"tools/audit_battle_grounds.py").read_text(encoding="utf-8"),
+   "cinq sols joueur a Y108, roche a Y112 et adversaires a Y48")
 ground_generator=(ROOT/"tools/make_battle_bases.py").read_text(encoding="utf-8")
 ok('("HERBE",   0, 0, 0)' in ground_generator and
    '("EAU",     1, 1, 0)' in ground_generator and
