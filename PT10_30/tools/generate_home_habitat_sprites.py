@@ -29,6 +29,11 @@ def rgb565(c):
     r, g, b = c
     return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3)
 
+def flat_pixels(image):
+    if hasattr(image, "get_flattened_data"):
+        return image.get_flattened_data()
+    return image.getdata()
+
 packed = []
 for row in range(2):
     for col in range(3):
@@ -56,8 +61,8 @@ for row in range(2):
         quant = rgb.quantize(colors=31, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
         pal_raw = quant.getpalette()[: 31 * 3]
         palette = [(0, 0, 0)] + [tuple(pal_raw[i:i + 3]) for i in range(0, len(pal_raw), 3)]
-        indices = [v + 1 for v in quant.getdata()]
-        resized_alpha = list(bg.getchannel("A").getdata())
+        indices = [v + 1 for v in flat_pixels(quant)]
+        resized_alpha = list(flat_pixels(bg.getchannel("A")))
         for i, alpha_value in enumerate(resized_alpha):
             if alpha_value < 96:
                 indices[i] = 0

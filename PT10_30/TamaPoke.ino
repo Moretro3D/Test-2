@@ -38,7 +38,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.46.108-moretro3d-v10.29-rock-anchor"
+#define FW_VERSION "1.46.109-moretro3d-v10.30-native-rock-ground"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -1673,15 +1673,6 @@ void drawHomeGymPlatform(uint8_t biome, uint8_t phase) {
     gfx->fillRect(147,239,172,5,light);
     for (int x=147;x<=307;x+=20)
       gfx->fillTriangle(x,243,x+5,233,x+10,243,light);
-  } else if (biome==4) {
-    uint16_t edge=(phase==3)?C565(0x20,0x25,0x35):C565(0x45,0x4b,0x58);
-    uint16_t rock=(phase==3)?C565(0x3c,0x43,0x55):C565(0x78,0x7f,0x88);
-    uint16_t light=(phase==3)?C565(0x58,0x60,0x72):C565(0xa9,0xae,0xb3);
-    gfx->fillRoundRect(129,242,208,38,13,edge);
-    gfx->fillRoundRect(135,237,196,34,11,rock);
-    gfx->fillTriangle(145,254,168,232,192,254,light);
-    gfx->fillTriangle(274,254,297,233,321,254,light);
-    gfx->fillRect(184,243,98,16,rock);
   }
 }
 

@@ -22,8 +22,7 @@ for item, wanted in zip(data, expected):
     pb, eb = item["player_bbox"], item["enemy_bbox"]
     if not pb or not eb:
         raise SystemExit(f"FAIL SOLS: {item['style']} contient une plateforme vide")
-    expected_player_bottom = 112 if item["style"] == "ROCHE" else 108
-    if pb[3] != expected_player_bottom or eb[3] != 48:
+    if pb[3] != 108 or eb[3] != 48:
         raise SystemExit(f"FAIL SOLS: {item['style']} bouge verticalement joueur={pb} adverse={eb}")
     source = item["enemy_source_bbox"]
     if source[0] <= 0 or source[1] <= 0 or source[2] >= 128 or source[3] >= 48:
@@ -34,6 +33,6 @@ if len({x["player_sha1"] for x in data}) != 6 or len({x["enemy_sha1"] for x in d
     raise SystemExit("FAIL SOLS: deux biomes utilisent encore le même visuel")
 print("AUDIT SOLS OK")
 print(" - herbe, eau, sable, volcan, roche et neige distincts")
-print(" - plateformes joueur alignées sur Y=108, roche descendue seule sur Y=112")
+print(" - plateformes joueur alignées sur Y=108")
 print(" - plateformes adverses complètes alignées sur Y=48")
 print(" - six ovales adverses fermes, sans bord rogne")
