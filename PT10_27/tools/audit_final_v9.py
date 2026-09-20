@@ -18,12 +18,12 @@ def ok(cond,msg):
         raise SystemExit("FAIL V9: "+msg)
     print("OK  ",msg)
 
-ok("1.46.105-moretro3d-v10.26-grounded-gym" in ino and
-   "1.46.105-moretro3d-v10.26-grounded-gym" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
-   "1.46.105-moretro3d-v10.26-grounded-gym" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "1.46.105-moretro3d-v10.26-grounded-gym" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
-   "1.46.105-moretro3d-v10.26-grounded-gym" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
-   "version 1.46.104 coherente et caches installateur invalides")
+ok("1.46.106-moretro3d-v10.27-foreground-gym" in ino and
+   "1.46.106-moretro3d-v10.27-foreground-gym" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.46.106-moretro3d-v10.27-foreground-gym" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.46.106-moretro3d-v10.27-foreground-gym" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   "1.46.106-moretro3d-v10.27-foreground-gym" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.46.106 coherente et caches installateur invalides")
 ok('gfx->setCursor(CX - 18, 366); gfx->print("V10")' in ino and
    '<div class="version">Firmware V10</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    '<div class="version">Firmware V10</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
@@ -37,7 +37,7 @@ ok("github.repository == 'Moretro3D/Test-2'" in workflow and
    "! grep -q 'location.replace' web/index.html" in workflow,
    "Test-2 affiche son Web Flasher sans redirection Shopify")
 test2_launcher=(ROOT/"OUVRIR_WEB_FLASHER_TEST_2.bat").read_text(encoding="utf-8")
-ok("https://moretro3d.github.io/Test-2/?v=1.46.105-moretro3d-v10.26-grounded-gym" in test2_launcher,
+ok("https://moretro3d.github.io/Test-2/?v=1.46.106-moretro3d-v10.27-foreground-gym" in test2_launcher,
    "lanceur direct Test-2 avec contournement du cache")
 scene=ino[ino.index("void drawScene("):ino.index("void drawStarterPokeball(")]
 ok("HORIZON-38" not in scene and "uint16_t sea=" not in scene and
@@ -277,8 +277,8 @@ ok("void drawHomeGymCabin(uint8_t phase, uint8_t biome)" in ino and
    '#include "home_gym_sprite.h"' in ino and
    "HOME_GYM_PIXELS" in ino and "HOME_GYM_PALETTE" in ino and
    (ROOT/"home_gym_sprite.h").exists() and
-   "x >= 169 && x <= 297 && y >= 141 && y <= 257" in ino and
-   "const int16_t x0=169, y0=145" in ino and
+   "x >= 161 && x <= 305 && y >= 129 && y <= 265" in ino and
+   "const int16_t x0=161, y0=133" in ino and
    "const int x=318, y=132" in ino and
    "Toit rouge étagé, large et immédiatement lisible" in ino and
    "Grand emblème Poké Ball centré dans le fronton" in ino and
@@ -288,7 +288,7 @@ ok("void drawHomeGymCabin(uint8_t phase, uint8_t biome)" in ino and
 ok('#include "home_habitat_sprites.h"' in ino and
    "void drawHomeHabitatGround(uint8_t biome)" in ino and
    "drawHomeHabitatGround(b)" in ino and
-   "const int16_t x0=-17, y0=193" in ino and
+   "const int16_t x0=-17" in ino and "const int16_t y0=(b==3)?181:193" in ino and
    "gfx->fillRect(0,HORIZON,466,466-HORIZON,bot)" in ino and
    "if (color)" in ino and
    "HOME_HABITAT_PIXELS" in ino and "HOME_HABITAT_PALETTES" in ino and
@@ -296,6 +296,10 @@ ok('#include "home_habitat_sprites.h"' in ino and
    all((ROOT/"assets/home_habitats_v10_19"/f"{name}.png").exists()
        for name in ("meadow","water","forest","volcano","mountain","snow")),
    "six sols pixel art detailles integres sur l'accueil selon le biome")
+ok("void drawHomeGymPlatform(uint8_t biome, uint8_t phase)" in ino and
+   "if (biome!=1) return" in ino and
+   scene.index("drawHomeHabitatGround(b);") < scene.index("drawHomeGymPlatform(b,phase);") < scene.index("drawHomeGymCabin(phase,b);"),
+   "volcan releve, ilot herbeux aquatique et arene agrandie au premier plan")
 ok("STARTER_DEX[3][3]" in ino and "{ 252, 255, 258 }" in ino,
    "starters 1G, 2G et 3G presents")
 ok("#define SPRITE_AUDIT_BUILD 0" in ino and

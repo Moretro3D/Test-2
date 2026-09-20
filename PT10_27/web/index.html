@@ -3,13 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta http-equiv="refresh" content="0;url=https://moretro3d.fr/pages/poketama">
 <title>PokeTama Moretro3D - Installation</title>
+<script>location.replace("https://moretro3d.fr/pages/poketama");</script>
 <style>
   :root { --bg:#f2efe1; --ink:#2a2a36; --accent:#4f93c4; --ok:#58b868; --bad:#e8503a; --track:#d8d2bd; }
   * { box-sizing: border-box; }
   body { margin:0; font-family: system-ui, -apple-system, sans-serif; background:var(--bg);
          color:var(--ink); line-height:1.6; }
-  .wrap { max-width: 680px; margin: 0 auto; padding: 2rem 1.25rem 1rem; }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
   h1 { font-size: 2rem; margin: 0 0 .25rem; }
   h2 { font-size: 1.25rem; margin: 2.5rem 0 .5rem; }
   .sub { color:#6b6b76; margin: 0 0 1.5rem; }
@@ -37,7 +40,9 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="embed-toolbar"><nav class="languages" aria-label="Choix de la langue">
+  <header class="topbar">
+    <div class="brand"><img src="moretro3d-logo.png" alt="Logo MoRetro3D"><span>MoRetro3D</span></div>
+    <div class="header-actions"><nav class="languages" aria-label="Choix de la langue">
       <button type="button" class="lang" data-lang="fr" title="Français" aria-label="Français"><img src="flags/fr.svg" alt="France" draggable="false"></button>
       <button type="button" class="lang" data-lang="en" title="English" aria-label="English"><img src="flags/gb.svg" alt="United Kingdom" draggable="false"></button>
       <button type="button" class="lang" data-lang="es" title="Español" aria-label="Español"><img src="flags/es.svg" alt="España" draggable="false"></button>
@@ -45,7 +50,9 @@
       <button type="button" class="lang" data-lang="it" title="Italiano" aria-label="Italiano"><img src="flags/it.svg" alt="Italia" draggable="false"></button>
       <button type="button" class="lang" data-lang="pt" title="Português" aria-label="Português"><img src="flags/pt.svg" alt="Portugal" draggable="false"></button>
     </nav><div class="version">Firmware V10</div></div>
-<section class="hero">
+  </header>
+
+  <section class="hero">
     <div>
       <div class="eyebrow" data-i18n="eyebrow">Compagnon Pokémon de poche</div>
       <h1>PokeTama<br><span class="gradient">Moretro3D</span></h1>
@@ -64,7 +71,7 @@
   <section class="step">
     <div class="step-head"><span class="num">1</span><h2 data-i18n="firmwareTitle">Installer le firmware</h2></div>
     <p data-i18n="firmwareDesc">Branche le PokeTama en USB-C, clique sur Installer, sélectionne son port puis attends la fin.</p>
-    <esp-web-install-button manifest="https://moretro3d.github.io/Test-1/manifest.json?v=1.46.105-moretro3d-v10.26-grounded-gym">
+    <esp-web-install-button manifest="manifest.json?v=1.46.106-moretro3d-v10.27-foreground-gym">
       <button slot="activate" data-i18n="installButton">Installer le firmware Moretro3D</button>
       <span slot="unsupported" data-i18n="browserBad">Navigateur non compatible : utilise Chrome ou Edge.</span>
       <span slot="not-allowed" data-i18n="https">La connexion HTTPS est requise.</span>
@@ -92,7 +99,10 @@
     <div class="info"><strong data-i18n="firstTitle">Premier démarrage</strong><p data-i18n="firstDesc">Choisis la langue, la génération 1, 2 ou 3, puis ton Pokémon de départ.</p></div>
     <div class="info"><strong data-i18n="safeTitle">Mise à jour sûre</strong><p data-i18n="safeDesc">Ta sauvegarde reste intacte avec une installation sans effacement.</p></div>
     <div class="info"><strong data-i18n="compatibleTitle">Navigateur compatible</strong><p data-i18n="compatibleDesc">Utilise Chrome ou Edge sur ordinateur avec un câble USB de données.</p></div>
-  </div></div>
+  </div>
+
+  <footer><span data-i18n="footer1">Projet communautaire gratuit et non commercial par MoRetro3D.</span><span data-i18n="footer2">Pokémon appartient à Nintendo, Game Freak et The Pokémon Company. Sprites : PMD SpriteCollab.</span></footer>
+</div>
 
 <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 <script src="configurator.js?v=9.47" defer></script>
@@ -278,16 +288,5 @@ document.getElementById('auto').onclick = async () => {
 };
 
 </script>
-<script>
-(function(){
-  function sendHeight(){
-    var wrap=document.querySelector('.wrap');
-    var h=wrap ? Math.ceil(wrap.getBoundingClientRect().bottom) : document.body.scrollHeight;
-    parent.postMessage({type:'poketama-shopify-height',height:h},'*');
-  }
-  addEventListener('load',sendHeight);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(sendHeight);
-  setTimeout(sendHeight,250); setTimeout(sendHeight,1000);
-})();
-</script></body>
+</body>
 </html>

@@ -38,7 +38,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.46.105-moretro3d-v10.26-grounded-gym"
+#define FW_VERSION "1.46.106-moretro3d-v10.27-foreground-gym"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -1422,7 +1422,7 @@ void onTap(int16_t x, int16_t y) {
     return;
   }
   // Raccourci permanent : toucher la cabane du décor ouvre les arènes.
-  if (x >= 169 && x <= 297 && y >= 141 && y <= 257) {
+  if (x >= 161 && x <= 305 && y >= 129 && y <= 265) {
     cardOpen = true;
     cardPage = 9;
     kantoArenaDetail = -1;
@@ -1622,7 +1622,7 @@ void drawHomeGymCabinLegacy(uint8_t phase, uint8_t biome) {
 void drawHomeGymCabin(uint8_t phase, uint8_t biome) {
   (void)phase;
   (void)biome;
-  const int16_t x0=169, y0=145;
+  const int16_t x0=161, y0=133;
   for (uint8_t y=0; y<HOME_GYM_H; y++) {
     uint8_t x=0;
     while (x<HOME_GYM_W) {
@@ -1644,7 +1644,8 @@ void drawHomeHabitatGround(uint8_t biome) {
   uint8_t b=biome<6?biome:0;
   const uint8_t *pixels=HOME_HABITAT_PIXELS[b];
   const uint16_t *palette=HOME_HABITAT_PALETTES[b];
-  const int16_t x0=-17, y0=193;
+  const int16_t x0=-17;
+  const int16_t y0=(b==3)?181:193;
   for (uint8_t y=0; y<HOME_HABITAT_H; y++) {
     uint8_t x=0;
     while (x<HOME_HABITAT_W) {
@@ -1658,6 +1659,20 @@ void drawHomeHabitatGround(uint8_t biome) {
       }
     }
   }
+}
+
+// Sur le décor aquatique, l'arène repose sur un petit îlot herbeux plutôt
+// que directement dans le lac. La forme reste volontairement pixelisée.
+void drawHomeGymPlatform(uint8_t biome, uint8_t phase) {
+  if (biome!=1) return;
+  uint16_t edge=(phase==3)?C565(0x16,0x35,0x2c):C565(0x28,0x62,0x35);
+  uint16_t grass=(phase==3)?C565(0x25,0x58,0x3b):C565(0x63,0xa8,0x42);
+  uint16_t light=(phase==3)?C565(0x36,0x70,0x47):C565(0x91,0xce,0x58);
+  gfx->fillRoundRect(137,239,192,36,16,edge);
+  gfx->fillRoundRect(141,235,184,34,15,grass);
+  gfx->fillRect(151,237,164,5,light);
+  for (int x=151;x<=311;x+=20)
+    gfx->fillTriangle(x,241,x+5,231,x+10,241,light);
 }
 
 void drawScene(uint8_t biome, uint32_t now, bool night) {
@@ -1716,10 +1731,11 @@ void drawScene(uint8_t biome, uint32_t now, bool night) {
   // reliefs. Le ciel dynamique reste seul derriere les nouveaux sols pixel-art.
   gfx->fillRect(0,HORIZON,466,466-HORIZON,bot);
 
-  // L'arène est centrée à l'arrière. Le sol est dessiné ensuite et recouvre
-  // légèrement son socle afin qu'elle paraisse réellement posée dans la scène.
-  drawHomeGymCabin(phase,b);
+  // Les sols restent au fond. L'îlot aquatique puis l'arène sont dessinés
+  // devant afin que la façade et les marches ne soient plus masquées.
   drawHomeHabitatGround(b);
+  drawHomeGymPlatform(b,phase);
+  drawHomeGymCabin(phase,b);
 }
 
 void drawStarterPokeball(int cx, int cy, int r) {
