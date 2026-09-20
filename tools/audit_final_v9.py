@@ -18,12 +18,12 @@ def ok(cond,msg):
         raise SystemExit("FAIL V9: "+msg)
     print("OK  ",msg)
 
-ok("1.46.112-moretro3d-v10.33-compact-player-grounds" in ino and
-   "1.46.112-moretro3d-v10.33-compact-player-grounds" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
-   "1.46.112-moretro3d-v10.33-compact-player-grounds" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "1.46.112-moretro3d-v10.33-compact-player-grounds" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
-   "1.46.112-moretro3d-v10.33-compact-player-grounds" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
-   "version 1.46.112 coherente et caches installateur invalides")
+ok("1.46.113-moretro3d-v10.34-box-visuals" in ino and
+   "1.46.113-moretro3d-v10.34-box-visuals" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.46.113-moretro3d-v10.34-box-visuals" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.46.113-moretro3d-v10.34-box-visuals" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   "1.46.113-moretro3d-v10.34-box-visuals" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.46.113 coherente et caches installateur invalides")
 ok('gfx->setCursor(CX - 18, 366); gfx->print("V10")' in ino and
    '<div class="version">Firmware V10</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    '<div class="version">Firmware V10</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
@@ -37,7 +37,7 @@ ok("github.repository == 'Moretro3D/Test-2'" in workflow and
    "! grep -q 'location.replace' web/index.html" in workflow,
    "Test-2 affiche son Web Flasher sans redirection Shopify")
 test2_launcher=(ROOT/"OUVRIR_WEB_FLASHER_TEST_2.bat").read_text(encoding="utf-8")
-ok("https://moretro3d.github.io/Test-2/?v=1.46.112-moretro3d-v10.33-compact-player-grounds" in test2_launcher,
+ok("https://moretro3d.github.io/Test-2/?v=1.46.113-moretro3d-v10.34-box-visuals" in test2_launcher,
    "lanceur direct Test-2 avec contournement du cache")
 scene=ino[ino.index("void drawScene("):ino.index("void drawStarterPokeball(")]
 ok("HORIZON-38" not in scene and "uint16_t sea=" not in scene and
@@ -239,6 +239,15 @@ ok("renderBoxBackgroundSettings" in ino and "boxBgPreview" in ino and
    "setBoxBackground(boxBgPreview)" in ino and
    "drawBoxBackgroundAsset(pet.boxBackground,-67,-20,4)" in ino,
    "selection, apercu, validation et affichage du fond de Boite")
+ok("void drawBoxThumbCentered(const uint8_t *b, int cx, int cy)" in ino and
+   "int scale=min(52/visibleW,52/visibleH);" in ino and
+   "if (thumb) drawBoxThumbCentered(thumb, x + 32, y + 32);" in ino,
+   "miniatures de Boite ajustees automatiquement sans rognage")
+ok("gfx->fillRoundRect(82,302,144,44,12,UI_TRACK);" in ino and
+   "gfx->fillRoundRect(240,302,144,44,12,UI_BAR_OK);" in ino and
+   "x>=82 && x<=226 && y>=302 && y<=346" in ino and
+   "x>=240 && x<=384 && y>=302 && y<=346" in ino,
+   "boutons Retour et S'occuper de taille et zones tactiles identiques")
 ok("pet.boxBackground=boxBgPreview" in ino and "cardDirty=true" in ino,
    "fond de Boite applique immediatement sans redemarrage")
 ok("Mode cover : 600x432" in ino and "-67,-20,4" in ino,

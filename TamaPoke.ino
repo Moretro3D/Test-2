@@ -39,7 +39,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.46.112-moretro3d-v10.33-compact-player-grounds"
+#define FW_VERSION "1.46.113-moretro3d-v10.34-box-visuals"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -1263,11 +1263,11 @@ void onTap(int16_t x, int16_t y) {
             cardDirty=true;
             sfxPlay(SFX_MENU);
           } else sfxPlay(SFX_DENY);
-        } else if(x>=68 && x<=220 && y>=302 && y<=352) {
+        } else if(x>=82 && x<=226 && y>=302 && y<=346) {
           boxSelectionDex=0;
           cardDirty=true;
           sfxPlay(SFX_TAP);
-        } else if(x>=222 && x<=398 && y>=302 && y<=352) {
+        } else if(x>=240 && x<=384 && y>=302 && y<=346) {
           int16_t dex=boxSelectionDex;
           if(dex==pet.speciesId || pet.switchToCaught(dex)) {
             sdDirty=true;
@@ -1775,6 +1775,34 @@ void drawStarterThumbCentered(const uint8_t *b, int16_t dex, int cx, int cy, int
       uint16_t color=(uint16_t)pal[idx*2] | ((uint16_t)pal[idx*2+1]<<8);
       gfx->fillRect(x0+x*scale,y0+y*scale,scale,scale,color);
     }
+  }
+}
+
+// Miniature dédiée à la Boîte : choisit automatiquement une échelle entière
+// qui remplit la vignette sans jamais rogner les grands Pokémon.
+void drawBoxThumbCentered(const uint8_t *b, int cx, int cy) {
+  if (!b) return;
+  uint8_t w=b[0], h=b[1], n=b[2];
+  const uint8_t *pal=b+3;
+  const uint8_t *data=pal+n*2;
+  int minX=w, minY=h, maxX=-1, maxY=-1;
+  for (uint8_t y=0; y<h; y++) for (uint8_t x=0; x<w; x++) {
+    if (data[(uint16_t)y*w+x] == 0xFF) continue;
+    minX=min(minX,(int)x); minY=min(minY,(int)y);
+    maxX=max(maxX,(int)x); maxY=max(maxY,(int)y);
+  }
+  if (maxX < minX || maxY < minY) return;
+  int visibleW=maxX-minX+1, visibleH=maxY-minY+1;
+  int scale=min(52/visibleW,52/visibleH);
+  scale=min(scale,3);
+  if (scale < 1) scale=1;
+  int x0=cx-visibleW*scale/2-minX*scale;
+  int y0=cy-visibleH*scale/2-minY*scale;
+  for (uint8_t y=0; y<h; y++) for (uint8_t x=0; x<w; x++) {
+    uint8_t idx=data[(uint16_t)y*w+x];
+    if (idx==0xFF || idx>=n) continue;
+    uint16_t color=(uint16_t)pal[idx*2] | ((uint16_t)pal[idx*2+1]<<8);
+    gfx->fillRect(x0+x*scale,y0+y*scale,scale,scale,color);
   }
 }
 
@@ -5213,7 +5241,7 @@ void renderCardBox() {
     gfx->fillRoundRect(x, y, 64, 64, 10, uiPanel());
     gfx->drawRoundRect(x, y, 64, 64, 10, d.accent);
     const uint8_t *thumb = thumbs.get(dex);
-    if (thumb) drawStarterThumbCentered(thumb, dex, x + 32, y + 31, 2);
+    if (thumb) drawBoxThumbCentered(thumb, x + 32, y + 32);
     if (pet.isShinyRegistered(dex)) {
       gfx->setTextColor(UI_BAR_WARN);
       gfx->setTextSize(1);
@@ -5277,15 +5305,15 @@ void renderCardBox() {
     gfx->setTextColor(uiContrastText(f2));
     gfx->setCursor(312-8*3,270); gfx->print("FAVORI 2");
 
-    gfx->fillRoundRect(78,302,134,44,12,UI_TRACK);
-    gfx->fillRoundRect(228,302,160,44,12,UI_BAR_OK);
+    gfx->fillRoundRect(82,302,144,44,12,UI_TRACK);
+    gfx->fillRoundRect(240,302,144,44,12,UI_BAR_OK);
     gfx->setTextSize(1);
     const char *back=T(S_LAN_BACK);
     gfx->setTextColor(uiContrastText(UI_TRACK));
-    gfx->setCursor(145-(int)strlen(back)*3,318); gfx->print(back);
+    gfx->setCursor(154-(int)strlen(back)*3,318); gfx->print(back);
     const char *care=T(S_CARE_ACTION);
     gfx->setTextColor(uiContrastText(UI_BAR_OK));
-    gfx->setCursor(308-(int)strlen(care)*3,318); gfx->print(care);
+    gfx->setCursor(312-(int)strlen(care)*3,318); gfx->print(care);
   }
 }
 
