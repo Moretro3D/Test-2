@@ -153,6 +153,9 @@ public:
   uint8_t kantoBadges = 0;
   uint8_t collectionFrame = 0;  // 0=Basis, weitere Rahmen ueber Dex-Meilensteine
   uint8_t boxBackground = 0;    // fond pixel-art sélectionné pour la Boîte (0..15)
+  // Deux équipes favorites globales. Les numéros Dex sont conservés dans des
+  // clés NVS séparées afin de ne jamais modifier les profils ni les captures.
+  int16_t boxFavorites[2][8] = {{0}};
   uint32_t lastPetInteractMinute = 0;
   uint8_t dexRewardMask = 0;
   uint32_t dailyGoalDay = 0;
@@ -290,6 +293,10 @@ public:
   uint8_t unlockedCollectionFrameCount() const;
   bool setCollectionFrame(uint8_t frame);
   bool setBoxBackground(uint8_t background);
+  bool toggleBoxFavorite(uint8_t list, int16_t dex);
+  bool isBoxFavorite(uint8_t list, int16_t dex) const;
+  uint8_t boxFavoriteCount(uint8_t list) const;
+  int16_t boxFavoriteAt(uint8_t list, uint8_t slot) const;
   void registerCaught(int16_t dex, bool caughtShiny = false);
   uint16_t nextDexGoal() const;
   uint16_t applyDexRewards();
