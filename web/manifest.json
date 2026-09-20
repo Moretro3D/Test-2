@@ -1,25 +1,25 @@
 {
-  "name": "PokeTama Moretro3D - V10.13 Correction Animation Capture",
-  "version": "1.46.92-moretro3d-v10.13-catch-timing-fix",
+  "name": "PokeTama Moretro3D - V10.25 Sols Plein Bord",
+  "version": "1.46.104-moretro3d-v10.25-full-bleed-habitats",
   "new_install_prompt_erase": true,
   "builds": [
     {
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/poketama-1.46.92-moretro3d-v10.13-catch-timing-fix-bootloader.bin",
+          "path": "firmware/poketama-1.46.104-moretro3d-v10.25-full-bleed-habitats-bootloader.bin",
           "offset": 0
         },
         {
-          "path": "firmware/poketama-1.46.92-moretro3d-v10.13-catch-timing-fix-partitions.bin",
+          "path": "firmware/poketama-1.46.104-moretro3d-v10.25-full-bleed-habitats-partitions.bin",
           "offset": 32768
         },
         {
-          "path": "firmware/poketama-1.46.92-moretro3d-v10.13-catch-timing-fix-boot_app0.bin",
+          "path": "firmware/poketama-1.46.104-moretro3d-v10.25-full-bleed-habitats-boot_app0.bin",
           "offset": 57344
         },
         {
-          "path": "firmware/poketama-1.46.92-moretro3d-v10.13-catch-timing-fix-app.bin",
+          "path": "firmware/poketama-1.46.104-moretro3d-v10.25-full-bleed-habitats-app.bin",
           "offset": 65536
         }
       ]
