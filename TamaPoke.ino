@@ -36,7 +36,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.46.92-moretro3d-v10.13-catch-timing-fix"
+#define FW_VERSION "1.46.95-moretro3d-v10.16-pokemon-gym-sprite"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -95,6 +95,7 @@ uint8_t cardPage = 0;         // 0 profil, 1 caractere, 2 quotidien, 3 boite, 4 
 uint8_t boxPage = 0;
 uint8_t boxSort = 0;          // 0 dex, 1 tipo, 2 criados primero
 int16_t boxSelectionDex = 0;  // popup de choix, sans quitter la Boite
+uint8_t boxFavoriteView = 0;  // 0=tous, 1=Favori 1, 2=Favori 2
 bool expeditionTrainChoiceOpen = false;
 bool clockOpen = false;       // pantalla de ajuste de hora (deslizar abajo)
 int clockH = 12, clockM = 0;  // hora en edicion
@@ -989,6 +990,7 @@ void handleTouch() {
 // deslizar vertical: abre/cierra la ficha del bicho
 void openClock();  // prototipo
 int16_t boxDexAt(uint16_t index);
+int16_t boxDisplayedDexAt(uint16_t index);
 uint8_t boxPageCount();
 uint8_t currentDayPhase();
 StrId dayPhaseTextId(uint8_t phase);
@@ -1248,11 +1250,21 @@ void onTap(int16_t x, int16_t y) {
     if (cardPage == 0 && y < 84) openKeyboard();  // tocar el nombre = renombrar
     else if (cardPage == 3) {
       if(boxSelectionDex>0) {
-        if(x>=68 && x<=220 && y>=292 && y<=356) {
+        if(y>=254 && y<=296 && x>=82 && x<=226) {
+          if(pet.toggleBoxFavorite(0,boxSelectionDex)) {
+            cardDirty=true;
+            sfxPlay(SFX_MENU);
+          } else sfxPlay(SFX_DENY);
+        } else if(y>=254 && y<=296 && x>=240 && x<=384) {
+          if(pet.toggleBoxFavorite(1,boxSelectionDex)) {
+            cardDirty=true;
+            sfxPlay(SFX_MENU);
+          } else sfxPlay(SFX_DENY);
+        } else if(x>=68 && x<=220 && y>=302 && y<=352) {
           boxSelectionDex=0;
           cardDirty=true;
           sfxPlay(SFX_TAP);
-        } else if(x>=222 && x<=398 && y>=292 && y<=356) {
+        } else if(x>=222 && x<=398 && y>=302 && y<=352) {
           int16_t dex=boxSelectionDex;
           if(dex==pet.speciesId || pet.switchToCaught(dex)) {
             sdDirty=true;
@@ -1262,10 +1274,24 @@ void onTap(int16_t x, int16_t y) {
           } else sfxPlay(SFX_DENY);
         }
         lockTouchBrief();
+      } else if (y >= 258 && y <= 298 && x >= 82 && x <= 226) {
+        boxFavoriteView = boxFavoriteView == 1 ? 0 : 1;
+        boxPage = 0;
+        cardDirty = true;
+        sfxPlay(SFX_MENU);
+        lockTouchBrief();
+      } else if (y >= 258 && y <= 298 && x >= 240 && x <= 384) {
+        boxFavoriteView = boxFavoriteView == 2 ? 0 : 2;
+        boxPage = 0;
+        cardDirty = true;
+        sfxPlay(SFX_MENU);
+        lockTouchBrief();
       } else if (x >= 76 && x <= 170 && y >= 300 && y <= 350) {
+        if (boxFavoriteView) { boxFavoriteView = 0; boxPage = 0; cardDirty = true; }
         if (boxPage > 0) { boxPage--; cardDirty = true; }
         sfxPlay(SFX_TAP);
       } else if (x >= 296 && x <= 390 && y >= 300 && y <= 350) {
+        if (boxFavoriteView) { boxFavoriteView = 0; boxPage = 0; cardDirty = true; }
         uint8_t pages = boxPageCount();
         if (boxPage + 1 < pages) { boxPage++; cardDirty = true; }
         sfxPlay(SFX_TAP);
@@ -1275,7 +1301,7 @@ void onTap(int16_t x, int16_t y) {
         if (col >= 0 && col < 4 && row >= 0 && row < 2 &&
             x >= 84 + col * 78 && x <= 148 + col * 78 &&
             y >= 112 + row * 74 && y <= 176 + row * 74) {
-          int16_t dex = boxDexAt((uint16_t)boxPage * 8 + row * 4 + col);
+          int16_t dex = boxDisplayedDexAt((uint16_t)boxPage * 8 + row * 4 + col);
           if (dex > 0) {
             boxSelectionDex=dex;
             cardDirty=true;
@@ -1393,6 +1419,17 @@ void onTap(int16_t x, int16_t y) {
     feedMenuUntil = 0;
     return;
   }
+  // Raccourci permanent : toucher la cabane du décor ouvre les arènes.
+  if (x >= 326 && x <= 438 && y >= 132 && y <= 246) {
+    cardOpen = true;
+    cardPage = 9;
+    kantoArenaDetail = -1;
+    galleryPmd.unload();
+    cardDirty = true;
+    lockTouchBrief();
+    sfxPlay(SFX_MENU);
+    return;
+  }
   if (pet.isEgg()) {
     pet.eggTap();
     sfxPlay(SFX_TAP);
@@ -1504,6 +1541,76 @@ void drawClouds(uint32_t now, uint16_t col) {
   }
 }
 
+// Arène Pokémon miniature, dessinée sur une grille de 4 px pour garder des
+// contours parfaitement nets sur l'écran AMOLED rond.
+void drawHomeGymCabin(uint8_t phase, uint8_t biome) {
+  const int x=326, y=140;
+  uint16_t outline=(phase==3)?C565(0x10,0x14,0x28):C565(0x24,0x2e,0x43);
+  uint16_t stone=(phase==3)?C565(0x50,0x5a,0x72):C565(0xb8,0xc8,0xd8);
+  uint16_t stoneHi=(phase==3)?C565(0x71,0x7d,0x96):C565(0xe8,0xf0,0xf5);
+  uint16_t roof=(phase==3)?C565(0x62,0x25,0x43):C565(0xc9,0x36,0x4b);
+  uint16_t roofHi=(phase==3)?C565(0x8d,0x3a,0x62):C565(0xf0,0x5b,0x64);
+  uint16_t glass=(phase==3)?C565(0xff,0xd8,0x62):C565(0x57,0xc8,0xe8);
+  uint16_t door=(phase==3)?C565(0x20,0x29,0x43):C565(0x38,0x55,0x78);
+  uint16_t ground=lerp565(BIOME_SOIL[biome<6?biome:0],outline,7,16);
+
+  // Socle et marches de l'arène.
+  gfx->fillRect(x+4,y+92,108,8,ground);
+  gfx->fillRect(x+18,y+84,80,8,outline);
+  gfx->fillRect(x+24,y+84,68,4,stoneHi);
+
+  // Corps large, ailes latérales et bandeau monumental.
+  gfx->fillRect(x+8,y+38,100,50,outline);
+  gfx->fillRect(x+14,y+42,88,42,stone);
+  gfx->fillRect(x+4,y+34,108,10,outline);
+  gfx->fillRect(x+10,y+34,96,5,roof);
+  gfx->fillRect(x+18,y+39,80,3,roofHi);
+
+  // Fronton en escalier rappelant les arènes des jeux Pokémon.
+  gfx->fillRect(x+34,y+6,48,4,outline);
+  gfx->fillRect(x+26,y+10,64,4,outline);
+  gfx->fillRect(x+18,y+14,80,4,outline);
+  gfx->fillRect(x+10,y+18,96,8,outline);
+  gfx->fillRect(x+18,y+22,80,12,roof);
+  gfx->fillRect(x+26,y+18,64,4,roofHi);
+  gfx->fillRect(x+34,y+14,48,4,roofHi);
+
+  // Grand emblème Poké Ball centré dans le fronton.
+  gfx->fillCircle(x+58,y+27,12,outline);
+  gfx->fillCircle(x+58,y+27,9,C565(0xf2,0x42,0x4f));
+  gfx->fillRect(x+49,y+27,18,4,outline);
+  gfx->fillCircle(x+58,y+29,4,stoneHi);
+  gfx->drawCircle(x+58,y+29,4,outline);
+
+  // Deux colonnes épaisses encadrent les doubles portes.
+  gfx->fillRect(x+18,y+46,12,38,outline);
+  gfx->fillRect(x+22,y+46,6,34,stoneHi);
+  gfx->fillRect(x+86,y+46,12,38,outline);
+  gfx->fillRect(x+88,y+46,6,34,stoneHi);
+  gfx->fillRect(x+38,y+52,40,32,outline);
+  gfx->fillRect(x+42,y+56,15,28,door);
+  gfx->fillRect(x+59,y+56,15,28,door);
+  gfx->fillRect(x+55,y+56,4,28,stoneHi);
+  gfx->fillRect(x+47,y+61,6,12,glass);
+  gfx->fillRect(x+63,y+61,6,12,glass);
+  gfx->fillCircle(x+53,y+77,2,C565(0xff,0xd7,0x55));
+  gfx->fillCircle(x+63,y+77,2,C565(0xff,0xd7,0x55));
+
+  // Fenêtres des ailes, lumineuses la nuit.
+  gfx->fillRect(x+3,y+52,15,23,outline);
+  gfx->fillRect(x+7,y+56,7,15,glass);
+  gfx->fillRect(x+98,y+52,15,23,outline);
+  gfx->fillRect(x+102,y+56,7,15,glass);
+
+  if (biome==5) {
+    uint16_t snow=C565(0xf1,0xf6,0xff);
+    gfx->fillRect(x+10,y+18,25,4,snow);
+    gfx->fillRect(x+81,y+18,25,4,snow);
+    gfx->fillRect(x+10,y+34,96,3,snow);
+    gfx->fillRect(x+12,y+88,92,4,snow);
+  }
+}
+
 void drawScene(uint8_t biome, uint32_t now, bool night) {
   int h=sceneHour();
   // 4 phases explicites sur 24 h :
@@ -1600,6 +1707,8 @@ void drawScene(uint8_t biome, uint32_t now, bool night) {
     for(int gx: {70,156,306,398})
       gfx->fillTriangle(gx,HORIZON+4,gx-7,HORIZON+22,gx+7,HORIZON+22,dk);
   }
+  // Le compagnon est dessiné ensuite : la cabane reste bien dans le décor.
+  drawHomeGymCabin(phase,b);
 }
 
 void drawStarterPokeball(int cx, int cy, int r) {
@@ -5013,6 +5122,12 @@ int16_t boxDexAt(uint16_t index) {
   return index < n ? list[index] : 0;
 }
 
+int16_t boxDisplayedDexAt(uint16_t index) {
+  if (boxFavoriteView >= 1 && boxFavoriteView <= 2)
+    return index < 8 ? pet.boxFavoriteAt(boxFavoriteView - 1, index) : 0;
+  return boxDexAt(index);
+}
+
 const char *boxSortLabel() {
   if (boxSort == 1) return T(S_SORT_TYPE);
   if (boxSort == 2) return T(S_SORT_RAISED);
@@ -5020,7 +5135,7 @@ const char *boxSortLabel() {
 }
 
 void renderCardBox() {
-  uint8_t pages = boxPageCount();
+  uint8_t pages = boxFavoriteView ? 1 : boxPageCount();
   if (boxPage >= pages) boxPage = pages - 1;
 
   gfx->fillRoundRect(108,24,250,72,15,uiPanel());
@@ -5054,8 +5169,8 @@ void renderCardBox() {
 
   // Grille 4x2 de mini-sprites captures, adaptee au cercle 1,75 pouce.
   for (uint8_t i = 0; i < BOX_ROWS; i++) {
-    int16_t dex = boxDexAt((uint16_t)boxPage * BOX_ROWS + i);
-    if (dex <= 0) break;
+    int16_t dex = boxDisplayedDexAt((uint16_t)boxPage * BOX_ROWS + i);
+    if (dex <= 0) continue;
     const DexEntry &d = DEX_TBL[dex];
     int col = i % 4, row = i / 4;
     int x = 84 + col * 78, y = 112 + row * 74;
@@ -5070,8 +5185,26 @@ void renderCardBox() {
       gfx->print("*");
     }
   }
-  uint16_t prevBg = boxPage > 0 ? UI_TRACK : C565(0xe4, 0xe8, 0xee);
-  uint16_t nextBg = boxPage + 1 < pages ? UI_TRACK : C565(0xe4, 0xe8, 0xee);
+
+  // Deux équipes favorites de huit Pokémon. Un second appui sur l'équipe
+  // active revient à la Boîte complète ; l'ajout se fait depuis la popup.
+  uint16_t fav1Bg = boxFavoriteView == 1 ? UI_BAR_WARN : uiPanel();
+  uint16_t fav2Bg = boxFavoriteView == 2 ? UI_BAR_WARN : uiPanel();
+  gfx->fillRoundRect(82,258,144,40,11,fav1Bg);
+  gfx->fillRoundRect(240,258,144,40,11,fav2Bg);
+  gfx->drawRoundRect(82,258,144,40,11,boxFavoriteView==1?UI_BAR_WARN:uiLine());
+  gfx->drawRoundRect(240,258,144,40,11,boxFavoriteView==2?UI_BAR_WARN:uiLine());
+  char fav1[16],fav2[16];
+  snprintf(fav1,sizeof(fav1),"FAVORI 1 %u/8",pet.boxFavoriteCount(0));
+  snprintf(fav2,sizeof(fav2),"FAVORI 2 %u/8",pet.boxFavoriteCount(1));
+  gfx->setTextSize(1);
+  gfx->setTextColor(uiContrastText(fav1Bg));
+  gfx->setCursor(154-(int)strlen(fav1)*3,274); gfx->print(fav1);
+  gfx->setTextColor(uiContrastText(fav2Bg));
+  gfx->setCursor(312-(int)strlen(fav2)*3,274); gfx->print(fav2);
+
+  uint16_t prevBg = !boxFavoriteView && boxPage > 0 ? UI_TRACK : C565(0xe4, 0xe8, 0xee);
+  uint16_t nextBg = !boxFavoriteView && boxPage + 1 < pages ? UI_TRACK : C565(0xe4, 0xe8, 0xee);
   gfx->fillRoundRect(76, 306, 94, 38, 11, prevBg);
   gfx->fillRoundRect(296, 306, 94, 38, 11, nextBg);
   gfx->setTextSize(3);
@@ -5082,7 +5215,8 @@ void renderCardBox() {
   gfx->setCursor(331, 315);
   gfx->print(">");
   char pg[12];
-  snprintf(pg, sizeof(pg), T(S_PAGE_FMT), boxPage + 1, pages);
+  if (boxFavoriteView) snprintf(pg,sizeof(pg),"FAVORI %u",boxFavoriteView);
+  else snprintf(pg, sizeof(pg), T(S_PAGE_FMT), boxPage + 1, pages);
   gfx->setTextColor(uiSub());
   gfx->setTextSize(2);
   gfx->setCursor(CX - strlen(pg) * 6, 318);
@@ -5095,7 +5229,18 @@ void renderCardBox() {
     gfx->setTextColor(UI_WHITE); gfx->setTextSize(3);
     gfx->setCursor(CX-(int)strlen(name)*9,94); gfx->print(name);
     const uint8_t *thumb=thumbs.get(boxSelectionDex);
-    if(thumb) drawStarterThumbCentered(thumb,boxSelectionDex,CX,218,5);
+    if(thumb) drawStarterThumbCentered(thumb,boxSelectionDex,CX,194,4);
+
+    uint16_t f1=pet.isBoxFavorite(0,boxSelectionDex)?UI_BAR_WARN:UI_TRACK;
+    uint16_t f2=pet.isBoxFavorite(1,boxSelectionDex)?UI_BAR_WARN:UI_TRACK;
+    gfx->fillRoundRect(82,254,144,40,11,f1);
+    gfx->fillRoundRect(240,254,144,40,11,f2);
+    gfx->setTextSize(1);
+    gfx->setTextColor(uiContrastText(f1));
+    gfx->setCursor(154-8*3,270); gfx->print("FAVORI 1");
+    gfx->setTextColor(uiContrastText(f2));
+    gfx->setCursor(312-8*3,270); gfx->print("FAVORI 2");
+
     gfx->fillRoundRect(78,302,134,44,12,UI_TRACK);
     gfx->fillRoundRect(228,302,160,44,12,UI_BAR_OK);
     gfx->setTextSize(1);
