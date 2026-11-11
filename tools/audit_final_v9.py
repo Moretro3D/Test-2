@@ -383,6 +383,10 @@ ok("biomeSelectOpen" in ino and "renderBiomeSelection" in ino and
    "biomeSearchUntil=millis()+2400UL" in ino and
    "startBattleWith(foundDex, foundLevel, -1)" in ino,
    "selection de biome et exploration animee avant revelation")
+ok("void biomeBubblePosition" in ino and
+   "gfx->fillCircle(cx,cy,44,colors[biome])" in ino and
+   "dx*dx+dy*dy>58L*58L" in ino,
+   "sept petites bulles de biome avec zones tactiles circulaires")
 music=ROOT/"tools/sdcard/music"
 for filename in ("morning.wav", "lofi.wav", "night.wav"):
     with wave.open(str(music/filename), "rb") as wav:

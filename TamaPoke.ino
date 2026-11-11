@@ -3744,9 +3744,11 @@ const char *battleBiomeName(uint8_t biome) {
   return L[gLang<LANG_COUNT?gLang:LANG_EN][biome<7?biome:0];
 }
 
-void biomeTilePosition(uint8_t biome,int &x,int &y) {
-  if (biome<6) { x=54+(biome&1)*188; y=78+(biome>>1)*68; }
-  else { x=148; y=282; }
+void biomeBubblePosition(uint8_t biome,int &cx,int &cy) {
+  static const int16_t X[7]={112,233,354,72,179,287,394};
+  static const int16_t Y[7]={126,126,126,252,252,252,252};
+  uint8_t i=biome<7?biome:0;
+  cx=X[i]; cy=Y[i];
 }
 
 void drawSkyBiomeBackground() {
@@ -3820,18 +3822,32 @@ void renderBiomeSelection() {
   }
 
   gfx->fillScreen(C565(0x0a,0x12,0x22));
+  // Halo discret adapte a l'ecran rond : les choix restent lisibles sans
+  // recreer de grands cadres rectangulaires.
+  gfx->drawCircle(CX,CY,214,C565(0x18,0x2b,0x42));
+  gfx->drawCircle(CX,CY,213,C565(0x10,0x20,0x35));
   gfx->setTextColor(UI_WHITE); gfx->setTextSize(2);
   const char *title=biomeChooseTitle();
   gfx->setCursor(CX-(int)strlen(title)*6,40); gfx->print(title);
+  const uint16_t colors[7]={C565(0x36,0x8e,0x45),C565(0x2f,0x83,0xc7),C565(0x20,0x69,0x3b),C565(0xb8,0x48,0x28),C565(0x70,0x69,0x62),C565(0x88,0xb8,0xd8),C565(0x4f,0x98,0xd8)};
   for(uint8_t biome=0;biome<7;biome++) {
-    int x,y; biomeTilePosition(biome,x,y);
-    uint16_t colors[7]={C565(0x36,0x8e,0x45),C565(0x2f,0x83,0xc7),C565(0x20,0x69,0x3b),C565(0xb8,0x48,0x28),C565(0x70,0x69,0x62),C565(0x88,0xb8,0xd8),C565(0x4f,0x98,0xd8)};
-    gfx->fillRoundRect(x,y,170,58,14,colors[biome]);
-    gfx->drawRoundRect(x,y,170,58,14,UI_WHITE);
-    drawBiomeIcon(biome,x+40,y+27);
+    int cx,cy; biomeBubblePosition(biome,cx,cy);
+    uint16_t dark=lerp565(colors[biome],UI_BLACK,5,16);
+    uint16_t light=lerp565(colors[biome],UI_WHITE,4,16);
+    // Ombre, double contour et reflet donnent une vraie petite bulle.
+    gfx->fillCircle(cx+3,cy+5,48,C565(0x04,0x09,0x12));
+    gfx->fillCircle(cx,cy,48,dark);
+    gfx->fillCircle(cx,cy,44,colors[biome]);
+    gfx->drawCircle(cx,cy,47,C565(0x80,0xd9,0xf0));
+    gfx->drawCircle(cx,cy,43,light);
+    gfx->drawArc(cx,cy,35,38,205,315,light);
+    drawBiomeIcon(biome,cx,cy-7);
     const char *name=battleBiomeName(biome);
     gfx->setTextColor(UI_WHITE); gfx->setTextSize(1);
-    gfx->setCursor(x+102-(int)strlen(name)*3,y+26); gfx->print(name);
+    int labelW=max(54,(int)strlen(name)*6+14);
+    gfx->fillRoundRect(cx-labelW/2,cy+29,labelW,21,10,C565(0x0d,0x18,0x29));
+    gfx->drawRoundRect(cx-labelW/2,cy+29,labelW,21,10,light);
+    gfx->setCursor(cx-(int)strlen(name)*3,cy+36); gfx->print(name);
   }
   gfx->fillRoundRect(136,358,194,42,12,UI_TRACK);
   gfx->setTextColor(uiContrastText(UI_TRACK)); gfx->setTextSize(2);
@@ -3846,8 +3862,9 @@ void biomeTap(int16_t x,int16_t y) {
     biomeSelectOpen=false; biomeDirty=true; markUiDirty(); lockTouchBrief(); sfxPlay(SFX_TAP); return;
   }
   for(uint8_t biome=0;biome<7;biome++) {
-    int bx,by; biomeTilePosition(biome,bx,by);
-    if(x<bx || x>bx+170 || y<by || y>by+58) continue;
+    int bx,by; biomeBubblePosition(biome,bx,by);
+    int32_t dx=x-bx,dy=y-by;
+    if(dx*dx+dy*dy>58L*58L) continue;
     biomeSelected=biome;
     biomeSearchDex=pickWildSpeciesForBiome(biome,(uint32_t)random(0x7FFFFFFF));
     biomeSearchLevel=wildLevelFor(pet.level(),(uint8_t)random(100));
