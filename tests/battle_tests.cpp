@@ -138,6 +138,22 @@ static void testWildSpeciesUsesAllGenerationsAndRarities() {
   EXPECT_TRUE(rarity[R_EVO] && rarity[R_COMUN] && rarity[R_RARO] && rarity[R_LEGENDARIO]);
 }
 
+static void testBiomeSelectionAlwaysMatchesChosenBiome() {
+  for (uint8_t biome = 0; biome < 7; biome++) {
+    bool sawGeneration[3] = {false, false, false};
+    for (uint32_t roll = 0; roll < 1200; roll++) {
+      int16_t dex = pickWildSpeciesForBiome(biome, roll * 2654435761UL);
+      EXPECT_TRUE(dex >= 1 && dex <= DEX_COUNT);
+      if (biome == 6)
+        EXPECT_TRUE(DEX_TBL[dex].type1 == TYPE_FLYING || DEX_TBL[dex].type2 == TYPE_FLYING);
+      else
+        EXPECT_EQ(DEX_TBL[dex].biome, biome);
+      sawGeneration[dex <= 151 ? 0 : (dex <= 251 ? 1 : 2)] = true;
+    }
+    EXPECT_TRUE(sawGeneration[0] || sawGeneration[1] || sawGeneration[2]);
+  }
+}
+
 static void testWildStatsUseDexBaseAndLevel() {
   BattleStats stats = wildBattleStats(4, 7);
   EXPECT_EQ(stats.level, 7);
@@ -411,6 +427,7 @@ int main() {
   testWildBattleStartGate();
   testWildLevelStaysNearPetLevel();
   testWildSpeciesUsesAllGenerationsAndRarities();
+  testBiomeSelectionAlwaysMatchesChosenBiome();
   testWildStatsUseDexBaseAndLevel();
   testBattleRuntimeStartsWithScaledHp();
   testAttackStepsOneRoundAndAvoidsNormalOneHit();

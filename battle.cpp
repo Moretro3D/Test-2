@@ -240,6 +240,40 @@ int16_t pickWildSpecies(uint32_t roll) {
   return count > 0 ? pool[(x >> 16) % count] : first;
 }
 
+int16_t pickWildSpeciesForBiome(uint8_t biome, uint32_t roll) {
+  if (biome > 6) biome = 0;
+  uint32_t x = roll + 0x6D2B79F5u + (uint32_t)biome * 0x9E3779B9u;
+  x ^= x >> 15; x *= 0x2C1B3C6Du; x ^= x >> 12; x *= 0x297A2D39u; x ^= x >> 15;
+  uint8_t generation = (uint8_t)(x % 3);
+  uint8_t rarityRoll = (uint8_t)((x >> 8) % 100);
+  uint8_t targetRarity = rarityRoll < 55 ? R_COMUN
+                         : rarityRoll < 80 ? R_EVO
+                         : rarityRoll < 98 ? R_RARO : R_LEGENDARIO;
+  int16_t pool[386];
+  int count = 0;
+  const int16_t first = generation == 0 ? 1 : (generation == 1 ? 152 : 252);
+  const int16_t last  = generation == 0 ? 151 : (generation == 1 ? 251 : 386);
+  for (int16_t dex = first; dex <= last; dex++) {
+    bool matches = biome == 6
+      ? (DEX_TBL[dex].type1 == TYPE_FLYING || DEX_TBL[dex].type2 == TYPE_FLYING)
+      : DEX_TBL[dex].biome == biome;
+    if (matches && DEX_TBL[dex].rarity == targetRarity) pool[count++] = dex;
+  }
+  if (count == 0) {
+    for (int16_t dex = 1; dex <= DEX_COUNT; dex++)
+      if ((biome == 6
+           ? (DEX_TBL[dex].type1 == TYPE_FLYING || DEX_TBL[dex].type2 == TYPE_FLYING)
+           : DEX_TBL[dex].biome == biome) && DEX_TBL[dex].rarity == targetRarity) pool[count++] = dex;
+  }
+  if (count == 0) {
+    for (int16_t dex = 1; dex <= DEX_COUNT; dex++)
+      if (biome == 6
+          ? (DEX_TBL[dex].type1 == TYPE_FLYING || DEX_TBL[dex].type2 == TYPE_FLYING)
+          : DEX_TBL[dex].biome == biome) pool[count++] = dex;
+  }
+  return count ? pool[(x >> 16) % count] : pickWildSpecies(x);
+}
+
 BattleStats wildBattleStats(int16_t dex, uint8_t level) {
   if (dex < 1 || dex > DEX_COUNT) dex = 1;
   const DexEntry &entry = DEX_TBL[dex];

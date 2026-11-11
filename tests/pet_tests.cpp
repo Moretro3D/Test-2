@@ -142,6 +142,170 @@ static void testStoredCharizardReturnsWhenNoLongerActive() {
   EXPECT_TRUE(pet.isCaught(25));
 }
 
+static void testIndependentEarlierFormsSurviveRepair() {
+  Pet pet = hatchedPet(7);  // Carapuce
+  pet.ageMinutes = 16 * MINUTES_PER_LEVEL;
+  pet.evolve();             // Carabaffe
+  pet.ageMinutes = 36 * MINUTES_PER_LEVEL;
+  pet.evolve();             // Tortank
+  EXPECT_TRUE(pet.isCaught(9));
+
+  // Une nouvelle capture de Carapuce est un autre individu : elle doit rester
+  // dans la Boite, y compris apres la reparation executee au redemarrage.
+  pet.registerCaught(7);
+  pet.repairCaughtProfiles();
+  EXPECT_TRUE(pet.isCaught(7));
+  EXPECT_TRUE(pet.isCaught(9));
+
+  pet.registerCaught(23);  // Abo
+  pet.registerCaught(24);  // Arbok
+  pet.registerCaught(35);  // Melofee
+  pet.registerCaught(36);  // Melodelfe
+  pet.repairCaughtProfiles();
+  EXPECT_TRUE(pet.isCaught(23));
+  EXPECT_TRUE(pet.isCaught(24));
+  EXPECT_TRUE(pet.isCaught(35));
+  EXPECT_TRUE(pet.isCaught(36));
+}
+
+static void testRepairRestoresProfilesWithoutShrinkingBox() {
+  Pet pet = hatchedPet(92);
+  pet.saveActiveProfile();
+  pet.speciesId = 94;
+  pet.saveActiveProfile();
+  pet.speciesId = 25;
+  pet.saveActiveProfile();
+
+  memset(pet.dexCaught, 0, sizeof(pet.dexCaught));
+  memset(pet.dexReg, 0, sizeof(pet.dexReg));
+  pet.repairCaughtProfiles();
+
+  EXPECT_TRUE(pet.isCaught(92));
+  EXPECT_TRUE(pet.isCaught(94));
+  EXPECT_TRUE(pet.isCaught(25));
+  EXPECT_TRUE(pet.isRegistered(92));
+  EXPECT_TRUE(pet.isRegistered(94));
+  EXPECT_TRUE(pet.isRegistered(25));
+  EXPECT_EQ(pet.caughtCount(), 3);
+}
+static void testAllEvolutionPairsRemainWhenCaughtSeparately() {
+  Pet pet = hatchedPet(25);
+  for (int16_t dex = 1; dex <= DEX_COUNT; dex++) {
+    int16_t evolved = DEX_TBL[dex].evolvesTo;
+    if (evolved < 1 || evolved > DEX_COUNT) continue;
+    pet.dexCaught[(dex - 1) >> 3] |= (1 << ((dex - 1) & 7));
+    pet.dexCaught[(evolved - 1) >> 3] |= (1 << ((evolved - 1) & 7));
+  }
+  uint16_t before = pet.caughtCount();
+  pet.repairCaughtProfiles();
+  EXPECT_EQ(pet.caughtCount(), before);
+  for (int16_t dex = 1; dex <= DEX_COUNT; dex++) {
+    int16_t evolved = DEX_TBL[dex].evolvesTo;
+    if (evolved < 1 || evolved > DEX_COUNT) continue;
+    EXPECT_TRUE(pet.isCaught(dex));
+    EXPECT_TRUE(pet.isCaught(evolved));
+  }
+}
+
+static void testRepeatedBootsNeverShrinkBoxOrDex() {
+  Pet pet;
+  pet.begin();
+  pet.chooseStarter(7);
+  const int16_t captures[] = {9, 23, 24, 35, 36, 92, 93, 94, 25, 130, 149};
+  for (int16_t dex : captures) pet.registerCaught(dex);
+  EXPECT_TRUE(pet.switchToCaught(94));
+  EXPECT_TRUE(pet.switchToCaught(25));
+  uint16_t caughtBefore = pet.caughtCount();
+  uint16_t knownBefore = pet.knownDexCount();
+
+  for (uint8_t boot = 0; boot < 12; boot++) {
+    pet.begin();
+    EXPECT_EQ(pet.speciesId, 25);
+    EXPECT_EQ(pet.caughtCount(), caughtBefore);
+    EXPECT_TRUE(pet.knownDexCount() >= knownBefore);
+    EXPECT_TRUE(pet.isCaught(7));
+    EXPECT_TRUE(pet.isCaught(9));
+    EXPECT_TRUE(pet.isCaught(92));
+    EXPECT_TRUE(pet.isCaught(94));
+  }
+}
+
+static void testGengarDoesNotLockActivePokemonAfterBoot() {
+  Pet pet;
+  pet.begin();
+  pet.chooseStarter(7);
+  pet.registerCaught(94);
+  pet.registerCaught(25);
+  EXPECT_TRUE(pet.switchToCaught(94));
+  pet.begin();
+  EXPECT_EQ(pet.speciesId, 94);
+  EXPECT_TRUE(pet.switchToCaught(25));
+  pet.begin();
+  EXPECT_EQ(pet.speciesId, 25);
+  EXPECT_TRUE(pet.switchToCaught(7));
+  pet.begin();
+  EXPECT_EQ(pet.speciesId, 7);
+}
+
+static void testManySelectionsKeepLatestPokemonAndCollection() {
+  Pet pet;
+  pet.begin();
+  pet.chooseStarter(7);
+  for (int16_t dex = 1; dex <= 80; dex++) {
+    pet.registerCaught(dex);
+    EXPECT_TRUE(pet.switchToCaught(dex));
+  }
+  EXPECT_TRUE(pet.storedProfileCount() <= STORED_PROFILE_LIMIT);
+  EXPECT_EQ(pet.caughtCount(), 80);
+  EXPECT_EQ(pet.speciesId, 80);
+
+  for (uint8_t boot = 0; boot < 12; boot++) {
+    pet.begin();
+    EXPECT_EQ(pet.speciesId, 80);
+    EXPECT_EQ(pet.caughtCount(), 80);
+    EXPECT_TRUE(pet.isCaught(7));
+    EXPECT_TRUE(pet.isCaught(25));
+    EXPECT_TRUE(pet.isCaught(80));
+    EXPECT_TRUE(pet.storedProfileCount() <= STORED_PROFILE_LIMIT);
+  }
+
+  EXPECT_TRUE(pet.switchToCaught(25));
+  pet.begin();
+  EXPECT_EQ(pet.speciesId, 25);
+  EXPECT_EQ(pet.caughtCount(), 80);
+}
+static void testEvolutionDeletesOnlyItsOwnOldProfile() {
+  Pet pet = hatchedPet(7);
+  pet.saveActiveProfile();
+  EXPECT_TRUE(pet.hasStoredProfile(7));
+  pet.ageMinutes = 16 * MINUTES_PER_LEVEL;
+  pet.evolve();
+  EXPECT_TRUE(!pet.hasStoredProfile(7));
+  EXPECT_TRUE(pet.hasStoredProfile(8));
+  EXPECT_TRUE(!pet.isCaught(7));
+  EXPECT_TRUE(pet.isCaught(8));
+
+  pet.registerCaught(7);
+  pet.repairCaughtProfiles();
+  EXPECT_TRUE(pet.isCaught(7));
+  EXPECT_TRUE(pet.isCaught(8));
+}
+
+static void testFullDexSurvivesRepeatedBoots() {
+  Pet pet;
+  pet.begin();
+  pet.chooseStarter(1);
+  for (int16_t dex = 1; dex <= DEX_COUNT; dex++) {
+    pet.dexCaught[(dex - 1) >> 3] |= (1 << ((dex - 1) & 7));
+    pet.dexReg[(dex - 1) >> 3] |= (1 << ((dex - 1) & 7));
+  }
+  pet.registerCaught(386);  // force la persistance des bitmaps
+  for (uint8_t boot = 0; boot < 12; boot++) {
+    pet.begin();
+    EXPECT_EQ(pet.caughtCount(), DEX_COUNT);
+    EXPECT_EQ(pet.knownDexCount(), DEX_COUNT);
+  }
+}
 static void testCareMistakeNeverDelaysEvolution() {
   Pet pet = hatchedPet(4);
   pet.ageMinutes = 15 * MINUTES_PER_LEVEL;
@@ -690,6 +854,14 @@ int main() {
   testEvolutionRequiresOnlyFixedLevel();
   testEvolutionAlwaysReplacesTheBoxForm();
   testStoredCharizardReturnsWhenNoLongerActive();
+  testIndependentEarlierFormsSurviveRepair();
+  testRepairRestoresProfilesWithoutShrinkingBox();
+  testAllEvolutionPairsRemainWhenCaughtSeparately();
+  testRepeatedBootsNeverShrinkBoxOrDex();
+  testGengarDoesNotLockActivePokemonAfterBoot();
+  testManySelectionsKeepLatestPokemonAndCollection();
+  testEvolutionDeletesOnlyItsOwnOldProfile();
+  testFullDexSurvivesRepeatedBoots();
   testCareMistakeNeverDelaysEvolution();
   testTrainingRewardsClampAndAffectNeeds();
   testCatchRewardTrainsSpeedAndRecord();

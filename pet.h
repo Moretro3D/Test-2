@@ -63,6 +63,7 @@ enum ExpeditionItem : uint8_t {
 };
 #define EXP_ITEM_COUNT 4
 #define EXP_ITEM_MAX 3
+#define STORED_PROFILE_LIMIT 24
 
 enum TrainingStat : int8_t {
   TRAIN_STAT_ATK = 0,
@@ -268,7 +269,8 @@ public:
         return; // Evoli et toute autre espece sont refuses comme starter.
     }
   }
-  void factoryReset() { prefs.clear(); }  // borra la NVS (test: comando serie WIPE)
+  void factoryReset();  // borra NVS y copia personal de la microSD
+  void syncSdSave();    // restaura/escribe la sauvegarde personnelle sur SD
   uint8_t level() const {
     uint32_t calculated = 1UL + ageMinutes / MINUTES_PER_LEVEL;
     return calculated > MAX_LEVEL ? MAX_LEVEL : (uint8_t)calculated;
@@ -339,7 +341,10 @@ public:
   bool switchToCaught(int16_t dex);
   bool hasStoredProfile(int16_t dex);
   void saveActiveProfile();
-  void repairCaughtProfiles(); // migration des anciens Pokemon eleves vers la Boite
+  void removeStoredProfile(int16_t dex);
+  void repairCaughtProfiles(); // restauration additive : ne retire jamais une capture
+  void compactStoredProfiles();
+  uint16_t storedProfileCount();
 
 private:
   Preferences prefs;
@@ -364,6 +369,7 @@ private:
   uint32_t milestoneUntil = 0; // celebracion de hito de racha
   uint32_t dexRewardUntil = 0;
   uint16_t lastDexReward = 0;
+  uint32_t saveSequence = 0;
 
   uint32_t today() const { return lastSeenEpoch ? lastSeenEpoch / 86400 : 0; }
   void registerCare();   // primer cuidado del dia: racha + vinculo
@@ -375,6 +381,9 @@ private:
   void hatch();
   void registerSpecies(int16_t dex);
   bool canReceiveExpeditionItem(ExpeditionItem item) const;
+  bool persistActiveSpecies();
+  bool persistCollection();
+  bool saveSdBackup();
   void save();
   void load();
   static uint8_t clamp100(int v) { return v < 0 ? 0 : (v > 100 ? 100 : v); }

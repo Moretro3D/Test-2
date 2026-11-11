@@ -18,16 +18,16 @@ def ok(cond,msg):
         raise SystemExit("FAIL V9: "+msg)
     print("OK  ",msg)
 
-ok("1.46.115-moretro3d-v10.36-box-pmd-sprites" in ino and
-   "1.46.115-moretro3d-v10.36-box-pmd-sprites" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
-   "1.46.115-moretro3d-v10.36-box-pmd-sprites" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "1.46.115-moretro3d-v10.36-box-pmd-sprites" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
-   "1.46.115-moretro3d-v10.36-box-pmd-sprites" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
-   "version 1.46.115 coherente et caches installateur invalides")
-ok('gfx->setCursor(CX - 18, 366); gfx->print("V10")' in ino and
-   '<div class="version">Firmware V10</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   '<div class="version">Firmware V10</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
-   "V10 affichee au demarrage, sur la page officielle et sur Shopify")
+ok("1.48.0-moretro3d-v12-sky-biome" in ino and
+   "1.48.0-moretro3d-v12-sky-biome" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.48.0-moretro3d-v12-sky-biome" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.48.0-moretro3d-v12-sky-biome" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   "1.48.0-moretro3d-v12-sky-biome" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.48.0 coherente et caches installateur invalides")
+ok('gfx->setCursor(CX - 24, 366); gfx->print("V12")' in ino and
+   '<div class="version">Firmware V12</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   '<div class="version">Firmware V12</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
+   "V12 affichee au demarrage, sur la page officielle et sur Shopify")
 ok('location.replace("https://moretro3d.fr/pages/poketama")' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    'https://moretro3d.github.io/Test-1/manifest.json' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
    "GitHub Pages redirige vers Shopify et conserve le Web Flasher officiel")
@@ -37,7 +37,7 @@ ok("github.repository == 'Moretro3D/Test-2'" in workflow and
    "! grep -q 'location.replace' web/index.html" in workflow,
    "Test-2 affiche son Web Flasher sans redirection Shopify")
 test2_launcher=(ROOT/"OUVRIR_WEB_FLASHER_TEST_2.bat").read_text(encoding="utf-8")
-ok("https://moretro3d.github.io/Test-2/?v=1.46.115-moretro3d-v10.36-box-pmd-sprites" in test2_launcher,
+ok("https://moretro3d.github.io/Test-2/?v=1.48.0-moretro3d-v12-sky-biome" in test2_launcher,
    "lanceur direct Test-2 avec contournement du cache")
 scene=ino[ino.index("void drawScene("):ino.index("void drawStarterPokeball(")]
 ok("HORIZON-38" not in scene and "uint16_t sea=" not in scene and
@@ -64,13 +64,12 @@ ok("galleryFilter" not in ino and "S_FILTER_ALL" not in ino and
    "R:%u C:%u" not in ino and "S_RAISED_MARK" not in ino and
    "S_CAUGHT_MARK" not in ino,
    "Pokedex sans filtres ni mentions eleve/capture")
-ok("drawBattleCaughtBall(350,354,24,26)" in ino and
-   "if (known) drawBattleCaughtBall" in ino,
-   "Pokeball discrete sur les fiches de Pokemon deja obtenus")
-ok("#define GAL_ROWS 3" in ino and "#define GAL_PAGE_SIZE (GAL_COLS * GAL_ROWS)" in ino and
+ok("drawBattleCaughtBall(350,354,24,26)" not in ino,
+   "aucun pictogramme de capture personnel dans le Pokedex")
+ok("#define GAL_ROWS 4" in ino and "#define GAL_PAGE_SIZE (GAL_COLS * GAL_ROWS)" in ino and
    "galleryPage * GAL_PAGE_SIZE" in ino and
-   "snprintf(caught,sizeof(caught),T(S_CAUGHT_COUNT_FMT),(unsigned)pet.caughtCount())" in ino,
-   "Pokedex en grille 4x3 avec total reel des captures")
+   "snprintf(caught,sizeof(caught),T(S_CAUGHT_COUNT_FMT),(unsigned)pet.caughtCount())" not in ino,
+   "Pokedex en grille 4x4 sans compteur de captures")
 ok("switchToCaught(galleryDetail)" not in ino and
    "drawPokedexInfoPopup(galleryDetail)" in ino and
    "galleryInfoOpen=true" in ino and
@@ -311,9 +310,9 @@ ok((ROOT/"assets/home_habitat_mountain_v10_31.png").exists() and
 ok(all((ROOT/"assets"/f"battle_ground_{name}_v10_32.png").exists()
        for name in ("grass","water","fire","normal","rock","ice","cloud")),
    "sept nouveaux pixel arts joueur et adversaire integres au combat")
-ok("void drawHomeGymPlatform(uint8_t biome, uint8_t phase)" in ino and
-   "if (biome==1)" in ino and "else if (biome==4)" not in ino and
-   "gfx->fillRoundRect(129,242,208,38,13,edge)" not in ino and
+home_platform=ino[ino.index("void drawHomeGymPlatform"):ino.index("void drawScene")]
+ok("if (biome==1)" in home_platform and "else if (biome==4)" not in home_platform and
+   "gfx->fillRoundRect(129,242,208,38,13,edge)" not in home_platform and
    scene.index("drawHomeHabitatGround(b);") < scene.index("drawHomeGymPlatform(b,phase);") < scene.index("drawHomeGymCabin(phase,b);"),
    "volcan releve, ilot eau conserve et arene posee directement sur le pixel art roche")
 ok("STARTER_DEX[3][3]" in ino and "{ 252, 255, 258 }" in ino,
@@ -343,7 +342,7 @@ ok("python3 \"$ROOT/tools/pack_pmd.py\" $(seq 1 386)" in build_web and
    "386 formes normales et Shiny rechargees depuis les sources originales")
 ok("int8_t forcedShiny = -1" not in ino and
    "startBattleWith(wildPromptDex, wildPromptLevel, -1)" in ino and
-   "startBattleWith(0, 0, -1)" in ino,
+   "startBattleWith(foundDex, foundLevel, -1)" in ino,
    "prototype Arduino sans argument par defaut duplique")
 ok('"..........kkk..."' in (ROOT/"species.h").read_text(encoding="utf-8") and
    '".....kkkkk.k...."' in (ROOT/"species.h").read_text(encoding="utf-8") and
@@ -351,13 +350,39 @@ ok('"..........kkk..."' in (ROOT/"species.h").read_text(encoding="utf-8") and
    "nouvelle planche de baies et super bonbon integree en 16x16")
 ok("drawStarterPokeball" in ino and "starterPreviewDex" in ino,
    "Pokeballs et popup de confirmation starter presentes")
-ok("repairCaughtProfiles" in pet and "hasStoredProfile(candidate)" in pet,
-   "anciens profils evolues restaures dans la Boite")
+load_part=pet[pet.index("void Pet::load()"):]
+ok("repairCaughtProfiles();" not in load_part and
+   "persistCollection();" in load_part and
+   "La collection appartient uniquement a cette sauvegarde" in load_part and
+   "soin individuels ne doivent jamais fabriquer de captures" in load_part,
+   "captures strictement personnelles et collection persistante")
+ok('SD_SAVE_MAIN = "/save/poketama.bin"' in pet and
+   'SD_SAVE_BACKUP = "/save/poketama.bak"' in pet and
+   'SD_SAVE_TEMP = "/save/poketama.tmp"' in pet and
+   "sdSaveChecksum" in pet and "syncSdSave" in pet and
+   "pet.syncSdSave();" in ino,
+   "sauvegarde personnelle SD atomique avec secours et CRC")
+ok('SD_MMC.begin("/sdcard", true /* modo 1-bit */, false' in sdmon and
+   'clearSdTree("/save")' not in sdmon,
+   "aucun formatage automatique et dossier save preserve")
 ok(all(name in audio for name in ("OST_MORNING", "OST_LOFI", "OST_NIGHT")) and
    "AUDIO_EVENT_AMBIENT" in audio and "audioAmbientPlay" in ino,
    "trois OST originales et lecture ambiante non bloquante")
 ok("hour>=7 && hour<13" in ino and "hour>=13 && hour<20" in ino,
    "selection OST automatique matin, lo-fi et nuit")
+ok("pickWildSpeciesForBiome" in battle and
+   "DEX_TBL[dex].biome == biome" in battle and
+   "TYPE_FLYING" in battle and
+   "for (uint8_t biome = 0; biome < 7; biome++)" in (ROOT/"tests/battle_tests.cpp").read_text(encoding="utf-8") and
+   "testBiomeSelectionAlwaysMatchesChosenBiome" in (ROOT/"tests/battle_tests.cpp").read_text(encoding="utf-8"),
+   "tirage sauvage filtre et teste sur six habitats plus le biome Ciel reserve au type Vol")
+ok("biomeSelectOpen" in ino and "renderBiomeSelection" in ino and
+   "drawBattleBackgroundBiome(biomeSelected)" in ino and
+   "drawSkyBiomeBackground()" in ino and
+   "battleEnvironmentBiome" in ino and
+   "biomeSearchUntil=millis()+2400UL" in ino and
+   "startBattleWith(foundDex, foundLevel, -1)" in ino,
+   "selection de biome et exploration animee avant revelation")
 music=ROOT/"tools/sdcard/music"
 for filename in ("morning.wav", "lofi.wav", "night.wav"):
     with wave.open(str(music/filename), "rb") as wav:

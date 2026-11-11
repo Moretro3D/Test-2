@@ -1,67 +1,52 @@
 @echo off
-chcp 65001 >nul
-title PokeTama Moretro3D V9.61 - Envoi GitHub
+setlocal EnableExtensions
+title PokeTama V12 - Envoi GitHub officiel
 cd /d "%~dp0"
 
-echo ============================================================
-echo   PokeTama Moretro3D V9.61 - Publication Test-1
-echo ============================================================
+echo PokeTama V12 - deploiement officiel vers Moretro3D/Test-1
 echo.
-
 where git >nul 2>nul
 if errorlevel 1 (
-  echo [ERREUR] Git for Windows n'est pas installe.
-  pause
-  exit /b 1
-)
-
-findstr /C:"poketama-path-change" "web\configurator.js" >nul 2>nul
-if errorlevel 1 (
-  echo [ERREUR] Le configurateur V9.61 est absent de ce dossier.
+  echo ERREUR : Git pour Windows est introuvable.
   pause
   exit /b 1
 )
 set "POKETAMA_SAFE_DIR=%CD:\=/%"
 git config --global --add safe.directory "%POKETAMA_SAFE_DIR%"
-git config --global user.name "Moretro3D"
-git config --global user.email "morgan.duncas@gmail.com"
+if errorlevel 1 goto :connexion
+if not exist ".git\HEAD" git init
+git -c safe.directory="%CD%" branch -M main
+git -c safe.directory="%CD%" config user.name >nul 2>nul || git -c safe.directory="%CD%" config user.name "Moretro3D"
+git -c safe.directory="%CD%" config user.email >nul 2>nul || git -c safe.directory="%CD%" config user.email "contact@moretro3d.fr"
+git -c safe.directory="%CD%" remote remove origin >nul 2>nul
+git -c safe.directory="%CD%" remote add origin https://github.com/Moretro3D/Test-1.git
 
-if not exist ".git" git init
-git branch -M main
-git remote remove origin >nul 2>nul
-git remote add origin https://github.com/Moretro3D/Test-1.git
+echo Recuperation securisee de Test-1...
+git -c safe.directory="%CD%" -c http.sslBackend=openssl fetch origin main
+if errorlevel 1 goto :connexion
+git -c safe.directory="%CD%" reset --mixed origin/main
+if errorlevel 1 goto :connexion
 
-echo [1/4] Recuperation du depot distant...
-git fetch origin main
-if errorlevel 1 goto :fail
-git reset --mixed origin/main
+echo Preparation de la version officielle V11...
+git -c safe.directory="%CD%" add -A
+git -c safe.directory="%CD%" diff --cached --quiet
+if errorlevel 1 (
+  git -c safe.directory="%CD%" commit -m "PokeTama V12 biome Ciel"
+  if errorlevel 1 goto :connexion
+)
 
-echo [2/4] Preparation des fichiers V9.61...
-git add -A
-
-echo [3/4] Creation du commit...
-git commit -m "PokeTama V9.61 configurateur public"
-if errorlevel 1 echo Aucun nouveau changement a committer, verification du push...
-
-echo [4/4] Publication sur GitHub...
-git push -u origin main
-if errorlevel 1 goto :fail
-
-git fetch origin main >nul 2>nul
-git show origin/main:web/configurator.js | findstr /C:"poketama-path-change" >nul 2>nul
-if errorlevel 1 goto :fail
+echo Envoi officiel de la V12 sans effacement ni force push...
+git -c safe.directory="%CD%" -c http.sslBackend=openssl push -u origin main
+if errorlevel 1 goto :connexion
 echo.
-echo ============================================================
-echo PUBLICATION TERMINEE - V9.61 VERIFIEE SUR GITHUB
-echo ============================================================
-start "" "https://github.com/Moretro3D/Test-1/actions"
+echo TERMINE : la V12 officielle est envoyee sur Test-1.
+echo Ouvre https://github.com/Moretro3D/Test-1/actions pour suivre la compilation.
 pause
 exit /b 0
 
-:fail
+:connexion
 echo.
-echo [ERREUR] La V9.61 n'a pas pu etre publiee ou verifiee.
-echo Connecte-toi a GitHub si une fenetre d'authentification apparait,
-echo puis relance ce fichier.
+echo ECHEC : consulte le message Git affiche juste au-dessus.
+echo Aucun force push ni effacement n'a ete effectue.
 pause
 exit /b 1

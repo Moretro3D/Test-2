@@ -1,4 +1,4 @@
-name: PokeTama V10 - Web Flasher
+name: PokeTama V11 - Web Flasher
 on:
   push:
     branches: ["main"]
@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   build:
-    name: Compiler et preparer le Web Flasher V10
+    name: Compiler et preparer le Web Flasher V11
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

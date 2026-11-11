@@ -1,8 +1,22 @@
-PokeTama Moretro3D V10.36
+PokeTama Moretro3D V12 BIOME CIEL
 
-VERSION INTERNE : 1.46.115-moretro3d-v10.36-box-pmd-sprites
+VERSION INTERNE : 1.48.0-moretro3d-v12-sky-biome
 
 NOUVEAUTES :
+- Six biomes sélectionnables avant de lancer un combat sauvage.
+- Recherche animée de 2,4 secondes avant de révéler le Pokémon.
+- Chaque biome ne propose que des Pokémon associés à son environnement.
+- Décors pixel art adaptés au biome choisi pendant l'exploration.
+- Sauvegarde personnelle complète copiée dans /save/poketama.bin sur la microSD.
+- Copie de secours, écriture temporaire atomique et contrôle CRC intégrés.
+- Restauration automatique après une installation ayant effacé la mémoire interne.
+- Le dossier /save est préservé pendant l'installation des sprites, fonds et musiques.
+- La microSD n'est plus formatée automatiquement si son montage échoue.
+- Les captures proviennent uniquement de la sauvegarde personnelle de l'appareil.
+- Les profils internes ne peuvent plus ajouter ou reconstruire des captures.
+- La collection est écrite en priorité et vérifiée avant les données secondaires.
+- Le Pokédex repasse en grille 4x4, sans compteur ni icône de capture.
+- Le correctif empêchant Ectoplasma de redevenir automatiquement actif est conservé.
 - Sept sols de combat pixel art : Plante, Eau, Feu, Normal, Roche, Glace, Nuages.
 - Demi-sol joueur et plateforme adverse alignes sur des positions fixes.
 - Affectation verifiee individuellement pour les 386 Pokemon.

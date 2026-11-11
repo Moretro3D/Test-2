@@ -39,7 +39,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.46.115-moretro3d-v10.36-box-pmd-sprites"
+#define FW_VERSION "1.48.0-moretro3d-v12-sky-biome"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -191,6 +191,14 @@ uint8_t battlePlayerSex = 2, battleEnemySex = 2; // 0 mâle, 1 femelle, 2 sans s
 bool battleArena = false;
 uint8_t battleArenaIndex = 0;
 bool battleArenaBadgeWon = false;
+bool biomeSelectOpen = false;
+bool biomeDirty = true;
+uint8_t biomeSelected = 0;
+uint32_t biomeSearchUntil = 0;
+int16_t biomeSearchDex = 0;
+uint8_t biomeSearchLevel = 1;
+int8_t battleEnvironmentBiome = -1;
+bool biomeBattlePending = false;
 int8_t kantoArenaDetail = -1;
 static const int16_t KANTO_LEADER_DEX[8] = { 95, 121, 26, 45, 110, 65, 59, 112 };
 static const uint8_t KANTO_LEADER_LEVEL[8] = { 12, 18, 24, 30, 36, 42, 48, 55 };
@@ -371,6 +379,7 @@ void markUiDirty() {
   keyboardDirty = true;
   gameMenuDirty = true;
   battleDirty = true;
+  biomeDirty = true;
   galleryDirty = true;
 }
 
@@ -383,6 +392,7 @@ void lockTouchBrief(uint16_t ms = 160) {
 
 const char *screenName() {
   if (pet.awaitingStarter()) return "starter";
+  if (biomeSelectOpen) return biomeSearchUntil ? "biome-search" : "biome-select";
   if (galleryOpen) return galleryDetail ? "gallery-detail" : "gallery-grid";
   if (gameOpen) return "game";
   if (sackOpen) return "sack";
@@ -397,6 +407,7 @@ const char *screenName() {
 
 bool staticScreenClean() {
   if (pet.awaitingStarter()) return !starterDirty;
+  if (biomeSelectOpen) return !biomeDirty;
   if (galleryOpen && !galleryDetail) return !galleryDirty;
   if (battleOpen) return !battleDirty;
   if (kbOpen) return !keyboardDirty;
@@ -446,11 +457,10 @@ void setup() {
   gfx->setTextSize(3);
   // 9 caracteres x 6 px x taille 3 = 162 px : centre exact a x=152.
   gfx->setCursor(CX - 79, 326); gfx->print("Moretro3D");
-  // Version publique volontairement simple : les correctifs V10.x restent
-  // internes tandis que l'utilisateur voit clairement la génération V10.
+  // Version publique V12 : exploration des biomes avec environnement Ciel.
   gfx->setTextColor(C565(0x61,0xda,0xf2));
   gfx->setTextSize(2);
-  gfx->setCursor(CX - 18, 366); gfx->print("V10");
+  gfx->setCursor(CX - 24, 366); gfx->print("V12");
   gfx->flush();
   panel->setBrightness(120);
 
@@ -471,10 +481,11 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(TP_INT), touchIsr, FALLING);
 
   pet.begin();
+  sdBegin();
+  pet.syncSdSave();
   Serial.printf("SAVE %s spec=%d lv=%u wins=%u losses=%u streak=%u\n",
                 pet.saveLoadedFromNvs ? "loaded" : "created",
                 pet.speciesId, pet.level(), pet.battleWins, pet.battleLosses, pet.battleStreak);
-  sdBegin();
 
   // reloj real: aplica el tiempo que estuvo apagado
   rtcBegin();
@@ -660,6 +671,22 @@ void loop() {
       }
     }
     battleDirty = true;
+  }
+
+  static uint32_t lastBiomeSearchFrame = 0;
+  if (biomeSelectOpen && biomeSearchUntil) {
+    if (now >= biomeSearchUntil) {
+      int16_t foundDex = biomeSearchDex;
+      uint8_t foundLevel = biomeSearchLevel;
+      battleEnvironmentBiome = biomeSelected;
+      biomeBattlePending = true;
+      biomeSearchUntil = 0;
+      biomeSelectOpen = false;
+      startBattleWith(foundDex, foundLevel, -1);
+    } else if (now - lastBiomeSearchFrame >= 260UL) {
+      lastBiomeSearchFrame = now;
+      biomeDirty = true;
+    }
   }
 
   // Die Expeditionskarte bleibt sonst als statischer Screen stehen. Ein
@@ -1009,7 +1036,7 @@ void onSwipeV(int dir) {
   if (wildPromptUntil && millis() < wildPromptUntil) return;
   if (wildPromptUntil) wildPromptUntil = 0;
   if (gameMenuOpen) return;
-  if (gameOpen || galleryOpen || kbOpen || sackOpen || battleOpen || pet.ceremony) return;
+  if (biomeSelectOpen || gameOpen || galleryOpen || kbOpen || sackOpen || battleOpen || pet.ceremony) return;
   if (clockOpen) { clockOpen = false; markUiDirty(); lockTouchBrief(); sfxPlay(SFX_TAP); return; }
   if (cardOpen) {
     if (dir < 0) { cardOpen = false; expeditionTrainChoiceOpen = false; kantoArenaDetail = -1; galleryPmd.unload(); markUiDirty(); lockTouchBrief(); sfxPlay(SFX_TAP); }  // arriba cierra la ficha
@@ -1038,7 +1065,7 @@ void onSwipe(int dir) {
   if (wildPromptUntil && millis() < wildPromptUntil) return;
   if (wildPromptUntil) wildPromptUntil = 0;
   if (gameMenuOpen) return;
-  if (gameOpen || kbOpen || clockOpen || battleOpen) return;
+  if (biomeSelectOpen || gameOpen || kbOpen || clockOpen || battleOpen) return;
   if (cardOpen) {  // dentro de la ficha: cambiar paginas
     int p = (int)cardPage + (dir > 0 ? -1 : 1);  // izquierda avanza
     uint8_t old = cardPage;
@@ -1191,6 +1218,10 @@ void onTap(int16_t x, int16_t y) {
       lockTouchBrief();
       sfxPlay(SFX_TAP);
     }
+    return;
+  }
+  if (biomeSelectOpen) {
+    biomeTap(x, y);
     return;
   }
   if (galleryOpen) {
@@ -1943,6 +1974,10 @@ void render() {
   if (staticScreenClean()) { perfRenderSkipCount++; return; }
   if (pet.awaitingStarter()) {  // primera partida: elegir inicial (prioridad total)
     renderStarterSelect();
+    return;
+  }
+  if (biomeSelectOpen) {
+    renderBiomeSelection();
     return;
   }
   if (galleryOpen) {
@@ -3007,7 +3042,7 @@ void scheduleNextWild(uint32_t now) {
 
 bool mainScreenReadyForWild() {
   if (screenOff || pet.awaitingStarter() || pet.isEgg() || pet.sleeping || pet.ceremony) return false;
-  if (battleOpen || gameOpen || gameMenuOpen || sackOpen || cardOpen || galleryOpen || kbOpen || clockOpen || helpOpen) return false;
+  if (battleOpen || biomeSelectOpen || gameOpen || gameMenuOpen || sackOpen || cardOpen || galleryOpen || kbOpen || clockOpen || helpOpen) return false;
   if (feedMenuUntil || choiceKind || bathUntil || petEventUntil) return false;
   if (pet.evolving() || pet.wantEvolveButton()) return false;
   return true;
@@ -3046,7 +3081,7 @@ void scheduleNextPetEvent(uint32_t now) {
 
 bool mainScreenReadyForPetEvent() {
   if (screenOff || pet.awaitingStarter() || pet.isEgg() || pet.sleeping || pet.ceremony) return false;
-  if (battleOpen || gameOpen || gameMenuOpen || sackOpen || cardOpen || galleryOpen || kbOpen || clockOpen || helpOpen) return false;
+  if (battleOpen || biomeSelectOpen || gameOpen || gameMenuOpen || sackOpen || cardOpen || galleryOpen || kbOpen || clockOpen || helpOpen) return false;
   if (feedMenuUntil || choiceKind || bathUntil || wildPromptUntil) return false;
   if (pet.evolving() || pet.wantEvolveButton()) return false;
   return true;
@@ -3109,6 +3144,7 @@ void closeBattle() {
   battleCatchAnimStart = 0;
   battleArena = false;
   battleArenaBadgeWon = false;
+  battleEnvironmentBiome = -1;
   wildPmd.unload();
   if (returnToArena) {
     cardOpen = true;
@@ -3122,6 +3158,10 @@ void closeBattle() {
 void startBattleWith(int16_t forcedDex, uint8_t forcedLevel, int8_t forcedShiny) {
   if (!canStartWildBattle(pet.isEgg(), pet.sleeping, pet.ceremony)) return;
   wildPromptUntil = 0;
+  biomeSelectOpen = false;
+  biomeSearchUntil = 0;
+  if (!biomeBattlePending) battleEnvironmentBiome = -1;
+  biomeBattlePending = false;
   battleArena = false;
   battleArenaBadgeWon = false;
   scheduleNextWild(millis());
@@ -3166,7 +3206,13 @@ void startBattleWith(int16_t forcedDex, uint8_t forcedLevel, int8_t forcedShiny)
 }
 
 void startBattle() {
-  startBattleWith(0, 0, -1);
+  if (!canStartWildBattle(pet.isEgg(), pet.sleeping, pet.ceremony)) return;
+  biomeSelectOpen = true;
+  biomeSearchUntil = 0;
+  biomeSearchDex = 0;
+  biomeDirty = true;
+  markUiDirty();
+  sfxPlay(SFX_MENU);
 }
 
 void startKantoArenaBattle(uint8_t index) {
@@ -3672,6 +3718,145 @@ void drawBattleBackgroundBiome(uint8_t biome) {
   }
 }
 
+const char *biomeChooseTitle() {
+  static const char *const L[LANG_COUNT]={
+    "ELIGE BIOMA","CHOOSE BIOME","CHOISIS UN BIOME","BIOM WAHLEN","SCEGLI BIOMA","ESCOLHE BIOMA"
+  };
+  return L[gLang<LANG_COUNT?gLang:LANG_EN];
+}
+
+const char *biomeSearchText() {
+  static const char *const L[LANG_COUNT]={
+    "BUSCANDO...","SEARCHING...","EXPLORATION...","SUCHE...","RICERCA...","PROCURANDO..."
+  };
+  return L[gLang<LANG_COUNT?gLang:LANG_EN];
+}
+
+const char *battleBiomeName(uint8_t biome) {
+  static const char *const L[LANG_COUNT][7]={
+    {"PRADERA","PLAYA","BOSQUE","VOLCAN","MONTANA","NIEVE","CIELO"},
+    {"GRASS","BEACH","FOREST","VOLCANO","MOUNTAIN","SNOW","SKY"},
+    {"PRAIRIE","PLAGE","FORET","VOLCAN","MONTAGNE","NEIGE","CIEL"},
+    {"WIESE","STRAND","WALD","VULKAN","BERG","SCHNEE","HIMMEL"},
+    {"PRATO","SPIAGGIA","BOSCO","VULCANO","MONTAGNA","NEVE","CIELO"},
+    {"CAMPO","PRAIA","FLORESTA","VULCAO","MONTANHA","NEVE","CEU"}
+  };
+  return L[gLang<LANG_COUNT?gLang:LANG_EN][biome<7?biome:0];
+}
+
+void biomeTilePosition(uint8_t biome,int &x,int &y) {
+  if (biome<6) { x=54+(biome&1)*188; y=78+(biome>>1)*68; }
+  else { x=148; y=282; }
+}
+
+void drawSkyBiomeBackground() {
+  uint16_t top=C565(0x25,0x75,0xc4), bottom=C565(0x9d,0xdc,0xf2);
+  for(int y=0;y<320;y+=8) gfx->fillRect(0,y,466,8,lerp565(top,bottom,y,320));
+  const int cloudX[5]={54,150,255,355,420};
+  const int cloudY[5]={102,182,78,222,145};
+  for(uint8_t i=0;i<5;i++) {
+    gfx->fillCircle(cloudX[i],cloudY[i],24,UI_WHITE);
+    gfx->fillCircle(cloudX[i]+24,cloudY[i]+5,19,UI_WHITE);
+    gfx->fillCircle(cloudX[i]-22,cloudY[i]+8,16,UI_WHITE);
+    gfx->fillRect(cloudX[i]-22,cloudY[i]+5,46,20,UI_WHITE);
+  }
+}
+
+void drawBiomeIcon(uint8_t biome,int cx,int cy) {
+  if (biome==0) {
+    gfx->fillRect(cx-28,cy+8,56,12,C565(0x54,0xb8,0x48));
+    for(int x=-24;x<=24;x+=8) gfx->drawFastVLine(cx+x,cy+1+(abs(x)%5),12,C565(0x9a,0xdd,0x68));
+  } else if (biome==1) {
+    gfx->fillRect(cx-30,cy-4,60,24,C565(0x38,0x9f,0xdf));
+    gfx->drawFastHLine(cx-25,cy+2,22,UI_WHITE); gfx->drawFastHLine(cx+4,cy+10,20,UI_WHITE);
+  } else if (biome==2) {
+    gfx->fillRect(cx-4,cy+2,8,22,C565(0x78,0x4c,0x28));
+    gfx->fillCircle(cx,cy-5,18,C565(0x32,0x91,0x47));
+    gfx->fillCircle(cx-15,cy+1,11,C565(0x45,0xb2,0x58));
+    gfx->fillCircle(cx+15,cy+1,11,C565(0x45,0xb2,0x58));
+  } else if (biome==3) {
+    gfx->fillTriangle(cx-27,cy+22,cx,cy-17,cx+27,cy+22,C565(0x65,0x42,0x38));
+    gfx->fillTriangle(cx-8,cy-6,cx,cy-17,cx+8,cy-6,C565(0xff,0x75,0x28));
+    gfx->drawFastVLine(cx,cy-26,8,C565(0xff,0xc0,0x45));
+  } else if (biome==4) {
+    gfx->fillTriangle(cx-31,cy+22,cx-8,cy-14,cx+12,cy+22,C565(0x8a,0x82,0x78));
+    gfx->fillTriangle(cx-8,cy+22,cx+13,cy-22,cx+34,cy+22,C565(0xb0,0xa7,0x98));
+    gfx->fillTriangle(cx+4,cy-4,cx+13,cy-22,cx+22,cy-4,UI_WHITE);
+  } else if (biome==5) {
+    for(int i=0;i<6;i++) {
+      int x=cx-25+(i%3)*25, y=cy-13+(i/3)*25;
+      gfx->drawFastHLine(x-5,y,11,UI_WHITE); gfx->drawFastVLine(x,y-5,11,UI_WHITE);
+      gfx->drawLine(x-4,y-4,x+4,y+4,UI_WHITE); gfx->drawLine(x+4,y-4,x-4,y+4,UI_WHITE);
+    }
+  } else {
+    gfx->fillCircle(cx-16,cy+4,15,UI_WHITE);
+    gfx->fillCircle(cx+2,cy-3,20,UI_WHITE);
+    gfx->fillCircle(cx+22,cy+5,14,UI_WHITE);
+    gfx->fillRect(cx-18,cy+4,42,15,UI_WHITE);
+  }
+}
+
+void renderBiomeSelection() {
+  biomeDirty=false;
+  if (biomeSearchUntil) {
+    gfx->fillScreen(C565(0x0d,0x16,0x27));
+    if (biomeSelected<6) drawBattleBackgroundBiome(biomeSelected);
+    else drawSkyBiomeBackground();
+    gfx->fillRoundRect(76,24,314,58,18,C565(0x12,0x20,0x35));
+    gfx->drawRoundRect(76,24,314,58,18,C565(0x61,0xda,0xf2));
+    gfx->setTextColor(UI_WHITE); gfx->setTextSize(2);
+    const char *search=biomeSearchText();
+    gfx->setCursor(CX-(int)strlen(search)*6,46); gfx->print(search);
+    uint8_t pulse=(millis()/260)%4;
+    for(uint8_t i=0;i<4;i++) gfx->drawCircle(CX,205,38+i*18,(i==pulse)?UI_WHITE:C565(0x52,0xa8,0xc8));
+    gfx->drawFastHLine(CX-62,205,124,C565(0x61,0xda,0xf2));
+    gfx->drawFastVLine(CX,143,124,C565(0x61,0xda,0xf2));
+    gfx->fillRoundRect(104,354,258,54,16,C565(0x12,0x20,0x35));
+    gfx->setTextColor(UI_WHITE); gfx->setTextSize(2);
+    const char *name=battleBiomeName(biomeSelected);
+    gfx->setCursor(CX-(int)strlen(name)*6,373); gfx->print(name);
+    gfx->flush();
+    return;
+  }
+
+  gfx->fillScreen(C565(0x0a,0x12,0x22));
+  gfx->setTextColor(UI_WHITE); gfx->setTextSize(2);
+  const char *title=biomeChooseTitle();
+  gfx->setCursor(CX-(int)strlen(title)*6,40); gfx->print(title);
+  for(uint8_t biome=0;biome<7;biome++) {
+    int x,y; biomeTilePosition(biome,x,y);
+    uint16_t colors[7]={C565(0x36,0x8e,0x45),C565(0x2f,0x83,0xc7),C565(0x20,0x69,0x3b),C565(0xb8,0x48,0x28),C565(0x70,0x69,0x62),C565(0x88,0xb8,0xd8),C565(0x4f,0x98,0xd8)};
+    gfx->fillRoundRect(x,y,170,58,14,colors[biome]);
+    gfx->drawRoundRect(x,y,170,58,14,UI_WHITE);
+    drawBiomeIcon(biome,x+40,y+27);
+    const char *name=battleBiomeName(biome);
+    gfx->setTextColor(UI_WHITE); gfx->setTextSize(1);
+    gfx->setCursor(x+102-(int)strlen(name)*3,y+26); gfx->print(name);
+  }
+  gfx->fillRoundRect(136,358,194,42,12,UI_TRACK);
+  gfx->setTextColor(uiContrastText(UI_TRACK)); gfx->setTextSize(2);
+  const char *back=T(S_LAN_BACK);
+  gfx->setCursor(CX-(int)strlen(back)*6,372); gfx->print(back);
+  gfx->flush();
+}
+
+void biomeTap(int16_t x,int16_t y) {
+  if (!biomeSelectOpen || biomeSearchUntil) return;
+  if (y>=352) {
+    biomeSelectOpen=false; biomeDirty=true; markUiDirty(); lockTouchBrief(); sfxPlay(SFX_TAP); return;
+  }
+  for(uint8_t biome=0;biome<7;biome++) {
+    int bx,by; biomeTilePosition(biome,bx,by);
+    if(x<bx || x>bx+170 || y<by || y>by+58) continue;
+    biomeSelected=biome;
+    biomeSearchDex=pickWildSpeciesForBiome(biome,(uint32_t)random(0x7FFFFFFF));
+    biomeSearchLevel=wildLevelFor(pet.level(),(uint8_t)random(100));
+    biomeSearchUntil=millis()+2400UL;
+    biomeDirty=true;
+    lockTouchBrief(); sfxPlay(SFX_MENU); return;
+  }
+}
+
 uint8_t battleGroundStyleFor(uint8_t type1,uint8_t type2) {
   // Priorité stable pour les doubles types : l'élément du Pokémon garde son
   // décor (Dracaufeu=Feu, Léviator=Eau, Artikodin=Glace), puis Vol utilise
@@ -3808,11 +3993,11 @@ void renderBattle() {
   int16_t playerDex = pet.speciesId;
   const DexEntry &mine = DEX_TBL[playerDex];
   const DexEntry &foe = DEX_TBL[battleDex];
-  uint8_t biome=mine.biome<6?mine.biome:0;
-  static const uint16_t skies[6]={C565(0xe8,0xf3,0xd9),C565(0xd9,0xf4,0xfa),C565(0xdf,0xef,0xd4),C565(0xed,0xd8,0xc6),C565(0xf1,0xe4,0xcf),C565(0xe9,0xf3,0xfa)};
+  uint8_t biome=battleEnvironmentBiome>=0?(uint8_t)battleEnvironmentBiome:(mine.biome<6?mine.biome:0);
+  static const uint16_t skies[7]={C565(0xe8,0xf3,0xd9),C565(0xd9,0xf4,0xfa),C565(0xdf,0xef,0xd4),C565(0xed,0xd8,0xc6),C565(0xf1,0xe4,0xcf),C565(0xe9,0xf3,0xfa),C565(0x9d,0xdc,0xf2)};
   uint16_t sky=skies[biome];
   gfx->fillScreen(sky);
-  drawBattleBackgroundBiome(biome);
+  if (biome<6) drawBattleBackgroundBiome(biome); else drawSkyBiomeBackground();
   drawBattleBaseFor(battleGroundStyleForDex(battleDex),true);
   drawBattleBaseFor(battleGroundStyleForDex(playerDex),false);
 
@@ -6005,7 +6190,7 @@ void keyboardTap(int16_t x, int16_t y) {
 #define GAL_Y 82
 #define GAL_CELL 72
 #define GAL_COLS 4
-#define GAL_ROWS 3
+#define GAL_ROWS 4
 #define GAL_PAGE_SIZE (GAL_COLS * GAL_ROWS)
 
 int galleryPageCount() {
@@ -6144,8 +6329,6 @@ void renderGallery() {
       const uint8_t *t = thumbs.get(galleryDetail);
       if (t) drawThumb(t, CX - GAL_CELL, 135, 4, !known);
     }
-    // Un seul pictogramme discret rappelle que ce Pokemon est deja obtenu.
-    if (known) drawBattleCaughtBall(350,354,24,26);
     // Bouton RETOUR vers la grille Pokédex.
     gfx->fillRoundRect(22, 20, 54, 34, 10, uiPanel());
     gfx->drawRoundRect(22, 20, 54, 34, 10, uiInk());
@@ -6218,15 +6401,6 @@ void renderGallery() {
       }
     }
   }
-  // La quatrieme ligne est remplacee par le total reel des captures.
-  char caught[28];
-  snprintf(caught,sizeof(caught),T(S_CAUGHT_COUNT_FMT),(unsigned)pet.caughtCount());
-  gfx->fillRoundRect(103,306,260,54,14,uiPanel());
-  gfx->drawRoundRect(103,306,260,54,14,uiLine());
-  gfx->setTextColor(uiInk());
-  gfx->setTextSize(2);
-  gfx->setCursor(CX-(int)strlen(caught)*6,325);
-  gfx->print(caught);
   // Navigation latérale : aucune rangée de petites billes.
   int pages = galleryPageCount();
   if (galleryPage > 0) {

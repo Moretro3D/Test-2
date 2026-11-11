@@ -203,7 +203,9 @@ static void maintainTamaPokeSd() {
 
 bool sdBegin() {
   SD_MMC.setPins(SDMMC_CLK, SDMMC_CMD, SDMMC_DATA);
-  sdReady = SD_MMC.begin("/sdcard", true /* modo 1-bit */, true /* formatea si no monta */);
+  // Une sauvegarde personnelle vit maintenant sur la carte : ne jamais
+  // formater automatiquement la SD après un simple échec de montage.
+  sdReady = SD_MMC.begin("/sdcard", true /* modo 1-bit */, false /* jamais de format auto */);
   if (sdReady) {
     Serial.printf("SD montada: %llu MB\n", SD_MMC.cardSize() / (1024ULL * 1024ULL));
     SD_MMC.mkdir("/mons");

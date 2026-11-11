@@ -19,6 +19,12 @@ public:
     return values.count(k) || blobs.count(k);
   }
 
+  bool remove(const char *key) {
+    std::string k(key ? key : "");
+    bool removed = values.erase(k) != 0;
+    removed = blobs.erase(k) != 0 || removed;
+    return removed;
+  }
   void putBool(const char *key, bool value) { values[key] = value ? "1" : "0"; }
   bool getBool(const char *key, bool fallback = false) const {
     return getValue(key, fallback ? "1" : "0") == "1";
@@ -34,7 +40,7 @@ public:
     return static_cast<uint32_t>(std::stoul(getValue(key, std::to_string(fallback))));
   }
 
-  void putShort(const char *key, int16_t value) { values[key] = std::to_string(value); }
+  size_t putShort(const char *key, int16_t value) { values[key] = std::to_string(value); return sizeof(value); }
   int16_t getShort(const char *key, int16_t fallback = 0) const {
     return static_cast<int16_t>(std::stoi(getValue(key, std::to_string(fallback))));
   }
@@ -56,9 +62,10 @@ public:
     out[len - 1] = '\0';
   }
 
-  void putBytes(const char *key, const void *data, size_t len) {
+  size_t putBytes(const char *key, const void *data, size_t len) {
     const auto *bytes = static_cast<const uint8_t *>(data);
     blobs[key] = std::vector<uint8_t>(bytes, bytes + len);
+    return len;
   }
 
   size_t getBytesLength(const char *key) const {
