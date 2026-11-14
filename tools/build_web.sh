@@ -9,7 +9,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 FQBN="esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=16M,PSRAM=opi,PartitionScheme=app3M_fat9M_16MB"
-VERSION="1.48.4-moretro3d-v12.4-canva-biomes"
+VERSION="1.48.5-moretro3d-v12.5-canva-biomes-fill"
 
 echo "Préparation du sketch TamaPoke..."
 TMP="$(mktemp -d "${TMPDIR:-/tmp}/tamapoke-ci.XXXXXX")"
@@ -70,7 +70,7 @@ python3 "$ROOT/tools/audit_386_assets.py"
 echo "Audit intégral des évolutions #001-386..."
 python3 "$ROOT/tools/audit_evolutions.py"
 
-echo "Audit final V12.4 interface + combat + habitats..."
+echo "Audit final V12.5 interface + combat + habitats..."
 python3 "$ROOT/tools/audit_final_v12.py"
 
 echo "BUILD TERMINE"

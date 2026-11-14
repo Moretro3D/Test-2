@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "assets" / "biome_thumbnails_canva"
 OUT = ROOT / "biome_thumbnails.h"
 NAMES = ("PRAIRIE", "PLAGE", "FORET", "VOLCAN", "MONTAGNE", "NEIGE", "CIEL")
-SIZE = 74
+SIZE = 88
 COLORS = 31
 
 
@@ -22,9 +22,9 @@ def prepare(path):
     if not box:
         raise SystemExit(f"Image vide: {path}")
     image = image.crop(box)
-    image.thumbnail((SIZE, SIZE), Image.Resampling.LANCZOS)
-    canvas = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
-    canvas.alpha_composite(image, ((SIZE-image.width)//2, (SIZE-image.height)//2))
+    # Les créations Canva sont plus hautes que larges. Pour remplir réellement
+    # la bulle AMOLED, on les adapte au carré complet sans conserver de marge.
+    canvas = image.resize((SIZE, SIZE), Image.Resampling.LANCZOS)
     mask = canvas.getchannel("A")
     base = Image.new("RGB", canvas.size, (0, 0, 0))
     base.paste(canvas.convert("RGB"), mask=mask)

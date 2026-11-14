@@ -40,7 +40,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.48.4-moretro3d-v12.4-canva-biomes"
+#define FW_VERSION "1.48.5-moretro3d-v12.5-canva-biomes-fill"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -458,10 +458,10 @@ void setup() {
   gfx->setTextSize(3);
   // 9 caracteres x 6 px x taille 3 = 162 px : centre exact a x=152.
   gfx->setCursor(CX - 79, 326); gfx->print("Moretro3D");
-  // Version publique V12.4 : sept miniatures pixel-art reellement embarquees.
+  // Version publique V12.5 : sept miniatures pixel-art reellement embarquees.
   gfx->setTextColor(C565(0x61,0xda,0xf2));
   gfx->setTextSize(2);
-  gfx->setCursor(CX - 30, 366); gfx->print("V12.4");
+  gfx->setCursor(CX - 30, 366); gfx->print("V12.5");
   gfx->flush();
   panel->setBrightness(120);
 
@@ -3826,7 +3826,7 @@ void renderBiomeSelection() {
     gfx->drawCircle(cx,cy,47,C565(0x80,0xd9,0xf0));
     gfx->drawCircle(cx,cy,43,light);
     gfx->drawArc(cx,cy,35,38,205,315,light);
-    drawBiomeIcon(biome,cx,cy-7);
+    drawBiomeIcon(biome,cx,cy);
     const char *name=battleBiomeName(biome);
     gfx->setTextColor(UI_WHITE); gfx->setTextSize(1);
     int labelW=max(54,(int)strlen(name)*6+14);

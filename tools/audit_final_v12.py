@@ -15,19 +15,19 @@ sdmon=(ROOT/"sdmon.cpp").read_text(encoding="utf-8")
 
 def ok(cond,msg):
     if not cond:
-        raise SystemExit("FAIL V12.4: "+msg)
+        raise SystemExit("FAIL V12.5: "+msg)
     print("OK  ",msg)
 
-ok("1.48.4-moretro3d-v12.4-canva-biomes" in ino and
-   "1.48.4-moretro3d-v12.4-canva-biomes" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
-   "1.48.4-moretro3d-v12.4-canva-biomes" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "1.48.4-moretro3d-v12.4-canva-biomes" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
-   "1.48.4-moretro3d-v12.4-canva-biomes" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
-   "version 1.48.4 coherente et caches installateur invalides")
-ok('gfx->setCursor(CX - 30, 366); gfx->print("V12.4")' in ino and
-   '<div class="version">Firmware V12.4</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   '<div class="version">Firmware V12.4</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
-   "V12.4 affichee au demarrage, sur la page officielle et sur Shopify")
+ok("1.48.5-moretro3d-v12.5-canva-biomes-fill" in ino and
+   "1.48.5-moretro3d-v12.5-canva-biomes-fill" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.48.5-moretro3d-v12.5-canva-biomes-fill" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.48.5-moretro3d-v12.5-canva-biomes-fill" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   "1.48.5-moretro3d-v12.5-canva-biomes-fill" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.48.5 coherente et caches installateur invalides")
+ok('gfx->setCursor(CX - 30, 366); gfx->print("V12.5")' in ino and
+   '<div class="version">Firmware V12.5</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   '<div class="version">Firmware V12.5</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
+   "V12.5 affichee au demarrage, sur la page officielle et sur Shopify")
 ok('location.replace("https://moretro3d.fr/pages/poketama")' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    'https://moretro3d.github.io/Test-1/manifest.json' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
    "GitHub Pages redirige vers Shopify et conserve le Web Flasher officiel")
@@ -37,7 +37,7 @@ ok("github.repository == 'Moretro3D/Test-2'" in workflow and
    "! grep -q 'location.replace' web/index.html" in workflow,
    "Test-2 affiche son Web Flasher sans redirection Shopify")
 test2_launcher=(ROOT/"OUVRIR_WEB_FLASHER_TEST_2.bat").read_text(encoding="utf-8")
-ok("https://moretro3d.github.io/Test-2/?v=1.48.4-moretro3d-v12.4-canva-biomes" in test2_launcher,
+ok("https://moretro3d.github.io/Test-2/?v=1.48.5-moretro3d-v12.5-canva-biomes-fill" in test2_launcher,
    "lanceur direct Test-2 avec contournement du cache")
 scene=ino[ino.index("void drawScene("):ino.index("void drawStarterPokeball(")]
 ok("HORIZON-38" not in scene and "uint16_t sea=" not in scene and
@@ -391,11 +391,13 @@ ok("void biomeBubblePosition" in ino and
 thumb=(ROOT/"biome_thumbnails.h").read_text(encoding="utf-8")
 ok('#include "biome_thumbnails.h"' in ino and
    "BIOME_THUMB_PIXELS[index]" in ino and "BIOME_THUMB_PALETTES[index]" in ino and
+   "#define BIOME_THUMB_W 88" in thumb and "#define BIOME_THUMB_H 88" in thumb and
+   "drawBiomeIcon(biome,cx,cy);" in ino and
    all(f"BIOME_{name}_PIXELS" in thumb for name in
        ("PRAIRIE","PLAGE","FORET","VOLCAN","MONTAGNE","NEIGE","CIEL")) and
    all((ROOT/"assets/biome_thumbnails_canva"/f"{name}.png").exists() for name in
        ("prairie","plage","foret","volcan","montagne","neige","ciel")),
-   "sept vraies images Canva converties et embarquees dans le firmware")
+   "sept images Canva etirees bord a bord dans leurs bulles")
 music=ROOT/"tools/sdcard/music"
 for filename in ("morning.wav", "lofi.wav", "night.wav"):
     with wave.open(str(music/filename), "rb") as wav:
@@ -509,4 +511,4 @@ if shutil.which("bash"):
 else:
     print("SKIP build_web.sh syntaxe (bash absent sur ce poste)")
 
-print("AUDIT FINAL V12.4 OK")
+print("AUDIT FINAL V12.5 OK")
