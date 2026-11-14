@@ -144,6 +144,15 @@ static const Note N_EXPEDITION_START[] = {TRI(523, 52, 64), TRI(659, 62, 70), SL
 static const Note N_EXPEDITION_FOUND[] = {TRI(784, 55, 70), TRI(1047, 58, 76), TRI(1319, 65, 78), SOFT(1568, 130, 72)};
 static const Note N_EXPEDITION_CLAIM[] = {SOFT(988, 55, 66), TRI(1319, 70, 74), SL(1568, 115, 1976, 76, W_TRI)};
 static const Note N_ITEM_USE[] = {SOFT(659, 48, 62), SL(784, 95, 1175, 70, W_TRI)};
+static const Note N_NEED_SLEEP[] = {
+  SOFT(659, 150, 48), SIL(35), SOFT(523, 180, 44), SIL(45), SOFT(392, 260, 38)
+};
+static const Note N_NEED_HUNGER[] = {
+  SL(180, 190, 115, 54, W_SOFT), NS(45, 24), SIL(55), SL(155, 240, 95, 50, W_SOFT)
+};
+static const Note N_NEED_HYGIENE[] = {
+  NS(42, 28), TRI(988, 55, 48), SIL(24), TRI(1319, 62, 54), SIL(22), TRI(1760, 75, 58)
+};
 
 // Trois compositions originales "ville douce / lo-fi". Elles sont jouees
 // note par note afin qu'un SFX ou un cri puisse s'intercaler rapidement.
@@ -263,6 +272,7 @@ static const SfxDef SFX[SFX_COUNT] = {
   {N_ATTACK_QUICK, 2}, {N_ATTACK_HEAVY, 3}, {N_ENEMY_HIT, 2}, {N_EFFECTIVE, 3},
   {N_WEAK_HIT, 2}, {N_MINIGAME_OK, 2}, {N_MINIGAME_BAD, 2}, {N_LOW_HP, 3},
   {N_EXPEDITION_START, 3}, {N_EXPEDITION_FOUND, 4}, {N_EXPEDITION_CLAIM, 3}, {N_ITEM_USE, 2},
+  {N_NEED_SLEEP, 5}, {N_NEED_HUNGER, 4}, {N_NEED_HYGIENE, 6},
 };
 
 static const uint8_t SFX_MIN_MODE[SFX_COUNT] = {
@@ -305,6 +315,9 @@ static const uint8_t SFX_MIN_MODE[SFX_COUNT] = {
   SOUND_LOW,  // EXPEDITION_FOUND
   SOUND_MED,  // EXPEDITION_CLAIM
   SOUND_MED,  // ITEM_USE
+  SOUND_MED,  // NEED_SLEEP
+  SOUND_MED,  // NEED_HUNGER
+  SOUND_MED,  // NEED_HYGIENE
 };
 
 static uint16_t noiseState = 0xACE1;

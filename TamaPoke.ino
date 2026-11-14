@@ -40,7 +40,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.50.0-moretro3d-v12.6-authentic-cries"
+#define FW_VERSION "1.50.1-moretro3d-v12.6-needs-audio"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -583,9 +583,9 @@ void maybePlayCareReminder(uint32_t now) {
   if (now < nextReminderAt || audioMode() == SOUND_OFF) return;
   if ((!screenOff && dimStage == 0) || pet.isEgg() || pet.sleeping || pet.ceremony) return;
   if (pet.lowestStat() >= 25) { nextReminderAt = now + 15UL * 60UL * 1000UL; return; }
-  if (pet.fullness < 25) sfxPlay(SFX_EAT);
-  else if (pet.hygiene < 25) sfxPlay(SFX_EVENT_SPARKLE);
-  else if (pet.energy < 25) sfxPlay(SFX_REST);
+  if (pet.energy < 25 && pet.energy <= pet.fullness && pet.energy <= pet.hygiene) sfxPlay(SFX_NEED_SLEEP);
+  else if (pet.fullness < 25 && pet.fullness <= pet.hygiene) sfxPlay(SFX_NEED_HUNGER);
+  else if (pet.hygiene < 25) sfxPlay(SFX_NEED_HYGIENE);
   else sfxPlay(SFX_HEART);
   speciesChirpPlay(pet.speciesId);
   nextReminderAt = now + 15UL * 60UL * 1000UL;
@@ -1535,6 +1535,7 @@ void onTap(int16_t x, int16_t y) {
         }
       } else if (i == 2) {
         pet.toggleLight();
+        if (pet.sleeping) sfxPlay(SFX_NEED_SLEEP);
       } else if (i == 3) {
         startBath();
       } else {
@@ -1553,8 +1554,12 @@ void onTap(int16_t x, int16_t y) {
     else if (r & PET_INTERACT_JOY) msg = S_HAPPY_FB;
     snprintf(petEventMsg, sizeof(petEventMsg), "%s", T(msg));
     petEventFeedbackUntil = millis() + 1600;
-    if (!pet.sleeping) sfxPlay((r & PET_INTERACT_BOND) ? SFX_HEART : SFX_TAP);
-    if (r != PET_INTERACT_NONE && audioMode() != SOUND_OFF) speciesChirpPlay(pet.speciesId);
+    if (r != PET_INTERACT_NONE && audioMode() != SOUND_OFF) {
+      speciesChirpPlay(pet.speciesId);  // vrai cri /cries/xxx.wav si installe
+      if (r & PET_INTERACT_BOND) sfxPlay(SFX_HEART);
+    } else if (!pet.sleeping) {
+      sfxPlay(SFX_TAP);
+    }
   }
 }
 

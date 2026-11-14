@@ -43,6 +43,9 @@ enum Sfx : uint8_t {
   SFX_EXPEDITION_FOUND,
   SFX_EXPEDITION_CLAIM,
   SFX_ITEM_USE,
+  SFX_NEED_SLEEP,
+  SFX_NEED_HUNGER,
+  SFX_NEED_HYGIENE,
   SFX_COUNT
 };
 
@@ -62,6 +65,6 @@ uint8_t audioMode();
 void audioSetMusicEnabled(bool on);
 bool audioMusicEnabled();
 bool audioBusy();
-void speciesChirpPlay(int16_t dex);  // eigener, synthetisierter Spezies-Chirp
+void speciesChirpPlay(int16_t dex);  // vrai WAV SD prioritaire, synthese en secours
 void audioAmbientPlay(uint8_t theme); // 0 matin, 1 lo-fi, 2 nuit; une note non bloquante
 bool audioPreloadMusic(uint8_t theme); // réserve le tampon et charge l'OST avant l'écran principal

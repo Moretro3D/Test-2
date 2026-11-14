@@ -1,6 +1,6 @@
-PokeTama Moretro3D V12.6 - 386 CRIS FIDELES SUR MICROSD
+PokeTama Moretro3D V12.6 - CRIS REELS ET SONS DES BESOINS
 
-VERSION INTERNE : 1.50.0-moretro3d-v12.6-authentic-cries
+VERSION INTERNE : 1.50.1-moretro3d-v12.6-needs-audio
 
 NOUVEAUTES :
 - Réglages séparés pour la musique et les sons d'interaction.
