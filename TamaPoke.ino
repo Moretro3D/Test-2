@@ -40,7 +40,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.50.1-moretro3d-v12.6-needs-audio"
+#define FW_VERSION "1.50.2-moretro3d-v12.6-radar-biomes"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -3974,19 +3974,53 @@ void drawBiomeIcon(uint8_t biome,int cx,int cy) {
   }
 }
 
+void drawBiomePixelArtRadar(uint8_t biome) {
+  // Reutilise exactement les sept pixel arts des bulles, agrandis au nearest
+  // neighbour et recadres dans le rond. Aucun lissage ni ancien fond generique.
+  uint8_t index=biome<7?biome:0;
+  const uint8_t *pixels=BIOME_THUMB_PIXELS[index];
+  const uint16_t *palette=BIOME_THUMB_PALETTES[index];
+  static const uint16_t base[7]={
+    C565(0x7c,0xb9,0x58),C565(0x55,0xa9,0xd5),C565(0x3c,0x79,0x45),
+    C565(0x8e,0x3d,0x2b),C565(0x79,0x70,0x66),C565(0xb9,0xd8,0xe9),C565(0x67,0xad,0xe0)
+  };
+  gfx->fillScreen(base[index]);
+  const int scale=6, left=(466-BIOME_THUMB_W*scale)/2, top=-104;
+  for(int sy=0;sy<BIOME_THUMB_H;sy++) {
+    int dy=top+sy*scale;
+    if(dy>=320 || dy+scale<=0) continue;
+    int x=0;
+    while(x<BIOME_THUMB_W) {
+      uint8_t color=pgm_read_byte(&pixels[(uint16_t)sy*BIOME_THUMB_W+x]);
+      int start=x++;
+      while(x<BIOME_THUMB_W && pgm_read_byte(&pixels[(uint16_t)sy*BIOME_THUMB_W+x])==color) x++;
+      if(color==BIOME_THUMB_TRANSPARENT) continue;
+      int dx=left+start*scale, dw=(x-start)*scale;
+      if(dx<0){dw+=dx;dx=0;} if(dx+dw>466) dw=466-dx;
+      int py=dy,ph=scale; if(py<0){ph+=py;py=0;} if(py+ph>320) ph=320-py;
+      if(dw>0 && ph>0) gfx->fillRect(dx,py,dw,ph,pgm_read_word(&palette[color]));
+    }
+  }
+  // Assombrit seulement les deux zones de texte; le pixel art reste visible.
+  gfx->fillRect(0,0,466,8,C565(0x0b,0x14,0x24));
+}
+
 void renderBiomeSelection() {
   biomeDirty=false;
   if (biomeSearchUntil) {
-    gfx->fillScreen(C565(0x0d,0x16,0x27));
-    if (biomeSelected<6) drawBattleBackgroundBiome(biomeSelected);
-    else drawSkyBiomeBackground();
+    drawBiomePixelArtRadar(biomeSelected);
     gfx->fillRoundRect(76,24,314,58,18,C565(0x12,0x20,0x35));
     gfx->drawRoundRect(76,24,314,58,18,C565(0x61,0xda,0xf2));
     gfx->setTextColor(UI_WHITE); gfx->setTextSize(2);
     const char *search=biomeSearchText();
     gfx->setCursor(CX-(int)strlen(search)*6,46); gfx->print(search);
     uint8_t pulse=(millis()/260)%4;
-    for(uint8_t i=0;i<4;i++) gfx->drawCircle(CX,205,38+i*18,(i==pulse)?UI_WHITE:C565(0x52,0xa8,0xc8));
+    for(uint8_t i=0;i<4;i++) {
+      gfx->drawCircle(CX,205,39+i*18,C565(0x08,0x12,0x20));
+      gfx->drawCircle(CX,205,38+i*18,(i==pulse)?UI_WHITE:C565(0x61,0xda,0xf2));
+    }
+    gfx->drawFastHLine(CX-63,206,126,C565(0x08,0x12,0x20));
+    gfx->drawFastVLine(CX+1,142,126,C565(0x08,0x12,0x20));
     gfx->drawFastHLine(CX-62,205,124,C565(0x61,0xda,0xf2));
     gfx->drawFastVLine(CX,143,124,C565(0x61,0xda,0xf2));
     gfx->fillRoundRect(104,354,258,54,16,C565(0x12,0x20,0x35));
