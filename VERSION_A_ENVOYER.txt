@@ -1,6 +1,6 @@
-PokeTama Moretro3D V12.2 MINIATURES BIOMES
+PokeTama Moretro3D V12.3 MINIATURES BIOMES
 
-VERSION INTERNE : 1.48.2-moretro3d-v12.2-biome-thumbnails
+VERSION INTERNE : 1.48.3-moretro3d-v12.3-biome-thumbnails
 
 NOUVEAUTES :
 - Sept biomes sélectionnables avant de lancer un combat sauvage : Prairie, Plage, Forêt, Volcan, Montagne, Neige et Ciel.

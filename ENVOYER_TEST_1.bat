@@ -1,9 +1,9 @@
 @echo off
 setlocal EnableExtensions
-title PokeTama V12.2 - Deploiement officiel Test-1
+title PokeTama V12.3 - Deploiement officiel Test-1
 cd /d "%~dp0"
 
-echo PokeTama V12.2 - deploiement officiel vers Moretro3D/Test-1
+echo PokeTama V12.3 - deploiement officiel vers Moretro3D/Test-1
 echo.
 where git >nul 2>nul
 if errorlevel 1 (
@@ -32,19 +32,19 @@ rem cette mise a jour : conserver strictement la copie deja publiee.
 git -c safe.directory="%CD%" checkout origin/main -- web/sprites.pak
 if errorlevel 1 goto :connexion
 
-echo Preparation de la version officielle V12.2...
+echo Preparation de la version officielle V12.3...
 git -c safe.directory="%CD%" add -A
 git -c safe.directory="%CD%" diff --cached --quiet
 if errorlevel 1 (
-  git -c safe.directory="%CD%" commit -m "PokeTama V12.2 miniatures biomes"
+  git -c safe.directory="%CD%" commit -m "PokeTama V12.3 miniatures biomes"
   if errorlevel 1 goto :connexion
 )
 
-echo Envoi officiel de la V12.2 sans effacement ni force push...
+echo Envoi officiel de la V12.3 sans effacement ni force push...
 git -c safe.directory="%CD%" -c http.sslBackend=openssl push -u origin main
 if errorlevel 1 goto :connexion
 echo.
-echo TERMINE : la V12.2 officielle est envoyee sur Test-1.
+echo TERMINE : la V12.3 officielle est envoyee sur Test-1.
 echo Ouvre https://github.com/Moretro3D/Test-1/actions pour suivre la compilation.
 pause
 exit /b 0
