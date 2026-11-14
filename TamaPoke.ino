@@ -40,7 +40,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.48.9-moretro3d-v12.6-home-battle"
+#define FW_VERSION "1.49.0-moretro3d-v12.6-audio-controls"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -549,7 +549,7 @@ void ensureMon() {
 }
 
 bool mainScreenReadyForAmbientSound() {
-  if (audioMode() < SOUND_LOW || screenOff || dimStage > 0) return false;
+  if (!audioMusicEnabled() || audioMode() < SOUND_LOW || screenOff || dimStage > 0) return false;
   // La musique reste continue dans toutes les pages et tous les menus. Elle ne
   // doit pas etre rechargee ni redemarree lors du retour a l'accueil.
   if (pet.sleeping || pet.ceremony) return false;
@@ -570,6 +570,22 @@ void maybePlayAmbientSound(uint32_t now) {
   uint8_t theme=(hour>=7 && hour<13) ? 0 : ((hour>=13 && hour<20) ? 1 : 2);
   audioAmbientPlay(theme);
   nextAmbientSoundAt = now + 10;
+}
+
+void maybePlayCareReminder(uint32_t now) {
+  // Le Pokemon peut appeler le joueur lorsque l'ecran est eteint ou assombri.
+  // Une alerte au maximum toutes les 15 minutes evite les sons repetitifs.
+  static uint32_t nextReminderAt = 0;
+  if (nextReminderAt == 0) { nextReminderAt = now + 15UL * 60UL * 1000UL; return; }
+  if (now < nextReminderAt || audioMode() == SOUND_OFF) return;
+  if ((!screenOff && dimStage == 0) || pet.isEgg() || pet.sleeping || pet.ceremony) return;
+  if (pet.lowestStat() >= 25) { nextReminderAt = now + 15UL * 60UL * 1000UL; return; }
+  if (pet.fullness < 25) sfxPlay(SFX_EAT);
+  else if (pet.hygiene < 25) sfxPlay(SFX_EVENT_SPARKLE);
+  else if (pet.energy < 25) sfxPlay(SFX_REST);
+  else sfxPlay(SFX_HEART);
+  speciesChirpPlay(pet.speciesId);
+  nextReminderAt = now + 15UL * 60UL * 1000UL;
 }
 
 uint16_t renderIntervalMs() {
@@ -657,6 +673,7 @@ void loop() {
   pet.ensureDailyGoals();
   maybeOfferWildEncounter(now);
   maybeOfferPetEvent(now);
+  maybePlayCareReminder(now);
   maybePlayAmbientSound(now);
 
   // Le combat est statique entre deux actions. Seules l'entree Shiny et la
@@ -1531,7 +1548,7 @@ void onTap(int16_t x, int16_t y) {
     snprintf(petEventMsg, sizeof(petEventMsg), "%s", T(msg));
     petEventFeedbackUntil = millis() + 1600;
     if (!pet.sleeping) sfxPlay((r & PET_INTERACT_BOND) ? SFX_HEART : SFX_TAP);
-    if (r != PET_INTERACT_NONE && audioMode() == SOUND_FULL) speciesChirpPlay(pet.speciesId);
+    if (r != PET_INTERACT_NONE && audioMode() != SOUND_OFF) speciesChirpPlay(pet.speciesId);
   }
 }
 
@@ -4624,15 +4641,18 @@ void renderTimeSettings() {
 void renderSoundSettings() {
   clockDirty=false; gfx->fillScreen(uiBg());
   drawSettingsTitle(T(S_SOUND_LABEL));
+  static const char *const musicLabels[LANG_COUNT]={"MUSICA","MUSIC","MUSIQUE","MUSIK","MUSICA","MUSICA"};
+  drawSettingsRow(64,76,338,48,musicLabels[gLang<LANG_COUNT?gLang:LANG_EN],
+                  audioMusicEnabled()?T(S_ON):T(S_OFF),audioMusicEnabled());
   static const StrId modes[4]={S_SND_FULL,S_SND_MED,S_SND_LOW,S_SND_OFF};
   static const uint8_t values[4]={SOUND_FULL,SOUND_MED,SOUND_LOW,SOUND_OFF};
   for(uint8_t i=0;i<4;i++) {
     bool active=audioMode()==values[i];
-    drawSettingsRow(64,92+i*62,338,48,T(modes[i]),active ? T(S_ACTIVE) : "",active);
+    drawSettingsRow(64,146+i*50,338,44,T(modes[i]),active ? T(S_ACTIVE) : "",active);
   }
-  gfx->fillRoundRect(128,358,210,46,14,UI_BAR_OK);
+  gfx->fillRoundRect(128,360,210,46,14,UI_BAR_OK);
   gfx->setTextColor(UI_WHITE); gfx->setTextSize(2);
-  gfx->setCursor(CX-12,372); gfx->print("OK");
+  gfx->setCursor(CX-12,374); gfx->print("OK");
   gfx->flush();
 }
 
@@ -4702,11 +4722,17 @@ void renderClock() {
 
 void clockTap(int16_t x,int16_t y) {
   if (settingsPage==2) {
-    if (y>=350 && y<=420) {
+    if (y>=352 && y<=420) {
       settingsPage=0; clockDirty=true; sfxPlay(SFX_TAP); lockTouchBrief(); return;
     }
-    if (x>=54 && x<=412 && y>=82 && y<=342) {
-      uint8_t row=(uint8_t)((y-82)/62);
+    if (x>=54 && x<=412 && y>=68 && y<=132) {
+      audioSetMusicEnabled(!audioMusicEnabled());
+      clockDirty=true;
+      sfxPlay(SFX_LEVEL);
+      return;
+    }
+    if (x>=54 && x<=412 && y>=140 && y<=346) {
+      uint8_t row=(uint8_t)((y-140)/50);
       static const uint8_t values[4]={SOUND_FULL,SOUND_MED,SOUND_LOW,SOUND_OFF};
       if(row<4) { audioSetMode(values[row]); clockDirty=true; if(audioEnabled()) sfxPlay(SFX_LEVEL); return; }
     }

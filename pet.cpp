@@ -228,19 +228,19 @@ void Pet::syncClock(uint32_t nowEpoch) {
       if (ageMinutes >= 3) hatch();  // eclosiona en tu ausencia
       continue;
     }
-    if (sleeping) {  // descanso: baja lento y con suelo, igual que en vivo
-      energy = clamp100(energy + 6);
-      if (ageMinutes % 2 == 0) {
+    if (sleeping) {  // repos long : les besoins restent stables pendant la nuit
+      if (ageMinutes % 5 == 0) energy = clamp100(energy + 3);
+      if (ageMinutes % 10 == 0) {
         fullness = dropTo(fullness, 1, 30);
         joy = dropTo(joy, 1, 35);
       }
-      if (ageMinutes % 3 == 0) hygiene = dropTo(hygiene, 1, 45);
+      if (ageMinutes % 15 == 0) hygiene = dropTo(hygiene, 1, 45);
       continue;
     }
-    fullness = dropTo(fullness, 2, 15);
-    energy = dropTo(energy, 1, 15);
-    hygiene = dropTo(hygiene, 1, 15);
-    joy = dropTo(joy, 1, 15);
+    if (ageMinutes % 5 == 0) fullness = dropTo(fullness, 1, 15);
+    if (ageMinutes % 6 == 0) energy = dropTo(energy, 1, 15);
+    if (ageMinutes % 6 == 0) hygiene = dropTo(hygiene, 1, 15);
+    if (ageMinutes % 6 == 0) joy = dropTo(joy, 1, 15);
   }
   if (!isEgg()) {
     if (!sleeping) {  // durmiendo no ensucia
@@ -276,18 +276,17 @@ void Pet::tick() {
     return;
   }
 
-  // el sueño es descanso: la energia se recupera y las necesidades bajan MUCHO
-  // mas lento que despierto y con suelo (amanece pidiendo algo de mimo, no a
-  // cero, sin descuidos ni escapadas). despierto: comida -2/min, hig/joy -1/min.
+  // Rythme volontairement doux : une jauge bien remplie tient plusieurs
+  // heures. Le joueur n'est plus oblige de revenir toutes les quelques minutes.
   // El peso aun se quema; la racha de buen cuidado (goodTicks) queda en pausa.
   if (sleeping) {
-    energy = clamp100(energy + 6);
+    if (ageMinutes % 5 == 0) energy = clamp100(energy + 3);
     if (weight > 0 && ageMinutes % 3 == 0) weight--;
-    if (ageMinutes % 2 == 0) {                 // ~4x mas lento que despierto
+    if (ageMinutes % 10 == 0) {
       fullness = dropTo(fullness, 1, 30);
       joy = dropTo(joy, 1, 35);
     }
-    if (ageMinutes % 3 == 0) hygiene = dropTo(hygiene, 1, 45);
+    if (ageMinutes % 15 == 0) hygiene = dropTo(hygiene, 1, 45);
     checkMedals();  // aun puede cruzar un nivel por edad mientras duerme
     if (++ticksSinceSave >= 5) pendingSave = true;
     return;
@@ -295,13 +294,14 @@ void Pet::tick() {
 
   if (ageMinutes % MINUTES_PER_LEVEL == 0) sfxPlay(SFX_LEVEL);  // subio de nivel (despierto)
 
-  fullness = clamp100(fullness - 2);
-  energy = clamp100(energy - 1);
-  if (fullness > 40 && poops < 3 && random(100) < 15) poops++;
+  if (ageMinutes % 5 == 0) fullness = dropTo(fullness, 1, 0);
+  if (ageMinutes % 6 == 0) energy = dropTo(energy, 1, 0);
+  if (fullness > 40 && poops < 3 && ageMinutes % 5 == 0 && random(100) < 12) poops++;
 
-  hygiene = clamp100(hygiene - 1 - 4 * poops);
-  // el sobrepeso da pereza: la energia cae el doble
-  if (weight > 50) energy = clamp100(energy - 1);
+  if (ageMinutes % 6 == 0) hygiene = dropTo(hygiene, 1, 0);
+  if (poops && ageMinutes % (10 - 2 * poops) == 0) hygiene = dropTo(hygiene, 1, 0);
+  // Le surpoids fatigue un peu plus, mais seulement toutes les douze minutes.
+  if (weight > 50 && ageMinutes % 12 == 0) energy = dropTo(energy, 1, 0);
   if (weight > 0 && ageMinutes % 3 == 0) weight--;
 
   // la disciplina forja la defensa: 12 h seguidas bien cuidado = +1 DEF
@@ -314,10 +314,9 @@ void Pet::tick() {
     goodTicks = 0;
   }
 
-  int dJoy = -1;
-  if (fullness < 30) dJoy -= 2;
-  if (hygiene < 30) dJoy -= 2;
-  joy = clamp100(joy + dJoy);
+  if (ageMinutes % 6 == 0) joy = dropTo(joy, 1, 0);
+  if (ageMinutes % 4 == 0 && (fullness < 30 || hygiene < 30))
+    joy = dropTo(joy, 1, 0);
 
   checkMedals();  // la evolucion la dispara el usuario (canEvolveNow + tap), no el tick
   // La negligence n'est plus comptabilisee et le Pokemon ne fuit jamais.

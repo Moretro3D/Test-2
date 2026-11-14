@@ -59,6 +59,8 @@ void audioSetEnabled(bool on);
 bool audioEnabled();
 void audioSetMode(uint8_t mode);
 uint8_t audioMode();
+void audioSetMusicEnabled(bool on);
+bool audioMusicEnabled();
 bool audioBusy();
 void speciesChirpPlay(int16_t dex);  // eigener, synthetisierter Spezies-Chirp
 void audioAmbientPlay(uint8_t theme); // 0 matin, 1 lo-fi, 2 nuit; une note non bloquante

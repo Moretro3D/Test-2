@@ -1,8 +1,10 @@
 PokeTama Moretro3D V12.6 - QUOTIDIEN ET PROFILS MICROSD
 
-VERSION INTERNE : 1.48.9-moretro3d-v12.6-home-battle
+VERSION INTERNE : 1.49.0-moretro3d-v12.6-audio-controls
 
 NOUVEAUTES :
+- Réglages séparés pour la musique et les sons d'interaction.
+- Cris du Pokémon lors des caresses et rappels sonores discrets écran éteint.
 - Cinquième bouton Combat ajouté à l'accueil avec accès direct aux biomes.
 - Page Quotidien entièrement réagencée en trois cartes lisibles.
 - Sept missions variées : nourrir, nettoyer, jouer, mémoire, interaction, combat ou capture.

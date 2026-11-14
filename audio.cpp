@@ -21,6 +21,7 @@
 static I2SClass i2s;
 static bool gReady = false;
 static uint8_t gMode = SOUND_FULL;
+static volatile bool gMusicEnabled = true;
 static QueueHandle_t gQ = nullptr;
 static volatile bool gBusy = false;
 static volatile uint32_t gAmbientKeepAliveUntil = 0;
@@ -402,8 +403,8 @@ static void audioTask(void *) {
   for (;;) {
     if (!xQueueReceive(gQ, &event, portMAX_DELAY) || !gReady) continue;
     bool isSfx = event.kind == AUDIO_EVENT_SFX && event.value < SFX_COUNT;
-    bool isChirp = event.kind == AUDIO_EVENT_CHIRP && event.value >= 1 && event.value <= 386 && gMode >= SOUND_MED;
-    bool isAmbient = event.kind == AUDIO_EVENT_AMBIENT && event.value < 3 && gMode >= SOUND_LOW;
+    bool isChirp = event.kind == AUDIO_EVENT_CHIRP && event.value >= 1 && event.value <= 386 && gMode >= SOUND_LOW;
+    bool isAmbient = event.kind == AUDIO_EVENT_AMBIENT && event.value < 3 && gMode >= SOUND_LOW && gMusicEnabled;
     if (isSfx && gMode < SFX_MIN_MODE[event.value]) continue;
     if (isSfx || isChirp || isAmbient) {
       gBusy = true;
@@ -423,7 +424,7 @@ static void audioTask(void *) {
           do {
             if (!playMusicChunk(theme)) { wavOk=false; break; }
             if (uxQueueMessagesWaiting(gQ) > 0) break; // priorite aux SFX/cris
-          } while (gMode >= SOUND_LOW && gAmbientTheme == theme &&
+          } while (gMode >= SOUND_LOW && gMusicEnabled && gAmbientTheme == theme &&
                    (int32_t)(gAmbientKeepAliveUntil - millis()) > 0);
         }
         if (!wavOk) {
@@ -459,6 +460,7 @@ void audioBegin() {
   } else {
     gMode = p.getBool("snd", true) ? SOUND_FULL : SOUND_OFF;
   }
+  gMusicEnabled = p.getBool("music", true);
   p.end();
   if (gMode > SOUND_FULL) gMode = SOUND_FULL;
 
@@ -503,12 +505,23 @@ void audioSetMode(uint8_t mode) {
 
 uint8_t audioMode() { return gMode; }
 
+void audioSetMusicEnabled(bool on) {
+  gMusicEnabled = on;
+  if (!on) gAmbientKeepAliveUntil = 0;
+  Preferences p;
+  p.begin("tamapoke", false);
+  p.putBool("music", on);
+  p.end();
+}
+
+bool audioMusicEnabled() { return gMusicEnabled; }
+
 bool audioBusy() {
   return gBusy || (gQ && uxQueueMessagesWaiting(gQ) > 0);
 }
 
 void audioAmbientPlay(uint8_t theme) {
-  if (!gReady || gMode < SOUND_LOW || !gQ || theme >= 3) return;
+  if (!gReady || !gMusicEnabled || gMode < SOUND_LOW || !gQ || theme >= 3) return;
   gAmbientTheme = theme;
   gAmbientKeepAliveUntil = millis() + 650;
   if (audioBusy()) return;
@@ -517,12 +530,12 @@ void audioAmbientPlay(uint8_t theme) {
 }
 
 bool audioPreloadMusic(uint8_t theme) {
-  if (!gReady || gMode == SOUND_OFF || theme >= 3) return false;
+  if (!gReady || !gMusicEnabled || gMode == SOUND_OFF || theme >= 3) return false;
   return openMusic(theme);
 }
 
 void speciesChirpPlay(int16_t dex) {
-  if (!gReady || !gQ || gMode < SOUND_MED || dex < 1 || dex > 386) return;
+  if (!gReady || !gQ || gMode < SOUND_LOW || dex < 1 || dex > 386) return;
   uint32_t now = millis();
   if (now - gLastChirpAt < 800UL) return;
   gLastChirpAt = now;
