@@ -472,23 +472,25 @@ static void testDailyGoalsProgressAndReset() {
   pet.ensureDailyGoals();
 
   EXPECT_EQ(pet.dailyGoalType[0], DAILY_GOAL_CARE);
-  EXPECT_EQ(pet.dailyGoalType[1], DAILY_GOAL_PLAY);
-  EXPECT_EQ(pet.dailyGoalType[2], DAILY_GOAL_CATCH);
+  EXPECT_EQ(pet.dailyGoalType[1], DAILY_GOAL_MEMO);
+  EXPECT_EQ(pet.dailyGoalType[2], DAILY_GOAL_FEED);
   EXPECT_TRUE(!pet.dailyGoalComplete(0));
 
-  pet.feedCandy();
+  pet.caress();
   EXPECT_EQ(pet.dailyGoalProgress[0], 1);
+  EXPECT_TRUE(!pet.dailyGoalComplete(0));
+  pet.caress();
   EXPECT_TRUE(pet.dailyGoalComplete(0));
 
-  pet.playResult(10);
-  EXPECT_EQ(pet.dailyGoalProgress[1], 1);
+  pet.applyMemoResult(3);
+  EXPECT_EQ(pet.dailyGoalProgress[1], 3);
   EXPECT_TRUE(pet.dailyGoalComplete(1));
 
-  pet.applyCatchResult(3);
-  EXPECT_EQ(pet.dailyGoalProgress[2], 3);
+  pet.feedCandy();
+  EXPECT_EQ(pet.dailyGoalProgress[2], 1);
   EXPECT_TRUE(!pet.dailyGoalComplete(2));
-  pet.applyCatchResult(3);
-  EXPECT_EQ(pet.dailyGoalProgress[2], 5);
+  pet.feedCandy();
+  EXPECT_EQ(pet.dailyGoalProgress[2], 2);
   EXPECT_TRUE(pet.dailyGoalComplete(2));
 
   pet.setClock(2 * 86400);
@@ -500,17 +502,17 @@ static void testDailyGoalsProgressAndReset() {
 
 static void testDailyBattleGoalCompletesOnWinOnly() {
   Pet pet = hatchedPet(4);
-  pet.setClock(3 * 86400);
+  pet.setClock(7 * 86400);
   pet.ensureDailyGoals();
 
-  EXPECT_EQ(pet.dailyGoalType[2], DAILY_GOAL_BATTLE);
+  EXPECT_EQ(pet.dailyGoalType[0], DAILY_GOAL_BATTLE);
   pet.applyBattleLoss();
-  EXPECT_EQ(pet.dailyGoalProgress[2], 0);
-  EXPECT_TRUE(!pet.dailyGoalComplete(2));
+  EXPECT_EQ(pet.dailyGoalProgress[0], 0);
+  EXPECT_TRUE(!pet.dailyGoalComplete(0));
 
   pet.applyBattleWin(66, false);
-  EXPECT_EQ(pet.dailyGoalProgress[2], 1);
-  EXPECT_TRUE(pet.dailyGoalComplete(2));
+  EXPECT_EQ(pet.dailyGoalProgress[0], 1);
+  EXPECT_TRUE(pet.dailyGoalComplete(0));
 }
 
 static void testCaughtDexIsSeparateFromRaisedDex() {
@@ -533,19 +535,19 @@ static void testCaughtDexIsSeparateFromRaisedDex() {
 
 static void testCaughtPokemonAdvanceDailyCatchGoal() {
   Pet pet = hatchedPet(4);
-  pet.setClock(86400);
+  pet.setClock(5 * 86400);
   pet.ensureDailyGoals();
 
-  EXPECT_EQ(pet.dailyGoalType[2], DAILY_GOAL_CATCH);
-  EXPECT_EQ(pet.dailyGoalProgress[2], 0);
+  EXPECT_EQ(pet.dailyGoalType[0], DAILY_GOAL_CATCH);
+  EXPECT_EQ(pet.dailyGoalProgress[0], 0);
 
   pet.registerCaught(66);
-  EXPECT_EQ(pet.dailyGoalProgress[2], 1);
-  EXPECT_TRUE(!pet.dailyGoalComplete(2));
+  EXPECT_EQ(pet.dailyGoalProgress[0], 1);
+  EXPECT_TRUE(!pet.dailyGoalComplete(0));
 
   pet.registerCaught(67);
-  EXPECT_EQ(pet.dailyGoalProgress[2], 2);
-  EXPECT_TRUE(!pet.dailyGoalComplete(2));
+  EXPECT_EQ(pet.dailyGoalProgress[0], 2);
+  EXPECT_TRUE(pet.dailyGoalComplete(0));
 }
 
 static void testDexRewardsApplyOnceAndCap() {

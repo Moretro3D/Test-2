@@ -1,4 +1,4 @@
-name: PokeTama V11 - Web Flasher
+name: PokeTama V12.6 - Web Flasher
 on:
   push:
     branches: ["main"]
@@ -12,12 +12,14 @@ concurrency:
   cancel-in-progress: true
 jobs:
   build:
-    name: Compiler et preparer le Web Flasher V11
+    name: Compiler et preparer le Web Flasher V12.6
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - name: Tests moteur
         run: make -C tests clean && make -C tests test
+      - name: Verifier qu'aucune sauvegarde personnelle ne sera publiee
+        run: python3 tools/audit_no_personal_save.py
       - uses: arduino/setup-arduino-cli@v2
         with:
           version: "1.x"

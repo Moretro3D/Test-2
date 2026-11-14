@@ -1,35 +1,29 @@
-PokeTama Moretro3D V12.6 MINIATURES BIOMES
+PokeTama Moretro3D V12.6 - QUOTIDIEN ET PROFILS MICROSD
 
-VERSION INTERNE : 1.48.6-moretro3d-v12.6-profile-redesign
+VERSION INTERNE : 1.48.9-moretro3d-v12.6-home-battle
 
 NOUVEAUTES :
-- Sept biomes sélectionnables avant de lancer un combat sauvage : Prairie, Plage, Forêt, Volcan, Montagne, Neige et Ciel.
-- Recherche animée de 2,4 secondes avant de révéler le Pokémon.
-- Chaque biome ne propose que des Pokémon associés à son environnement.
-- Décors pixel art adaptés au biome choisi pendant l'exploration.
-- Sauvegarde personnelle complète copiée dans /save/poketama.bin sur la microSD.
-- Copie de secours, écriture temporaire atomique et contrôle CRC intégrés.
-- Restauration automatique après une installation ayant effacé la mémoire interne.
-- Le dossier /save est préservé pendant l'installation des sprites, fonds et musiques.
-- La microSD n'est plus formatée automatiquement si son montage échoue.
-- Les captures proviennent uniquement de la sauvegarde personnelle de l'appareil.
-- Les profils internes ne peuvent plus ajouter ou reconstruire des captures.
-- La collection est écrite en priorité et vérifiée avant les données secondaires.
-- Le Pokédex repasse en grille 4x4, sans compteur ni icône de capture.
-- Le correctif empêchant Ectoplasma de redevenir automatiquement actif est conservé.
-- Sept sols de combat pixel art : Plante, Eau, Feu, Normal, Roche, Glace, Nuages.
-- Demi-sol joueur et plateforme adverse alignes sur des positions fixes.
-- Affectation verifiee individuellement pour les 386 Pokemon.
-- Sol Roche de l'accueil remonte de 4 pixels.
-- Demi-sols du joueur réduits pour mieux respirer dans l'écran rond.
-- Vignettes de la grille conservees sans modification.
-- Le popup charge maintenant le vrai sprite PMD complet du Pokemon.
-- Recadrage de la silhouette et proportions strictement conservees.
-- Boutons Retour et S'occuper uniformises.
+- Cinquième bouton Combat ajouté à l'accueil avec accès direct aux biomes.
+- Page Quotidien entièrement réagencée en trois cartes lisibles.
+- Sept missions variées : nourrir, nettoyer, jouer, mémoire, interaction, combat ou capture.
+- Objectifs plus courts et mieux équilibrés.
+- Lot du jour affiché avant de commencer.
+- Récompense complète : un objet utile, +12 joie, +8 énergie et +3 lien.
+- Le mot « Gagner » est remplacé par une mission Combat plus claire.
+- Chaque Pokémon conserve désormais son profil individuel sur la microSD.
+- Niveau, âge, statistiques, lien, surnom, forme Shiny et état de soin sont restaurés au changement de Pokémon.
+- Migration automatique des anciens profils encore présents dans la mémoire interne.
+- Un fichier séparé avec contrôle CRC est utilisé pour chaque Pokémon dans /save/profiles.
+- Les captures et sauvegardes existantes ne sont ni remplacées ni effacées.
+
+DEPLOIEMENT TEST :
+1. Extraire entièrement le ZIP.
+2. Double-cliquer sur ENVOYER_TEST_2.bat.
+3. Suivre la compilation sur https://github.com/Moretro3D/Test-2/actions
 
 DEPLOIEMENT OFFICIEL :
-1. Extraire entierement le ZIP.
+1. Extraire entièrement le ZIP.
 2. Double-cliquer sur ENVOYER_TEST_1.bat.
 3. Suivre la compilation sur https://github.com/Moretro3D/Test-1/actions
 
-L'installation sans effacement conserve le Pokemon et la sauvegarde.
+Toujours choisir l'installation sans effacement pour conserver la partie.

@@ -18,16 +18,49 @@ def ok(cond,msg):
         raise SystemExit("FAIL V12.6: "+msg)
     print("OK  ",msg)
 
-ok("1.48.6-moretro3d-v12.6-profile-redesign" in ino and
-   "1.48.6-moretro3d-v12.6-profile-redesign" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
-   "1.48.6-moretro3d-v12.6-profile-redesign" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "1.48.6-moretro3d-v12.6-profile-redesign" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
-   "1.48.6-moretro3d-v12.6-profile-redesign" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
-   "version 1.48.6 coherente et caches installateur invalides")
+ok("1.48.9-moretro3d-v12.6-home-battle" in ino and
+   "1.48.9-moretro3d-v12.6-home-battle" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.48.9-moretro3d-v12.6-home-battle" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.48.9-moretro3d-v12.6-home-battle" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   "1.48.9-moretro3d-v12.6-home-battle" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.48.9 coherente et caches installateur invalides")
 ok('gfx->setCursor(CX - 30, 366); gfx->print("V12.6")' in ino and
    '<div class="version">Firmware V12.6</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    '<div class="version">Firmware V12.6</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
    "V12.6 affichee au demarrage, sur la page officielle et sur Shopify")
+pet_cpp = (ROOT/"pet.cpp").read_text(encoding="utf-8")
+pet_h = (ROOT/"pet.h").read_text(encoding="utf-8")
+ok(all(goal in pet_h for goal in ("DAILY_GOAL_FEED", "DAILY_GOAL_CLEAN")) and
+   "DAILY_GOAL_FEED, DAILY_GOAL_PLAY, DAILY_GOAL_CATCH, DAILY_GOAL_CLEAN" in pet_cpp and
+   "DAILY_GOAL_BATTLE, DAILY_GOAL_CARE, DAILY_GOAL_MEMO" in pet_cpp,
+   "sept missions quotidiennes variees sans doublon")
+ok("itemCounts[reward]++" in pet_cpp and
+   "joy = clamp100((int)joy + 12)" in pet_cpp and
+   "addBond(3)" in pet_cpp and
+   "gfx->print(T(dailyRewardLabelId(reward)))" in ino,
+   "lot quotidien visible avec objet, joie, energie et lien")
+ok("drawDailyGoalRow(136 + i * 66, i)" in ino and
+   "gfx->fillRoundRect(104, y + 38, 282, 7" in ino,
+   "page Quotidien recomposee en trois cartes avec progression")
+ok("Btn buttons[5]" in ino and
+   ino.count("for (int i = 0; i < 5; i++)") >= 2 and
+   "drawHomeBattleIcon" in ino and
+   "if (!pet.sleeping) startBattle();" in ino,
+   "cinquieme bouton Combat sur accueil avec acces direct aux biomes")
+ok("/save/profiles/p%03d%s" in pet_cpp and
+   "writeSdStoredProfile(speciesId, p)" in pet_cpp and
+   "readSdStoredProfile(dex, p)" in pet_cpp and
+   "profileChecksum" in pet_cpp,
+   "niveau et profil individuel de chaque Pokemon sauvegardes sur microSD avec CRC")
+ok("Migration transparente des profils des anciennes versions" in pet_cpp and
+   "for (int16_t dex=1; dex<=DEX_COUNT; dex++)" in pet_cpp,
+   "anciens profils NVS migres sur microSD sans effacer la collection")
+privacy_audit = (ROOT/"tools/audit_no_personal_save.py").read_text(encoding="utf-8")
+workflow = (ROOT/".github/workflows/pages.yml").read_text(encoding="utf-8")
+ok("aucune sauvegarde personnelle" in privacy_audit and
+   "audit_no_personal_save.py" in workflow and
+   "audit_no_personal_save.py" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "publication bloquee automatiquement si une sauvegarde personnelle est detectee")
 ok('location.replace("https://moretro3d.fr/pages/poketama")' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    'https://moretro3d.github.io/Test-1/manifest.json' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
    "GitHub Pages redirige vers Shopify et conserve le Web Flasher officiel")
@@ -37,7 +70,7 @@ ok("github.repository == 'Moretro3D/Test-2'" in workflow and
    "! grep -q 'location.replace' web/index.html" in workflow,
    "Test-2 affiche son Web Flasher sans redirection Shopify")
 test2_launcher=(ROOT/"OUVRIR_WEB_FLASHER_TEST_2.bat").read_text(encoding="utf-8")
-ok("https://moretro3d.github.io/Test-2/?v=1.48.6-moretro3d-v12.6-profile-redesign" in test2_launcher,
+ok("https://moretro3d.github.io/Test-2/?v=1.48.9-moretro3d-v12.6-home-battle" in test2_launcher,
    "lanceur direct Test-2 avec contournement du cache")
 scene=ino[ino.index("void drawScene("):ino.index("void drawStarterPokeball(")]
 ok("HORIZON-38" not in scene and "uint16_t sea=" not in scene and
@@ -298,6 +331,13 @@ ok("void drawHomeGymCabin(uint8_t phase, uint8_t biome)" in ino and
    "Deux colonnes épaisses encadrent les doubles portes" in ino and
    "cardPage = 8" in ino and "kantoArenaDetail = -1" in ino,
    "arene Pokemon pixel art tactile ouvrant directement les arenes Kanto")
+ok('showHomeGym = p.getBool("homegym", true)' in ino and
+   'p.putBool("homegym", showHomeGym)' in ino and
+   "displayArenaLabel()" in ino and
+   "showHomeGym?T(S_ON):T(S_OFF)" in ino and
+   "if(showHomeGym)" in ino and
+   "if (showHomeGym && x >= 155" in ino,
+   "reglage Affichage Arenes persistant et zone tactile desactivee avec le decor")
 ok('#include "home_habitat_sprites.h"' in ino and
    "void drawHomeHabitatGround(uint8_t biome)" in ino and
    "drawHomeHabitatGround(b)" in ino and

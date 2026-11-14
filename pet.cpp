@@ -15,6 +15,79 @@ static const char *SD_SAVE_DIR = "/save";
 static const char *SD_SAVE_MAIN = "/save/poketama.bin";
 static const char *SD_SAVE_BACKUP = "/save/poketama.bak";
 static const char *SD_SAVE_TEMP = "/save/poketama.tmp";
+static const char *SD_PROFILE_DIR = "/save/profiles";
+
+struct SdStoredProfileV1 {
+  uint32_t magic;
+  uint16_t version;
+  int16_t dex;
+  StoredPetProfile profile;
+  uint32_t crc;
+};
+
+static uint32_t profileChecksum(const SdStoredProfileV1 &data) {
+  const uint8_t *bytes = reinterpret_cast<const uint8_t *>(&data);
+  uint32_t hash = 2166136261UL;
+  for (size_t i = 0; i < offsetof(SdStoredProfileV1, crc); i++) {
+    hash ^= bytes[i];
+    hash *= 16777619UL;
+  }
+  return hash;
+}
+
+static void sdProfilePath(int16_t dex, char *path, size_t size, const char *suffix = ".bin") {
+  snprintf(path, size, "/save/profiles/p%03d%s", (int)dex, suffix);
+}
+
+static bool readSdStoredProfile(int16_t dex, StoredPetProfile &profile) {
+  if (!sdReady || dex < 1 || dex > DEX_COUNT) return false;
+  char path[40]; sdProfilePath(dex, path, sizeof(path));
+  File file = SD_MMC.open(path, FILE_READ);
+  if (!file || file.size() != sizeof(SdStoredProfileV1)) {
+    if (file) file.close();
+    return false;
+  }
+  SdStoredProfileV1 data{};
+  bool ok = file.read(reinterpret_cast<uint8_t *>(&data), sizeof(data)) == sizeof(data);
+  file.close();
+  if (!ok || data.magic != 0x50545046UL || data.version != 1 || data.dex != dex ||
+      data.profile.version != 1 || data.crc != profileChecksum(data)) return false;
+  profile = data.profile;
+  return true;
+}
+
+static bool writeSdStoredProfile(int16_t dex, const StoredPetProfile &profile) {
+  if (!sdReady || dex < 1 || dex > DEX_COUNT || profile.version != 1) return false;
+  SD_MMC.mkdir(SD_SAVE_DIR);
+  SD_MMC.mkdir(SD_PROFILE_DIR);
+  char path[40], temp[40];
+  sdProfilePath(dex, path, sizeof(path));
+  sdProfilePath(dex, temp, sizeof(temp), ".tmp");
+  SdStoredProfileV1 data{};
+  data.magic = 0x50545046UL; // "PTPF"
+  data.version = 1;
+  data.dex = dex;
+  data.profile = profile;
+  data.crc = profileChecksum(data);
+  SD_MMC.remove(temp);
+  File file = SD_MMC.open(temp, FILE_WRITE);
+  if (!file) return false;
+  bool ok = file.write(reinterpret_cast<const uint8_t *>(&data), sizeof(data)) == sizeof(data);
+  file.flush(); file.close();
+  if (!ok) { SD_MMC.remove(temp); return false; }
+  SD_MMC.remove(path);
+  if (!SD_MMC.rename(temp, path)) { SD_MMC.remove(temp); return false; }
+  return true;
+}
+
+static void removeSdStoredProfile(int16_t dex) {
+  if (!sdReady || dex < 1 || dex > DEX_COUNT) return;
+  char path[40], temp[40];
+  sdProfilePath(dex, path, sizeof(path));
+  sdProfilePath(dex, temp, sizeof(temp), ".tmp");
+  SD_MMC.remove(path);
+  SD_MMC.remove(temp);
+}
 
 struct SdPetSaveV1 {
   uint32_t magic;
@@ -334,13 +407,19 @@ int Pet::careBonus() const {
 
 uint8_t Pet::dailyGoalTarget(uint8_t goalType) const {
   switch (goalType) {
-    case DAILY_GOAL_CARE: return 1;
+    case DAILY_GOAL_CARE: return 2;
     case DAILY_GOAL_PLAY: return 1;
     case DAILY_GOAL_BATTLE: return 1;
-    case DAILY_GOAL_CATCH: return 5;
+    case DAILY_GOAL_CATCH: return 2;
     case DAILY_GOAL_MEMO: return 3;
+    case DAILY_GOAL_FEED: return 2;
+    case DAILY_GOAL_CLEAN: return 1;
     default: return 1;
   }
+}
+
+ExpeditionItem Pet::dailyRewardItem() const {
+  return (ExpeditionItem)(dailyGoalDay % EXP_ITEM_COUNT);
 }
 
 bool Pet::dailyGoalComplete(uint8_t index) const {
@@ -351,12 +430,15 @@ void Pet::ensureDailyGoals() {
   if (isEgg() || ceremony != CER_NONE) return;
   uint32_t d = today();
   if (d == 0 || d == dailyGoalDay) return;
+  // Sept activites differentes : chaque jour propose trois missions consecutives
+  // sans doublon, avec un depart propre a la partie du joueur.
   static const uint8_t POOL[] = {
-    DAILY_GOAL_CARE, DAILY_GOAL_PLAY, DAILY_GOAL_CATCH, DAILY_GOAL_MEMO, DAILY_GOAL_BATTLE
+    DAILY_GOAL_FEED, DAILY_GOAL_PLAY, DAILY_GOAL_CATCH, DAILY_GOAL_CLEAN,
+    DAILY_GOAL_BATTLE, DAILY_GOAL_CARE, DAILY_GOAL_MEMO
   };
-  uint8_t seed = (uint8_t)((d + (speciesId > 0 ? speciesId : 0)) % 5);
+  uint8_t seed = (uint8_t)((d + (speciesId > 0 ? speciesId : 0)) % 7);
   for (uint8_t i = 0; i < DAILY_GOAL_COUNT; i++) {
-    dailyGoalType[i] = POOL[(seed + i) % 5];
+    dailyGoalType[i] = POOL[(seed + i) % 7];
     dailyGoalProgress[i] = 0;
   }
   dailyGoalDone = 0;
@@ -365,8 +447,14 @@ void Pet::ensureDailyGoals() {
 }
 
 void Pet::applyDailyReward() {
-  joy = clamp100((int)joy + 4);
-  addBond(1);
+  // Un vrai lot quotidien : un objet utile, plus un bonus qui reste accorde
+  // meme lorsque la petite sacoche d'expedition est deja pleine.
+  ExpeditionItem reward = dailyRewardItem();
+  if (reward < EXP_ITEM_COUNT && itemCounts[reward] < EXP_ITEM_MAX)
+    itemCounts[reward]++;
+  joy = clamp100((int)joy + 12);
+  energy = clamp100((int)energy + 8);
+  addBond(3);
 }
 
 void Pet::noteDailyGoal(uint8_t goalType, uint8_t amount) {
@@ -693,6 +781,9 @@ void Pet::evolve() {
   // Le profil appartient a l'individu, pas a toutes les formes de sa chaine.
   // Sans ce nettoyage, un ancien profil de la forme precedente restait en NVS.
   removeStoredProfile(prevSpeciesId);
+#ifdef ARDUINO
+  removeSdStoredProfile(prevSpeciesId);
+#endif
   save();
 }
 
@@ -714,7 +805,7 @@ void Pet::feedBerry(uint8_t color) {
   }
   eatUntil = millis() + EAT_ANIM_MS;
   registerCare();
-  noteDailyGoal(DAILY_GOAL_CARE, 1);
+  noteDailyGoal(DAILY_GOAL_FEED, 1);
   save();
 }
 
@@ -726,7 +817,7 @@ void Pet::feedCandy() {
   weight = clamp100(weight + 12);  // las chuches pasan factura
   eatUntil = millis() + EAT_ANIM_MS;
   registerCare();
-  noteDailyGoal(DAILY_GOAL_CARE, 1);
+  noteDailyGoal(DAILY_GOAL_FEED, 1);
   save();
 }
 
@@ -797,7 +888,7 @@ uint8_t Pet::applyCleanResult(uint8_t score) {
   if (score > cleanHi) cleanHi = score;
   addBond(1);
   registerCare();
-  noteDailyGoal(DAILY_GOAL_CARE, 1);
+  noteDailyGoal(DAILY_GOAL_CLEAN, 1);
   save();
   return gain;
 }
@@ -1110,7 +1201,7 @@ void Pet::clean() {
   hygiene = 100;
   addBond(1);
   registerCare();
-  noteDailyGoal(DAILY_GOAL_CARE, 1);
+  noteDailyGoal(DAILY_GOAL_CLEAN, 1);
   save();
 }
 
@@ -1260,6 +1351,10 @@ void Pet::saveActiveProfile() {
   if (prefs.putBytes(key,&p,sizeof(p)) != sizeof(p)) {
     Serial.printf("[SAVE] profil #%d non ecrit\n", speciesId);
   }
+#ifdef ARDUINO
+  if (sdReady && !writeSdStoredProfile(speciesId, p))
+    Serial.printf("[SAVE SD] profil #%d non ecrit\n", speciesId);
+#endif
 }
 
 bool Pet::switchToCaught(int16_t dex) {
@@ -1273,7 +1368,11 @@ bool Pet::switchToCaught(int16_t dex) {
   char key[8];
   petProfileKey(dex,key,sizeof(key));
   StoredPetProfile p;
-  size_t got=prefs.getBytes(key,&p,sizeof(p));
+  size_t got=0;
+#ifdef ARDUINO
+  if (readSdStoredProfile(dex, p)) got=sizeof(p);
+#endif
+  if (got != sizeof(p)) got=prefs.getBytes(key,&p,sizeof(p));
   if (got==sizeof(p) && p.version==1) {
     fullness=p.fullness; joy=p.joy; energy=p.energy; hygiene=p.hygiene;
     poops=p.poops; weight=p.weight;
@@ -1525,9 +1624,11 @@ void Pet::factoryReset() {
   saveSequence = 0;
 #ifdef ARDUINO
   if (sdReady) {
+    for (int16_t dex=1; dex<=DEX_COUNT; dex++) removeSdStoredProfile(dex);
     SD_MMC.remove(SD_SAVE_TEMP);
     SD_MMC.remove(SD_SAVE_MAIN);
     SD_MMC.remove(SD_SAVE_BACKUP);
+    SD_MMC.rmdir(SD_PROFILE_DIR);
     SD_MMC.rmdir(SD_SAVE_DIR);
   }
 #endif
@@ -1602,6 +1703,17 @@ bool Pet::saveSdBackup() {
 void Pet::syncSdSave() {
 #ifdef ARDUINO
   if (!sdReady) return;
+  // Migration transparente des profils des anciennes versions : tout profil
+  // encore present dans le cache NVS est copie sur la microSD avant toute
+  // restauration. Les niveaux deja connus ne peuvent donc plus etre evinces
+  // lorsque plus de 24 Pokemon ont ete utilises.
+  for (int16_t dex=1; dex<=DEX_COUNT; dex++) {
+    if (!hasStoredProfile(dex)) continue;
+    char key[8]; petProfileKey(dex,key,sizeof(key));
+    StoredPetProfile profile;
+    if (prefs.getBytes(key,&profile,sizeof(profile)) == sizeof(profile) && profile.version == 1)
+      writeSdStoredProfile(dex, profile);
+  }
   SdPetSaveV1 mainSave{}, backupSave{};
   bool mainOk=readSdSaveFile(SD_SAVE_MAIN,mainSave);
   bool backupOk=readSdSaveFile(SD_SAVE_BACKUP,backupSave);
@@ -1649,6 +1761,7 @@ void Pet::syncSdSave() {
     if (dex<1 || dex>DEX_COUNT || data.profiles[i].version!=1) continue;
     char key[8]; petProfileKey(dex,key,sizeof(key));
     prefs.putBytes(key,&data.profiles[i],sizeof(StoredPetProfile));
+    writeSdStoredProfile(dex, data.profiles[i]);
   }
   prevSpeciesId=-1; ceremony=CER_NONE; saveSequence=data.sequence;
   saveLoadedFromNvs=true; saveCreatedThisBoot=false;

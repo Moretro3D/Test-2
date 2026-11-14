@@ -40,7 +40,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.48.6-moretro3d-v12.6-profile-redesign"
+#define FW_VERSION "1.48.9-moretro3d-v12.6-home-battle"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -105,6 +105,7 @@ bool clockOpen = false;       // pantalla de ajuste de hora (deslizar abajo)
 int clockH = 12, clockM = 0;  // hora en edicion
 bool powerSave = false;       // ahorro opcional: off por defecto
 bool darkMode = false;        // thème sombre manuel, persistant
+bool showHomeGym = true;      // affiche l'arene et son raccourci sur l'accueil
 uint8_t settingsPage = 0;     // 0 = réglages principaux, 1 = affichage/cadres
 uint8_t boxBgPreview = 0;
 bool helpOpen = false;
@@ -268,6 +269,7 @@ void loadDarkMode() {
   Preferences p;
   p.begin("tamapoke", true);
   darkMode = p.getBool("darkui", false);
+  showHomeGym = p.getBool("homegym", true);
   p.end();
 }
 
@@ -278,6 +280,15 @@ void setDarkMode(bool on) {
   p.putBool("darkui", darkMode);
   p.end();
   uiDirty = cardDirty = galleryDirty = clockDirty = helpDirty = true;
+}
+
+void setHomeGymVisible(bool on) {
+  showHomeGym = on;
+  Preferences p;
+  p.begin("tamapoke", false);
+  p.putBool("homegym", showHomeGym);
+  p.end();
+  uiDirty = clockDirty = true;
 }
 
 // Palette dynamique de l'interface. Les sprites conservent leurs vraies couleurs.
@@ -312,12 +323,13 @@ struct Btn {
   int8_t iconDx;
   int8_t iconDy;
 };
-Btn buttons[4] = {
+Btn buttons[5] = {
   // cx, cy, sprite, cadre, icone, tactile, dx, dy
-  { 140, 390, SPR_ICON_FOOD,  52, 32, 36, 0, 0 },
-  { 202, 404, SPR_ICON_PLAY,  52, 28, 36, 0, 0 },
-  { 264, 404, SPR_ICON_LIGHT, 52, 32, 36, 0, 0 },
-  { 326, 390, SPR_ICON_CLEAN, 52, 32, 36, 0, 0 },
+  { 108, 388, SPR_ICON_FOOD,  52, 32, 30, 0, 0 },
+  { 170, 408, SPR_ICON_PLAY,  52, 28, 30, 0, 0 },
+  { 233, 416, SPR_ICON_LIGHT, 52, 32, 30, 0, 0 },
+  { 296, 408, SPR_ICON_CLEAN, 52, 32, 30, 0, 0 },
+  { 358, 388, SPR_ICON_PLAY,  52, 28, 30, 0, 0 }, // combat direct
 };
 
 // grietas del huevo (pixeles 'k' sobre el sprite)
@@ -1459,7 +1471,7 @@ void onTap(int16_t x, int16_t y) {
     return;
   }
   // Raccourci permanent : toucher la cabane du décor ouvre les arènes.
-  if (x >= 155 && x <= 311 && y >= 122 && y <= 270) {
+  if (showHomeGym && x >= 155 && x <= 311 && y >= 122 && y <= 270) {
     cardOpen = true;
     cardPage = 8;
     kantoArenaDetail = -1;
@@ -1480,7 +1492,7 @@ void onTap(int16_t x, int16_t y) {
     choiceKind = 1; choiceUntil = millis() + 12000;
     return;
   }
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 5; i++) {
     int dx = x - buttons[i].cx, dy = y - buttons[i].cy;
     int hit = buttons[i].hitRadius;
     if (dx * dx + dy * dy <= hit * hit) {
@@ -1500,8 +1512,11 @@ void onTap(int16_t x, int16_t y) {
         }
       } else if (i == 2) {
         pet.toggleLight();
-      } else {
+      } else if (i == 3) {
         startBath();
+      } else {
+        if (!pet.sleeping) startBattle();
+        else sfxPlay(SFX_DENY);
       }
       return;
     }
@@ -1773,8 +1788,10 @@ void drawScene(uint8_t biome, uint32_t now, bool night) {
   // Les sols restent au fond. L'îlot aquatique puis l'arène sont dessinés
   // devant afin que la façade et les marches ne soient plus masquées.
   drawHomeHabitatGround(b);
-  drawHomeGymPlatform(b,phase);
-  drawHomeGymCabin(phase,b);
+  if(showHomeGym) {
+    drawHomeGymPlatform(b,phase);
+    drawHomeGymCabin(phase,b);
+  }
 }
 
 void drawStarterPokeball(int cx, int cy, int r) {
@@ -4451,6 +4468,11 @@ static const char *displayBoxLabel() {
   return L[gLang];
 }
 
+static const char *displayArenaLabel() {
+  static const char *const L[LANG_COUNT]={"ARENAS","GYMS","ARENES","ARENEN","PALESTRE","ARENAS"};
+  return L[gLang<LANG_COUNT?gLang:LANG_EN];
+}
+
 void drawSettingsTitle(const char *title);
 
 void drawBoxBackgroundAsset(uint8_t style,int x0,int y0,int scale) {
@@ -4542,13 +4564,14 @@ void renderFrameSettings() {
 void renderDisplaySettings() {
   clockDirty=false; gfx->fillScreen(uiBg());
   drawSettingsTitle(T(S_DISPLAY_LABEL));
-  drawSettingsRow(64,82,338,48,T(S_MODE_LABEL),darkMode?T(S_DARK):T(S_LIGHT),darkMode);
-  drawSettingsRow(64,144,338,48,displayFrameLabel(),frameTemplateName(pet.collectionFrame),false);
+  drawSettingsRow(64,76,338,42,T(S_MODE_LABEL),darkMode?T(S_DARK):T(S_LIGHT),darkMode);
+  drawSettingsRow(64,126,338,42,displayFrameLabel(),frameTemplateName(pet.collectionFrame),false);
   char boxVal[12]; snprintf(boxVal,sizeof(boxVal),"%u/16",(unsigned)(pet.boxBackground+1));
-  drawSettingsRow(64,206,338,48,displayBoxLabel(),boxVal,false);
+  drawSettingsRow(64,176,338,42,displayBoxLabel(),boxVal,false);
+  drawSettingsRow(64,226,338,42,displayArenaLabel(),showHomeGym?T(S_ON):T(S_OFF),showHomeGym);
   char langVal[10]; snprintf(langVal,sizeof(langVal),"%s",LANG_CODES[gLang]);
-  drawSettingsRow(64,268,164,42,T(S_LANG_LABEL),langVal,false);
-  drawSettingsRow(238,268,164,42,T(S_POWER_SAVE_LABEL),powerSave?T(S_ON):T(S_OFF),powerSave);
+  drawSettingsRow(64,276,164,38,T(S_LANG_LABEL),langVal,false);
+  drawSettingsRow(238,276,164,38,T(S_POWER_SAVE_LABEL),powerSave?T(S_ON):T(S_OFF),powerSave);
   gfx->fillRoundRect(128,342,210,46,14,UI_BAR_OK);
   gfx->setTextColor(UI_WHITE); gfx->setTextSize(2); gfx->setCursor(CX-12,356); gfx->print("OK");
   gfx->flush();
@@ -4745,16 +4768,19 @@ void clockTap(int16_t x,int16_t y) {
     if (x>=118 && x<=348 && y>=330 && y<=410) {
       settingsPage=0; clockDirty=true; sfxPlay(SFX_TAP); lockTouchBrief(); return;
     }
-    if (x>=54 && x<=412 && y>=72 && y<=140) {
+    if (x>=54 && x<=412 && y>=68 && y<=122) {
       setDarkMode(!darkMode); clockDirty=true; sfxPlay(SFX_MENU); lockTouchBrief(); return;
     }
-    if (x>=54 && x<=412 && y>=138 && y<=200) {
+    if (x>=54 && x<=412 && y>=122 && y<=172) {
       settingsPage=5; clockDirty=true; sfxPlay(SFX_MENU); lockTouchBrief(); return;
     }
-    if (x>=54 && x<=412 && y>=200 && y<=262) {
+    if (x>=54 && x<=412 && y>=172 && y<=222) {
       boxBgPreview=pet.boxBackground; settingsPage=6; clockDirty=true; sfxPlay(SFX_MENU); lockTouchBrief(); return;
     }
-    if (y>=260 && y<=326) {
+    if (x>=54 && x<=412 && y>=222 && y<=272) {
+      setHomeGymVisible(!showHomeGym); clockDirty=true; sfxPlay(SFX_MENU); lockTouchBrief(); return;
+    }
+    if (y>=272 && y<=326) {
       if (x>=54 && x<=232) setLang((Lang)((gLang+1)%LANG_COUNT));
       else if (x>=232 && x<=412) setPowerSave(!powerSave);
       clockDirty=true; sfxPlay(SFX_MENU); lockTouchBrief(); return;
@@ -5294,9 +5320,11 @@ StrId dailyGoalLabelId(uint8_t goalType) {
   switch (goalType) {
     case DAILY_GOAL_CARE: return S_GOAL_CARE;
     case DAILY_GOAL_PLAY: return S_GOAL_PLAY;
-    case DAILY_GOAL_BATTLE: return S_GOAL_BATTLE;
+    case DAILY_GOAL_BATTLE: return S_BATTLE;
     case DAILY_GOAL_CATCH: return S_GOAL_CATCH;
     case DAILY_GOAL_MEMO: return S_GOAL_MEMO;
+    case DAILY_GOAL_FEED: return S_ITEM_SNACK;
+    case DAILY_GOAL_CLEAN: return S_GAME_CLEAN;
     default: return S_GOAL_CARE;
   }
 }
@@ -5308,6 +5336,8 @@ uint16_t dailyGoalColor(uint8_t goalType) {
     case DAILY_GOAL_BATTLE: return UI_BAR_BAD;
     case DAILY_GOAL_CATCH: return UI_BAR_OK;
     case DAILY_GOAL_MEMO: return 0x4C98;
+    case DAILY_GOAL_FEED: return C565(0xf0, 0x8a, 0x45);
+    case DAILY_GOAL_CLEAN: return C565(0x48, 0xc7, 0xe8);
     default: return UI_INK;
   }
 }
@@ -5316,29 +5346,41 @@ uint16_t dailyTextColor() {
   return darkMode ? UI_WHITE : UI_INK;
 }
 
+StrId dailyRewardLabelId(ExpeditionItem item) {
+  switch (item) {
+    case EXP_ITEM_SNACK: return S_ITEM_SNACK;
+    case EXP_ITEM_ENERGY: return S_ITEM_ENERGY;
+    case EXP_ITEM_CARE: return S_ITEM_CARE;
+    case EXP_ITEM_TRAIN: return S_ITEM_TRAIN;
+    default: return S_REWARD;
+  }
+}
+
 void drawDailyGoalRow(int y, uint8_t idx) {
   uint8_t type = pet.dailyGoalType[idx];
   uint8_t target = pet.dailyGoalTarget(type);
   uint8_t progress = pet.dailyGoalProgress[idx] > target ? target : pet.dailyGoalProgress[idx];
   bool done = pet.dailyGoalComplete(idx);
   uint16_t col = dailyGoalColor(type);
-  gfx->fillRoundRect(58, y, 350, 52, 12, done ? col : uiPanel());
-  gfx->drawRoundRect(58, y, 350, 52, 12, col);
+  gfx->fillRoundRect(48, y, 370, 58, 14, done ? col : uiPanel());
+  gfx->drawRoundRect(48, y, 370, 58, 14, col);
+  gfx->fillCircle(76, y + 29, 17, col);
+  gfx->setTextColor(done ? UI_BG_DAY : UI_WHITE);
+  gfx->setTextSize(2);
+  gfx->setCursor(70, y + 21);
+  gfx->print(idx + 1);
   gfx->setTextSize(2);
   gfx->setTextColor(dailyTextColor());
-  gfx->setCursor(82, y + 18);
+  gfx->setCursor(104, y + 11);
   gfx->print(T(dailyGoalLabelId(type)));
 
   char prog[12];
   snprintf(prog, sizeof(prog), "%u/%u", progress, target);
-  gfx->setCursor(286, y + 18);
+  gfx->setCursor(342, y + 11);
   gfx->print(done ? T(S_DONE) : prog);
-  if (done) {
-    gfx->fillCircle(374, y + 26, 12, UI_BG_DAY);
-    gfx->setTextColor(dailyTextColor());
-    gfx->setCursor(368, y + 18);
-    gfx->print("v");
-  }
+  gfx->fillRoundRect(104, y + 38, 282, 7, 3, uiLine());
+  int fill = target ? (282 * progress) / target : 0;
+  if (fill > 0) gfx->fillRoundRect(104, y + 38, fill, 7, 3, col);
 }
 
 // pagina 2: objetivos diarios
@@ -5346,16 +5388,29 @@ void renderCardDaily() {
   pet.ensureDailyGoals();
   gfx->setTextColor(dailyTextColor());
   gfx->setTextSize(3);
-  gfx->setCursor(CX - strlen(T(S_DAILY)) * 9, 44);
+  gfx->setCursor(CX - strlen(T(S_DAILY)) * 9, 32);
   gfx->print(T(S_DAILY));
   const char *phase = T(dayPhaseTextId(currentDayPhase()));
   gfx->setTextColor(dailyTextColor());
   gfx->setTextSize(2);
-  gfx->setCursor(CX - strlen(phase) * 6, 74);
+  gfx->setCursor(CX - strlen(phase) * 6, 61);
   gfx->print(phase);
 
+  ExpeditionItem reward = pet.dailyRewardItem();
+  gfx->fillRoundRect(48, 82, 370, 40, 12, uiPanel());
+  gfx->drawRoundRect(48, 82, 370, 40, 12, UI_BAR_WARN);
+  gfx->setTextColor(UI_BAR_WARN);
+  gfx->setTextSize(2);
+  gfx->setCursor(68, 94);
+  gfx->print(T(S_REWARD));
+  gfx->setTextColor(dailyTextColor());
+  gfx->setCursor(174, 94);
+  gfx->print(T(dailyRewardLabelId(reward)));
+  gfx->setCursor(372, 94);
+  gfx->print("+1");
+
   for (uint8_t i = 0; i < DAILY_GOAL_COUNT; i++) {
-    drawDailyGoalRow(104 + i * 70, i);
+    drawDailyGoalRow(136 + i * 66, i);
   }
 }
 
@@ -7114,15 +7169,32 @@ void drawBar(int x, int y, const char *label, uint8_t val) {
   if (fw > 0) gfx->fillRoundRect(bx + 2, y + 2, fw, bh - 4, 3, fill);
 }
 
+void drawHomeBattleIcon(int cx, int cy) {
+  // Deux petites epees croisees, lisibles sans texte dans le cinquieme bouton.
+  const uint16_t blade = C565(0xe8, 0xee, 0xf7);
+  const uint16_t edge = C565(0x57, 0x67, 0x82);
+  const uint16_t grip = C565(0xe2, 0x55, 0x55);
+  for (int o = -1; o <= 1; o++) {
+    gfx->drawLine(cx - 12 + o, cy + 11, cx + 11 + o, cy - 12, edge);
+    gfx->drawLine(cx + 12 + o, cy + 11, cx - 11 + o, cy - 12, edge);
+  }
+  gfx->drawLine(cx - 10, cy + 9, cx + 10, cy - 11, blade);
+  gfx->drawLine(cx + 10, cy + 9, cx - 10, cy - 11, blade);
+  gfx->fillRect(cx - 16, cy + 7, 10, 4, grip);
+  gfx->fillRect(cx + 7, cy + 7, 10, 4, grip);
+}
+
 void drawButtons() {
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 5; i++) {
     bool off = pet.sleeping && i != 2;  // durmiendo solo funciona LUZ
     int frame = buttons[i].frameSize;
     int bx = buttons[i].cx - frame / 2, by = buttons[i].cy - frame / 2;
     if (!pet.sleeping) gfx->fillRoundRect(bx, by, frame, frame, 14, uiPanel());
     gfx->drawRoundRect(bx, by, frame, frame, 14, inkColor());
     if (!off) {
-      if (i == 1) {
+      if (i == 4) {
+        drawHomeBattleIcon(buttons[i].cx, buttons[i].cy);
+      } else if (i == 1) {
         drawBattleCaughtBall(buttons[i].cx + buttons[i].iconDx,
                              buttons[i].cy + buttons[i].iconDy, 29, 31);
       } else {
