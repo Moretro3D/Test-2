@@ -40,7 +40,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.50.2-moretro3d-v12.6-radar-biomes"
+#define FW_VERSION "1.50.3-moretro3d-v12.6-radar-fullscreen"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -3975,34 +3975,38 @@ void drawBiomeIcon(uint8_t biome,int cx,int cy) {
 }
 
 void drawBiomePixelArtRadar(uint8_t biome) {
-  // Reutilise exactement les sept pixel arts des bulles, agrandis au nearest
-  // neighbour et recadres dans le rond. Aucun lissage ni ancien fond generique.
+  // Le radar occupe tout le cadran. Les miniatures 88x88 restent reservees aux
+  // bulles : les agrandir x6 rendait leurs pixels beaucoup trop visibles.
+  // Ici on reutilise les decors d'accueil 250x105, deja prevus pour un rendu
+  // plein ecran en blocs 2x2, sur un ciel colore propre a chaque biome.
   uint8_t index=biome<7?biome:0;
-  const uint8_t *pixels=BIOME_THUMB_PIXELS[index];
-  const uint16_t *palette=BIOME_THUMB_PALETTES[index];
-  static const uint16_t base[7]={
-    C565(0x7c,0xb9,0x58),C565(0x55,0xa9,0xd5),C565(0x3c,0x79,0x45),
-    C565(0x8e,0x3d,0x2b),C565(0x79,0x70,0x66),C565(0xb9,0xd8,0xe9),C565(0x67,0xad,0xe0)
+  static const uint16_t skyTop[7]={
+    C565(0x22,0x78,0xc7),C565(0x24,0x83,0xcf),C565(0x1c,0x68,0x91),
+    C565(0x48,0x1d,0x55),C565(0x50,0x67,0x78),C565(0x79,0xac,0xd1),C565(0x27,0x78,0xc8)
   };
-  gfx->fillScreen(base[index]);
-  const int scale=6, left=(466-BIOME_THUMB_W*scale)/2, top=-104;
-  for(int sy=0;sy<BIOME_THUMB_H;sy++) {
-    int dy=top+sy*scale;
-    if(dy>=320 || dy+scale<=0) continue;
-    int x=0;
-    while(x<BIOME_THUMB_W) {
-      uint8_t color=pgm_read_byte(&pixels[(uint16_t)sy*BIOME_THUMB_W+x]);
-      int start=x++;
-      while(x<BIOME_THUMB_W && pgm_read_byte(&pixels[(uint16_t)sy*BIOME_THUMB_W+x])==color) x++;
-      if(color==BIOME_THUMB_TRANSPARENT) continue;
-      int dx=left+start*scale, dw=(x-start)*scale;
-      if(dx<0){dw+=dx;dx=0;} if(dx+dw>466) dw=466-dx;
-      int py=dy,ph=scale; if(py<0){ph+=py;py=0;} if(py+ph>320) ph=320-py;
-      if(dw>0 && ph>0) gfx->fillRect(dx,py,dw,ph,pgm_read_word(&palette[color]));
+  static const uint16_t skyBottom[7]={
+    C565(0xb8,0xe2,0xef),C565(0xb5,0xe6,0xf4),C565(0x87,0xc2,0xb0),
+    C565(0xe0,0x72,0x42),C565(0xc1,0xd0,0xd4),C565(0xe8,0xf4,0xfa),C565(0xb9,0xe6,0xf5)
+  };
+  for(int y=0;y<466;y+=6) {
+    gfx->fillRect(0,y,466,6,lerp565(skyTop[index],skyBottom[index],y,466));
+  }
+  if(index<6) {
+    // Fond sous le sol, puis decor haute definition deja aligne sur le rond.
+    gfx->fillRect(0,193,466,273,lerp565(skyBottom[index],C565(0x10,0x18,0x20),3,8));
+    drawHomeHabitatGround(index);
+  } else {
+    // Le biome Vol conserve un ciel complet et plusieurs nuages doux.
+    const int16_t cloudX[6]={58,142,238,326,405,188};
+    const int16_t cloudY[6]={132,278,104,205,310,382};
+    for(uint8_t i=0;i<6;i++) {
+      uint16_t shade=(i&1)?C565(0xe8,0xf5,0xfb):UI_WHITE;
+      gfx->fillCircle(cloudX[i],cloudY[i],22,shade);
+      gfx->fillCircle(cloudX[i]+22,cloudY[i]+5,17,shade);
+      gfx->fillCircle(cloudX[i]-20,cloudY[i]+7,15,shade);
+      gfx->fillRect(cloudX[i]-20,cloudY[i]+4,42,19,shade);
     }
   }
-  // Assombrit seulement les deux zones de texte; le pixel art reste visible.
-  gfx->fillRect(0,0,466,8,C565(0x0b,0x14,0x24));
 }
 
 void renderBiomeSelection() {
@@ -4015,14 +4019,15 @@ void renderBiomeSelection() {
     const char *search=biomeSearchText();
     gfx->setCursor(CX-(int)strlen(search)*6,46); gfx->print(search);
     uint8_t pulse=(millis()/260)%4;
+    static const int16_t radarRadius[4]={48,92,136,180};
     for(uint8_t i=0;i<4;i++) {
-      gfx->drawCircle(CX,205,39+i*18,C565(0x08,0x12,0x20));
-      gfx->drawCircle(CX,205,38+i*18,(i==pulse)?UI_WHITE:C565(0x61,0xda,0xf2));
+      gfx->drawCircle(CX,CY,radarRadius[i]+1,C565(0x08,0x12,0x20));
+      gfx->drawCircle(CX,CY,radarRadius[i],(i==pulse)?UI_WHITE:C565(0x61,0xda,0xf2));
     }
-    gfx->drawFastHLine(CX-63,206,126,C565(0x08,0x12,0x20));
-    gfx->drawFastVLine(CX+1,142,126,C565(0x08,0x12,0x20));
-    gfx->drawFastHLine(CX-62,205,124,C565(0x61,0xda,0xf2));
-    gfx->drawFastVLine(CX,143,124,C565(0x61,0xda,0xf2));
+    gfx->drawFastHLine(CX-180,CY+1,360,C565(0x08,0x12,0x20));
+    gfx->drawFastVLine(CX+1,CY-180,360,C565(0x08,0x12,0x20));
+    gfx->drawFastHLine(CX-180,CY,360,C565(0x61,0xda,0xf2));
+    gfx->drawFastVLine(CX,CY-180,360,C565(0x61,0xda,0xf2));
     gfx->fillRoundRect(104,354,258,54,16,C565(0x12,0x20,0x35));
     gfx->setTextColor(UI_WHITE); gfx->setTextSize(2);
     const char *name=battleBiomeName(biomeSelected);
