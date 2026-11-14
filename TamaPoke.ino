@@ -36,10 +36,11 @@
 #include "kanto_badge_sprites.h"
 #include "home_gym_sprite.h"
 #include "home_habitat_sprites.h"
+#include "biome_thumbnails.h"
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.48.3-moretro3d-v12.3-biome-thumbnails"
+#define FW_VERSION "1.48.4-moretro3d-v12.4-canva-biomes"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -457,10 +458,10 @@ void setup() {
   gfx->setTextSize(3);
   // 9 caracteres x 6 px x taille 3 = 162 px : centre exact a x=152.
   gfx->setCursor(CX - 79, 326); gfx->print("Moretro3D");
-  // Version publique V12.3 : sept miniatures pixel-art reellement embarquees.
+  // Version publique V12.4 : sept miniatures pixel-art reellement embarquees.
   gfx->setTextColor(C565(0x61,0xda,0xf2));
   gfx->setTextSize(2);
-  gfx->setCursor(CX - 30, 366); gfx->print("V12.3");
+  gfx->setCursor(CX - 30, 366); gfx->print("V12.4");
   gfx->flush();
   panel->setBrightness(120);
 
@@ -3765,68 +3766,20 @@ void drawSkyBiomeBackground() {
 }
 
 void drawBiomeIcon(uint8_t biome,int cx,int cy) {
-  // Chaque bulle contient maintenant une vraie scene pixel-art compacte.
-  // Les formes sont volontairement dessinees par aplats sans anti-aliasing
-  // pour rester nettes sur l'AMOLED 466x466.
-  if (biome==0) {
-    gfx->fillRect(cx-31,cy-22,62,26,C565(0x78,0xc8,0xe8));
-    gfx->fillRect(cx-31,cy+4,62,22,C565(0x3f,0x9b,0x45));
-    gfx->fillRect(cx-31,cy+18,62,8,C565(0x2f,0x72,0x35));
-    for(int x=-26;x<=26;x+=8) {
-      gfx->drawFastVLine(cx+x,cy+5+(abs(x)%4),13,C565(0x91,0xd8,0x58));
-      if((x/8)&1) gfx->fillRect(cx+x-1,cy+9,3,3,C565(0xff,0xda,0x55));
+  uint8_t index=biome<7?biome:0;
+  const uint8_t *pixels=BIOME_THUMB_PIXELS[index];
+  const uint16_t *palette=BIOME_THUMB_PALETTES[index];
+  int left=cx-BIOME_THUMB_W/2;
+  int top=cy-BIOME_THUMB_H/2;
+  for(int y=0;y<BIOME_THUMB_H;y++) {
+    int x=0;
+    while(x<BIOME_THUMB_W) {
+      uint8_t color=pgm_read_byte(&pixels[(uint16_t)y*BIOME_THUMB_W+x]);
+      int start=x++;
+      while(x<BIOME_THUMB_W && pgm_read_byte(&pixels[(uint16_t)y*BIOME_THUMB_W+x])==color) x++;
+      if(color!=BIOME_THUMB_TRANSPARENT)
+        gfx->fillRect(left+start,top+y,x-start,1,pgm_read_word(&palette[color]));
     }
-  } else if (biome==1) {
-    gfx->fillRect(cx-31,cy-22,62,19,C565(0x72,0xc7,0xee));
-    gfx->fillRect(cx-31,cy-3,62,18,C565(0x2e,0x91,0xd1));
-    gfx->fillRect(cx-31,cy+15,62,11,C565(0xf1,0xc7,0x70));
-    gfx->drawFastHLine(cx-27,cy+1,24,UI_WHITE);
-    gfx->drawFastHLine(cx+5,cy+7,22,C565(0xa9,0xe6,0xf5));
-    gfx->fillRect(cx-18,cy+18,5,3,C565(0xd8,0xa6,0x55));
-    gfx->fillRect(cx+12,cy+21,7,2,C565(0xd8,0xa6,0x55));
-  } else if (biome==2) {
-    gfx->fillRect(cx-31,cy-22,62,48,C565(0x16,0x52,0x2d));
-    gfx->fillRect(cx-31,cy+18,62,8,C565(0x28,0x6f,0x36));
-    for(int x=-24;x<=24;x+=16) {
-      gfx->fillRect(cx+x-3,cy-5,7,24,C565(0x6d,0x43,0x24));
-      gfx->fillCircle(cx+x,cy-10,11,C565(0x2f,0x91,0x45));
-      gfx->fillCircle(cx+x-7,cy-6,7,C565(0x49,0xb4,0x5c));
-    }
-    gfx->drawFastHLine(cx-25,cy+21,50,C565(0x75,0xc4,0x58));
-  } else if (biome==3) {
-    gfx->fillRect(cx-31,cy-22,62,48,C565(0x56,0x25,0x28));
-    gfx->fillTriangle(cx-31,cy+24,cx-5,cy-15,cx+11,cy+24,C565(0x4c,0x32,0x30));
-    gfx->fillTriangle(cx-8,cy+24,cx+16,cy-20,cx+31,cy+24,C565(0x6c,0x38,0x2d));
-    gfx->fillTriangle(cx+6,cy-3,cx+16,cy-20,cx+24,cy-3,C565(0xff,0x70,0x20));
-    gfx->fillRect(cx-31,cy+20,62,6,C565(0xd9,0x3b,0x1f));
-    gfx->drawFastHLine(cx-18,cy+22,17,C565(0xff,0xb1,0x2b));
-    gfx->fillRect(cx+14,cy-28,4,6,C565(0xff,0xc2,0x42));
-  } else if (biome==4) {
-    gfx->fillRect(cx-31,cy-22,62,48,C565(0x75,0xa7,0xc8));
-    gfx->fillTriangle(cx-33,cy+25,cx-10,cy-11,cx+10,cy+25,C565(0x75,0x70,0x69));
-    gfx->fillTriangle(cx-12,cy+25,cx+13,cy-22,cx+34,cy+25,C565(0xa4,0x9b,0x8e));
-    gfx->fillTriangle(cx+3,cy-4,cx+13,cy-22,cx+23,cy-4,UI_WHITE);
-    gfx->fillRect(cx-31,cy+21,62,5,C565(0x55,0x50,0x4b));
-    gfx->fillRect(cx-23,cy+13,8,5,C565(0xc0,0xb5,0xa2));
-  } else if (biome==5) {
-    gfx->fillRect(cx-31,cy-22,62,48,C565(0x8e,0xc7,0xe6));
-    gfx->fillTriangle(cx-32,cy+18,cx-8,cy-10,cx+10,cy+18,C565(0xd9,0xec,0xf4));
-    gfx->fillTriangle(cx-10,cy+18,cx+15,cy-18,cx+34,cy+18,UI_WHITE);
-    gfx->fillRect(cx-31,cy+18,62,8,C565(0xc4,0xe4,0xf2));
-    const int sx[5]={-24,-12,2,17,27}; const int sy[5]={-15,5,-10,1,-15};
-    for(int i=0;i<5;i++) {
-      gfx->drawFastHLine(cx+sx[i]-3,cy+sy[i],7,UI_WHITE);
-      gfx->drawFastVLine(cx+sx[i],cy+sy[i]-3,7,UI_WHITE);
-    }
-  } else {
-    gfx->fillRect(cx-31,cy-22,62,48,C565(0x48,0x91,0xd4));
-    gfx->fillRect(cx-31,cy+18,62,8,C565(0x78,0xb5,0xe4));
-    gfx->fillCircle(cx-18,cy+4,9,UI_WHITE);
-    gfx->fillCircle(cx-6,cy-1,12,UI_WHITE);
-    gfx->fillCircle(cx+8,cy+5,8,UI_WHITE);
-    gfx->fillRect(cx-20,cy+4,30,9,UI_WHITE);
-    gfx->fillCircle(cx+19,cy-11,6,C565(0xd9,0xf2,0xff));
-    gfx->fillCircle(cx+27,cy-8,5,C565(0xd9,0xf2,0xff));
   }
 }
 

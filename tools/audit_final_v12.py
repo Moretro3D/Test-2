@@ -15,19 +15,19 @@ sdmon=(ROOT/"sdmon.cpp").read_text(encoding="utf-8")
 
 def ok(cond,msg):
     if not cond:
-        raise SystemExit("FAIL V12.3: "+msg)
+        raise SystemExit("FAIL V12.4: "+msg)
     print("OK  ",msg)
 
-ok("1.48.3-moretro3d-v12.3-biome-thumbnails" in ino and
-   "1.48.3-moretro3d-v12.3-biome-thumbnails" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
-   "1.48.3-moretro3d-v12.3-biome-thumbnails" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "1.48.3-moretro3d-v12.3-biome-thumbnails" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
-   "1.48.3-moretro3d-v12.3-biome-thumbnails" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
-   "version 1.48.3 coherente et caches installateur invalides")
-ok('gfx->setCursor(CX - 30, 366); gfx->print("V12.3")' in ino and
-   '<div class="version">Firmware V12.3</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   '<div class="version">Firmware V12.3</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
-   "V12.3 affichee au demarrage, sur la page officielle et sur Shopify")
+ok("1.48.4-moretro3d-v12.4-canva-biomes" in ino and
+   "1.48.4-moretro3d-v12.4-canva-biomes" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.48.4-moretro3d-v12.4-canva-biomes" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.48.4-moretro3d-v12.4-canva-biomes" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   "1.48.4-moretro3d-v12.4-canva-biomes" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.48.4 coherente et caches installateur invalides")
+ok('gfx->setCursor(CX - 30, 366); gfx->print("V12.4")' in ino and
+   '<div class="version">Firmware V12.4</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   '<div class="version">Firmware V12.4</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
+   "V12.4 affichee au demarrage, sur la page officielle et sur Shopify")
 ok('location.replace("https://moretro3d.fr/pages/poketama")' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    'https://moretro3d.github.io/Test-1/manifest.json' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
    "GitHub Pages redirige vers Shopify et conserve le Web Flasher officiel")
@@ -37,7 +37,7 @@ ok("github.repository == 'Moretro3D/Test-2'" in workflow and
    "! grep -q 'location.replace' web/index.html" in workflow,
    "Test-2 affiche son Web Flasher sans redirection Shopify")
 test2_launcher=(ROOT/"OUVRIR_WEB_FLASHER_TEST_2.bat").read_text(encoding="utf-8")
-ok("https://moretro3d.github.io/Test-2/?v=1.48.3-moretro3d-v12.3-biome-thumbnails" in test2_launcher,
+ok("https://moretro3d.github.io/Test-2/?v=1.48.4-moretro3d-v12.4-canva-biomes" in test2_launcher,
    "lanceur direct Test-2 avec contournement du cache")
 scene=ino[ino.index("void drawScene("):ino.index("void drawStarterPokeball(")]
 ok("HORIZON-38" not in scene and "uint16_t sea=" not in scene and
@@ -388,12 +388,14 @@ ok("void biomeBubblePosition" in ino and
    "dx*dx+dy*dy>58L*58L" in ino and
    "UI_BLACK" not in ino,
    "sept petites bulles de biome avec zones tactiles circulaires")
-ok("Chaque bulle contient maintenant une vraie scene pixel-art compacte" in ino and
-   "C565(0x78,0xc8,0xe8)" in ino and "C565(0xf1,0xc7,0x70)" in ino and
-   "C565(0x16,0x52,0x2d)" in ino and "C565(0xd9,0x3b,0x1f)" in ino and
-   "C565(0x75,0xa7,0xc8)" in ino and "C565(0x8e,0xc7,0xe6)" in ino and
-   "C565(0x48,0x91,0xd4)" in ino,
-   "sept miniatures pixel-art detaillees reellement embarquees")
+thumb=(ROOT/"biome_thumbnails.h").read_text(encoding="utf-8")
+ok('#include "biome_thumbnails.h"' in ino and
+   "BIOME_THUMB_PIXELS[index]" in ino and "BIOME_THUMB_PALETTES[index]" in ino and
+   all(f"BIOME_{name}_PIXELS" in thumb for name in
+       ("PRAIRIE","PLAGE","FORET","VOLCAN","MONTAGNE","NEIGE","CIEL")) and
+   all((ROOT/"assets/biome_thumbnails_canva"/f"{name}.png").exists() for name in
+       ("prairie","plage","foret","volcan","montagne","neige","ciel")),
+   "sept vraies images Canva converties et embarquees dans le firmware")
 music=ROOT/"tools/sdcard/music"
 for filename in ("morning.wav", "lofi.wav", "night.wav"):
     with wave.open(str(music/filename), "rb") as wav:
@@ -507,4 +509,4 @@ if shutil.which("bash"):
 else:
     print("SKIP build_web.sh syntaxe (bash absent sur ce poste)")
 
-print("AUDIT FINAL V12.3 OK")
+print("AUDIT FINAL V12.4 OK")
