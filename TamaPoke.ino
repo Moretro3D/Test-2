@@ -41,7 +41,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.50.4-moretro3d-v12.6-radar-canvas"
+#define FW_VERSION "1.50.5-moretro3d-v12.6-biome-battles"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -3975,7 +3975,7 @@ void drawBiomeIcon(uint8_t biome,int cx,int cy) {
   }
 }
 
-void drawBiomePixelArtRadar(uint8_t biome) {
+void drawBiomeCanvasBackground(uint8_t biome) {
   // Sept decors originaux, composes specialement pour le cadran rond. Chaque
   // ressource 233x233 est affichee en pixel-perfect x2 sur les 466x466 pixels.
   // Aucune petite vignette n'est etiree et aucun ancien sol n'est superpose.
@@ -3996,7 +3996,7 @@ void drawBiomePixelArtRadar(uint8_t biome) {
 void renderBiomeSelection() {
   biomeDirty=false;
   if (biomeSearchUntil) {
-    drawBiomePixelArtRadar(biomeSelected);
+    drawBiomeCanvasBackground(biomeSelected);
     gfx->fillRoundRect(76,24,314,58,18,C565(0x12,0x20,0x35));
     gfx->drawRoundRect(76,24,314,58,18,C565(0x61,0xda,0xf2));
     gfx->setTextColor(UI_WHITE); gfx->setTextSize(2);
@@ -4210,10 +4210,9 @@ void renderBattle() {
   const DexEntry &mine = DEX_TBL[playerDex];
   const DexEntry &foe = DEX_TBL[battleDex];
   uint8_t biome=battleEnvironmentBiome>=0?(uint8_t)battleEnvironmentBiome:(mine.biome<6?mine.biome:0);
-  static const uint16_t skies[7]={C565(0xe8,0xf3,0xd9),C565(0xd9,0xf4,0xfa),C565(0xdf,0xef,0xd4),C565(0xed,0xd8,0xc6),C565(0xf1,0xe4,0xcf),C565(0xe9,0xf3,0xfa),C565(0x9d,0xdc,0xf2)};
-  uint16_t sky=skies[biome];
-  gfx->fillScreen(sky);
-  if (biome<6) drawBattleBackgroundBiome(biome); else drawSkyBiomeBackground();
+  // Le combat conserve exactement le decor plein cadran choisi au radar.
+  // Les plateformes, sprites et barres de PV sont dessines ensuite par-dessus.
+  drawBiomeCanvasBackground(biome);
   drawBattleBaseFor(battleGroundStyleForDex(battleDex),true);
   drawBattleBaseFor(battleGroundStyleForDex(playerDex),false);
 
