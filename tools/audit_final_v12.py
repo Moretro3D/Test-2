@@ -12,6 +12,7 @@ pet_h=(ROOT/"pet.h").read_text(encoding="utf-8")
 audio=(ROOT/"audio.cpp").read_text(encoding="utf-8")
 chirp=(ROOT/"species_chirp.cpp").read_text(encoding="utf-8")
 sdmon=(ROOT/"sdmon.cpp").read_text(encoding="utf-8")
+workflow=(ROOT/".github/workflows/pages.yml").read_text(encoding="utf-8")
 
 def ok(cond,msg):
     if not cond:
@@ -76,6 +77,11 @@ ok('id="cries"' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    'id="cries"' in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
    "cries-installer.js?v=1.50.0" in (ROOT/"web/index.html").read_text(encoding="utf-8"),
    "bouton Cris integre aux importateurs USB GitHub et Shopify")
+ok("Verifier que la page correspond exactement au firmware" in workflow and
+   'grep -q \'id="cries"\' web/index.html' in workflow and
+   (ROOT/"ENVOYER_FIRMWARE_ET_PAGE_OFFICIELLE.bat").exists() and
+   "Firmware et page officielle" in (ROOT/"ENVOYER_TEST_1.bat").read_text(encoding="utf-8"),
+   "firmware et page officielle publies ensemble avec verification bloquante")
 ok("ageMinutes % 5 == 0) fullness" in pet_cpp and
    "ageMinutes % 6 == 0) energy" in pet_cpp and
    "ageMinutes % 6 == 0) hygiene" in pet_cpp and

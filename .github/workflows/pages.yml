@@ -70,6 +70,14 @@ jobs:
         run: python3 tools/audit_battle_sprite_sizes.py
       - name: Verifier la page et les binaires
         run: python3 tools/verify_web.py
+      - name: Verifier que la page correspond exactement au firmware
+        run: |
+          grep -q '1.50.0-moretro3d-v12.6-authentic-cries' web/manifest.json
+          grep -q 'id="cries"' web/index.html
+          grep -q 'id="cries"' web/shopify.html
+          grep -q 'cries-installer.js?v=1.50.0' web/index.html
+          test -s web/cries-installer.js
+          grep -q 'for(let id=1;id<=386;id++)' web/cries-installer.js
       - name: Afficher directement le Web Flasher sur Test-2
         if: github.repository == 'Moretro3D/Test-2'
         run: |

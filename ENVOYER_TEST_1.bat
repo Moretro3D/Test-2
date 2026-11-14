@@ -1,9 +1,10 @@
 @echo off
 setlocal EnableExtensions
-title PokeTama V12.6 - Deploiement officiel Test-1
+title PokeTama V12.6 - Firmware et page officielle
 cd /d "%~dp0"
 
-echo PokeTama V12.6 - deploiement officiel vers Moretro3D/Test-1
+echo PokeTama V12.6 - FIRMWARE + PAGE + IMPORTATEUR USB
+echo Depot officiel : Moretro3D/Test-1
 echo.
 where git >nul 2>nul
 if errorlevel 1 (
@@ -32,11 +33,11 @@ rem cette mise a jour : conserver strictement la copie deja publiee.
 git -c safe.directory="%CD%" checkout origin/main -- web/sprites.pak
 if errorlevel 1 goto :connexion
 
-echo Preparation de la version officielle V12.6...
+echo Preparation simultanee du firmware et de la page officielle V12.6...
 git -c safe.directory="%CD%" add -A
 git -c safe.directory="%CD%" diff --cached --quiet
 if errorlevel 1 (
-  git -c safe.directory="%CD%" commit -m "PokeTama V12.6 quotidien et profils microSD"
+  git -c safe.directory="%CD%" commit -m "PokeTama V12.6 vrais cris et page USB 1.50.0"
   if errorlevel 1 goto :connexion
 )
 
@@ -44,8 +45,8 @@ echo Envoi officiel de la V12.6 sans effacement ni force push...
 git -c safe.directory="%CD%" -c http.sslBackend=openssl push -u origin main
 if errorlevel 1 goto :connexion
 echo.
-echo TERMINE : la V12.6 officielle est envoyee sur Test-1.
-echo Ouvre https://github.com/Moretro3D/Test-1/actions pour suivre la compilation.
+echo TERMINE : firmware et page officielle sont envoyes ensemble sur Test-1.
+echo Ouvre https://github.com/Moretro3D/Test-1/actions pour suivre leur publication.
 pause
 exit /b 0
 
