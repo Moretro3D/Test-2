@@ -37,10 +37,11 @@
 #include "home_gym_sprite.h"
 #include "home_habitat_sprites.h"
 #include "biome_thumbnails.h"
+#include "radar_biomes.h"
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.50.3-moretro3d-v12.6-radar-fullscreen"
+#define FW_VERSION "1.50.4-moretro3d-v12.6-radar-canvas"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -3975,37 +3976,20 @@ void drawBiomeIcon(uint8_t biome,int cx,int cy) {
 }
 
 void drawBiomePixelArtRadar(uint8_t biome) {
-  // Le radar occupe tout le cadran. Les miniatures 88x88 restent reservees aux
-  // bulles : les agrandir x6 rendait leurs pixels beaucoup trop visibles.
-  // Ici on reutilise les decors d'accueil 250x105, deja prevus pour un rendu
-  // plein ecran en blocs 2x2, sur un ciel colore propre a chaque biome.
+  // Sept decors originaux, composes specialement pour le cadran rond. Chaque
+  // ressource 233x233 est affichee en pixel-perfect x2 sur les 466x466 pixels.
+  // Aucune petite vignette n'est etiree et aucun ancien sol n'est superpose.
   uint8_t index=biome<7?biome:0;
-  static const uint16_t skyTop[7]={
-    C565(0x22,0x78,0xc7),C565(0x24,0x83,0xcf),C565(0x1c,0x68,0x91),
-    C565(0x48,0x1d,0x55),C565(0x50,0x67,0x78),C565(0x79,0xac,0xd1),C565(0x27,0x78,0xc8)
-  };
-  static const uint16_t skyBottom[7]={
-    C565(0xb8,0xe2,0xef),C565(0xb5,0xe6,0xf4),C565(0x87,0xc2,0xb0),
-    C565(0xe0,0x72,0x42),C565(0xc1,0xd0,0xd4),C565(0xe8,0xf4,0xfa),C565(0xb9,0xe6,0xf5)
-  };
-  for(int y=0;y<466;y+=6) {
-    gfx->fillRect(0,y,466,6,lerp565(skyTop[index],skyBottom[index],y,466));
-  }
-  if(index<6) {
-    // Fond sous le sol, puis decor haute definition deja aligne sur le rond.
-    gfx->fillRect(0,193,466,273,lerp565(skyBottom[index],C565(0x10,0x18,0x20),3,8));
-    drawHomeHabitatGround(index);
-  } else {
-    // Le biome Vol conserve un ciel complet et plusieurs nuages doux.
-    const int16_t cloudX[6]={58,142,238,326,405,188};
-    const int16_t cloudY[6]={132,278,104,205,310,382};
-    for(uint8_t i=0;i<6;i++) {
-      uint16_t shade=(i&1)?C565(0xe8,0xf5,0xfb):UI_WHITE;
-      gfx->fillCircle(cloudX[i],cloudY[i],22,shade);
-      gfx->fillCircle(cloudX[i]+22,cloudY[i]+5,17,shade);
-      gfx->fillCircle(cloudX[i]-20,cloudY[i]+7,15,shade);
-      gfx->fillRect(cloudX[i]-20,cloudY[i]+4,42,19,shade);
-    }
+  const uint16_t *runs=RADAR_BIOME_RUNS[index];
+  const uint16_t *palette=RADAR_BIOME_PALETTES[index];
+  uint16_t x=0,y=0;
+  for(uint32_t i=0;i<RADAR_BIOME_RUN_COUNTS[index] && y<RADAR_BIOME_H;i++) {
+    uint16_t packed=pgm_read_word(&runs[i]);
+    uint16_t length=packed>>6;
+    uint8_t color=packed&0x3f;
+    gfx->fillRect(x*2,y*2,length*2,2,pgm_read_word(&palette[color]));
+    x+=length;
+    if(x>=RADAR_BIOME_W) { x=0; y++; }
   }
 }
 

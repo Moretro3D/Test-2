@@ -1,25 +1,25 @@
 {
   "name": "PokeTama Moretro3D - V12.6 Miniatures Biomes",
-  "version": "1.50.3-moretro3d-v12.6-radar-fullscreen",
+  "version": "1.50.4-moretro3d-v12.6-radar-canvas",
   "new_install_prompt_erase": true,
   "builds": [
     {
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/poketama-1.50.3-moretro3d-v12.6-radar-fullscreen-bootloader.bin",
+          "path": "firmware/poketama-1.50.4-moretro3d-v12.6-radar-canvas-bootloader.bin",
           "offset": 0
         },
         {
-          "path": "firmware/poketama-1.50.3-moretro3d-v12.6-radar-fullscreen-partitions.bin",
+          "path": "firmware/poketama-1.50.4-moretro3d-v12.6-radar-canvas-partitions.bin",
           "offset": 32768
         },
         {
-          "path": "firmware/poketama-1.50.3-moretro3d-v12.6-radar-fullscreen-boot_app0.bin",
+          "path": "firmware/poketama-1.50.4-moretro3d-v12.6-radar-canvas-boot_app0.bin",
           "offset": 57344
         },
         {
-          "path": "firmware/poketama-1.50.3-moretro3d-v12.6-radar-fullscreen-app.bin",
+          "path": "firmware/poketama-1.50.4-moretro3d-v12.6-radar-canvas-app.bin",
           "offset": 65536
         }
       ]

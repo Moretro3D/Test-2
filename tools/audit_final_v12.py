@@ -19,12 +19,12 @@ def ok(cond,msg):
         raise SystemExit("FAIL V12.6: "+msg)
     print("OK  ",msg)
 
-ok("1.50.3-moretro3d-v12.6-radar-fullscreen" in ino and
-   "1.50.3-moretro3d-v12.6-radar-fullscreen" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
-   "1.50.3-moretro3d-v12.6-radar-fullscreen" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "1.50.3-moretro3d-v12.6-radar-fullscreen" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
-   "1.50.3-moretro3d-v12.6-radar-fullscreen" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
-   "version 1.50.3 coherente et caches installateur invalides")
+ok("1.50.4-moretro3d-v12.6-radar-canvas" in ino and
+   "1.50.4-moretro3d-v12.6-radar-canvas" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.50.4-moretro3d-v12.6-radar-canvas" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.50.4-moretro3d-v12.6-radar-canvas" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   "1.50.4-moretro3d-v12.6-radar-canvas" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.50.4 coherente et caches installateur invalides")
 ok('gfx->setCursor(CX - 30, 366); gfx->print("V12.6")' in ino and
    '<div class="version">Firmware V12.6</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    '<div class="version">Firmware V12.6</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
@@ -74,7 +74,8 @@ ok(all(name in audio_h for name in ("SFX_NEED_SLEEP", "SFX_NEED_HUNGER", "SFX_NE
    "if (pet.sleeping) sfxPlay(SFX_NEED_SLEEP)" in ino,
    "vrai cri a la caresse et alertes distinctes sommeil faim hygiene")
 ok("void drawBiomePixelArtRadar(uint8_t biome)" in ino and
-   "drawHomeHabitatGround(index)" in ino and "radarRadius[4]={48,92,136,180}" in ino and
+   '#include "radar_biomes.h"' in ino and "RADAR_BIOME_RUNS[index]" in ino and
+   "radarRadius[4]={48,92,136,180}" in ino and
    "drawBiomePixelArtRadar(biomeSelected);" in ino and
    "if (biomeSelected<6) drawBattleBackgroundBiome" not in ino,
    "radar de recherche sur les sept pixel arts de biomes sans ancien fond")
@@ -121,7 +122,7 @@ ok("github.repository == 'Moretro3D/Test-2'" in workflow and
    "! grep -q 'location.replace' web/index.html" in workflow,
    "Test-2 affiche son Web Flasher sans redirection Shopify")
 test2_launcher=(ROOT/"OUVRIR_WEB_FLASHER_TEST_2.bat").read_text(encoding="utf-8")
-ok("https://moretro3d.github.io/Test-2/?v=1.50.3-moretro3d-v12.6-radar-fullscreen" in test2_launcher,
+ok("https://moretro3d.github.io/Test-2/?v=1.50.4-moretro3d-v12.6-radar-canvas" in test2_launcher,
    "lanceur direct Test-2 avec contournement du cache")
 scene=ino[ino.index("void drawScene("):ino.index("void drawStarterPokeball(")]
 ok("HORIZON-38" not in scene and "uint16_t sea=" not in scene and

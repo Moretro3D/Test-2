@@ -1,6 +1,6 @@
 PokeTama Moretro3D V12.6 - RADAR PIXEL ART DES BIOMES
 
-VERSION INTERNE : 1.50.3-moretro3d-v12.6-radar-fullscreen
+VERSION INTERNE : 1.50.4-moretro3d-v12.6-radar-canvas
 
 NOUVEAUTES :
 - Réglages séparés pour la musique et les sons d'interaction.

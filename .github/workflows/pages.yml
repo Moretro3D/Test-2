@@ -72,7 +72,7 @@ jobs:
         run: python3 tools/verify_web.py
       - name: Verifier que la page correspond exactement au firmware
         run: |
-          grep -q '1.50.2-moretro3d-v12.6-radar-biomes' web/manifest.json
+          grep -q '1.50.4-moretro3d-v12.6-radar-canvas' web/manifest.json
           grep -q 'id="cries"' web/index.html
           grep -q 'id="cries"' web/shopify.html
           grep -q 'cries-installer.js?v=1.50.0' web/index.html

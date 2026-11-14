@@ -37,7 +37,7 @@ echo Preparation simultanee du firmware et de la page officielle V12.6...
 git -c safe.directory="%CD%" add -A
 git -c safe.directory="%CD%" diff --cached --quiet
 if errorlevel 1 (
-  git -c safe.directory="%CD%" commit -m "PokeTama V12.6 radar plein ecran 1.50.3"
+  git -c safe.directory="%CD%" commit -m "PokeTama V12.6 radar Canvas plein ecran 1.50.4"
   if errorlevel 1 goto :connexion
 )
 
