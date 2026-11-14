@@ -910,6 +910,26 @@ uint8_t Pet::applyTypeResult(uint8_t score) {
   return gain;
 }
 
+uint8_t Pet::applyRunnerResult(uint8_t score) {
+  if (ceremony != CER_NONE || isEgg()) return 0;
+  uint8_t gain = score / 2;
+  if (score && gain == 0) gain = 1;
+  if (gain > 12) gain = 12;
+  uint8_t v = trSpe + gain;
+  trSpe = v > 100 ? 100 : v;
+  joy = clamp100((int)joy + 4 + (score > 12 ? 18 : score));
+  energy = dropTo(energy, 6 + score / 3, 8);
+  fullness = dropTo(fullness, 3 + score / 5, 5);
+  int burn = (int)weight - score;
+  weight = burn > 0 ? burn : 0;
+  if (score >= 4) heartUntil = millis() + HEART_MS;
+  addBond(1);
+  registerCare();
+  noteDailyGoal(DAILY_GOAL_PLAY, 1);
+  save();
+  return gain;
+}
+
 bool Pet::applyPetEvent(uint8_t eventType) {
   if (ceremony != CER_NONE || isEgg()) return false;
   if (eventType == PET_EVENT_BERRY) {

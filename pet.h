@@ -186,6 +186,7 @@ public:
   uint8_t applyMemoResult(uint8_t rounds);
   uint8_t applyCleanResult(uint8_t score);
   uint8_t applyTypeResult(uint8_t score);
+  uint8_t applyRunnerResult(uint8_t score);
   bool applyPetEvent(uint8_t eventType);
   uint8_t interactPet(bool eveningBonus);
   PetPersonality personality() const;

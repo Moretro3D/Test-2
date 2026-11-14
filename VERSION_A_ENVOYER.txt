@@ -1,6 +1,6 @@
-PokeTama Moretro3D V12.6 - QUOTIDIEN ET PROFILS MICROSD
+PokeTama Moretro3D V12.6 - MINI-JEU COURSE ET ICONES
 
-VERSION INTERNE : 1.49.0-moretro3d-v12.6-audio-controls
+VERSION INTERNE : 1.49.1-moretro3d-v12.6-runner-game
 
 NOUVEAUTES :
 - Réglages séparés pour la musique et les sons d'interaction.

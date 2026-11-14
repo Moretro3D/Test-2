@@ -40,7 +40,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.49.0-moretro3d-v12.6-audio-controls"
+#define FW_VERSION "1.49.1-moretro3d-v12.6-runner-game"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -129,7 +129,7 @@ uint32_t nextAmbientSoundAt = 0;
 // minijuego "toques": mantener la pokeball en el aire
 bool gameOpen = false;
 bool gameMenuOpen = false;
-uint8_t gameMode = 0;  // 0 ball, 1 catch, 2 memo
+uint8_t gameMode = 0;  // 0 ball, 1 catch, 2 memo, 3 clean, 4 type, 5 runner
 uint32_t gameOverUntil = 0;
 float ballX, ballY, ballVX, ballVY, gamePetX;
 uint8_t gameScore, gameMisses;
@@ -153,6 +153,9 @@ bool cleanAlive[4] = { false };
 uint32_t cleanUntil = 0, cleanSpawnAt = 0;
 uint8_t cleanActive = 0;
 uint8_t typeEnemy = TYPE_GRASS;
+float runnerY = 0, runnerVY = 0, runnerObstacleX = 0;
+uint32_t runnerLastFrameAt = 0;
+bool runnerGrounded = true;
 uint8_t typeChoice[3] = { TYPE_FIRE, TYPE_WATER, TYPE_GRASS };
 uint8_t typeCorrect = 0;
 uint32_t typeUntil = 0;
@@ -1144,16 +1147,17 @@ struct GameMenuTile {
   uint8_t game;
 };
 
-static const GameMenuTile GAME_MENU_TILES[5] = {
-  { 88, 156, 138, 58, 0 },
-  { 240, 156, 138, 58, 1 },
-  { 88, 226, 138, 58, 2 },
-  { 240, 226, 138, 58, 3 },
-  { 94, 296, 278, 62, 4 },
+static const GameMenuTile GAME_MENU_TILES[6] = {
+  { 88, 150, 138, 54, 0 },
+  { 240, 150, 138, 54, 1 },
+  { 88, 214, 138, 54, 2 },
+  { 240, 214, 138, 54, 3 },
+  { 88, 278, 138, 54, 4 },
+  { 240, 278, 138, 54, 5 },
 };
 
 int8_t gameMenuHit(int16_t x, int16_t y) {
-  for (uint8_t i = 0; i < 5; i++) {
+  for (uint8_t i = 0; i < 6; i++) {
     const GameMenuTile &t = GAME_MENU_TILES[i];
     if (x >= t.x && x <= t.x + t.w && y >= t.y && y <= t.y + t.h) return i;
   }
@@ -1167,6 +1171,7 @@ void startGameMenuChoice(uint8_t idx) {
     case 2: startMemoGame(); break;
     case 3: startCleanGame(); break;
     case 4: startTypeGame(); break;
+    case 5: startRunnerGame(); break;
   }
 }
 
@@ -2153,9 +2158,10 @@ void drawGameMenu() {
   const char *title = T(S_GOAL_PLAY);
   gfx->setCursor(CX - strlen(title) * 9, 124);
   gfx->print(title);
-  const char *labels[5] = { T(S_GAME_BALL), T(S_GAME_CATCH), T(S_GAME_MEMO), T(S_GAME_CLEAN), T(S_GAME_TYPE) };
-  uint16_t cols[5] = { UI_BAR_BAD, UI_BAR_WARN, 0x4C98, UI_BAR_OK, 0xF3B7 };
-  for (int i = 0; i < 5; i++) {
+  static const char *runnerLabels[LANG_COUNT] = { "CORRER", "RUN", "COURSE", "LAUF", "CORSA", "CORRIDA" };
+  const char *labels[6] = { T(S_GAME_BALL), T(S_GAME_CATCH), T(S_GAME_MEMO), T(S_GAME_CLEAN), T(S_GAME_TYPE), runnerLabels[gLang < LANG_COUNT ? gLang : LANG_EN] };
+  uint16_t cols[6] = { UI_BAR_BAD, UI_BAR_WARN, 0x4C98, UI_BAR_OK, 0xF3B7, 0x7D8C };
+  for (int i = 0; i < 6; i++) {
     const GameMenuTile &t = GAME_MENU_TILES[i];
     gfx->fillRoundRect(t.x, t.y, t.w, t.h, 14, cols[i]);
     gfx->drawRoundRect(t.x, t.y, t.w, t.h, 14, uiInk());
@@ -2314,6 +2320,23 @@ void startTypeGame() {
   sfxPlay(SFX_GAME_START);
 }
 
+void startRunnerGame() {
+  if (pet.isEgg() || pet.sleeping || pet.ceremony) return;
+  gameMenuOpen = false;
+  gameOpen = true;
+  gameMode = 5;
+  gameOverUntil = 0;
+  gameScore = 0;
+  gameGain = 0;
+  gameNewHi = false;
+  runnerY = 322;
+  runnerVY = 0;
+  runnerObstacleX = 438;
+  runnerGrounded = true;
+  runnerLastFrameAt = millis();
+  sfxPlay(SFX_GAME_START);
+}
+
 void respawnBall() {
   ballX = 112 + random(242);
   ballY = 82;
@@ -2331,6 +2354,16 @@ int ballHitRadius() {
 }
 
 void gameTap(int16_t x, int16_t y) {
+  if (gameMode == 5) {
+    if (gameOverUntil) return;
+    if (y < 72) { gameOpen = false; sfxPlay(SFX_TAP); return; }
+    if (runnerGrounded) {
+      runnerVY = -9.8f;
+      runnerGrounded = false;
+      sfxPlay(SFX_TAP);
+    }
+    return;
+  }
   if (gameMode == 1) {
     catchTap(x, y);
     return;
@@ -2482,6 +2515,13 @@ void finishTypeGame() {
   gameGain = pet.applyTypeResult(gameScore);
   sfxPlay(gameNewHi && gameScore > 0 ? SFX_MEDAL : SFX_LEVEL);
   gameOverUntil = millis() + 4000;
+}
+
+void finishRunnerGame() {
+  if (gameOverUntil) return;
+  gameGain = pet.applyRunnerResult(gameScore);
+  sfxPlay(gameScore >= 6 ? SFX_LEVEL : SFX_MINIGAME_BAD);
+  gameOverUntil = millis() + 4200;
 }
 
 void typeTap(int16_t x, int16_t y) {
@@ -2942,12 +2982,107 @@ void renderTypeGame() {
   gfx->flush();
 }
 
+void drawRunnerCreature(int x, int y) {
+  const uint16_t body = C565(0x35, 0x42, 0x5d);
+  const uint16_t light = C565(0x62, 0xd6, 0xb3);
+  const uint16_t ink = C565(0x12, 0x18, 0x29);
+  gfx->fillRect(x + 7, y + 5, 20, 17, body);
+  gfx->fillRect(x + 17, y, 15, 13, body);
+  gfx->fillRect(x + 1, y + 13, 12, 6, body);
+  gfx->fillRect(x + 9, y + 20, 6, 9, body);
+  gfx->fillRect(x + 22, y + 20, 6, 9, body);
+  gfx->fillRect(x + 25, y + 4, 3, 3, light);
+  gfx->fillRect(x + 28, y + 10, 4, 3, ink);
+}
+
+void renderRunnerGame() {
+  const int groundY = 351;
+  const int runnerX = 108;
+  uint32_t now = millis();
+  uint32_t elapsed = now - runnerLastFrameAt;
+  if (elapsed > 120) elapsed = 120;
+  runnerLastFrameAt = now;
+  float step = elapsed / 16.0f;
+
+  if (!gameOverUntil) {
+    runnerVY += 0.72f * step;
+    runnerY += runnerVY * step;
+    if (runnerY >= 322) {
+      runnerY = 322;
+      runnerVY = 0;
+      runnerGrounded = true;
+    }
+    runnerObstacleX -= (4.2f + (gameScore > 20 ? 3.0f : gameScore * 0.15f)) * step;
+    if (runnerObstacleX < -28) {
+      runnerObstacleX = 470 + random(70, 170);
+      if (gameScore < 250) gameScore++;
+      sfxPlay(SFX_MINIGAME_OK);
+    }
+    int ox = (int)runnerObstacleX;
+    if (runnerX + 29 > ox + 3 && runnerX + 4 < ox + 23 && (int)runnerY + 29 > groundY - 35) {
+      finishRunnerGame();
+    }
+  }
+
+  uint16_t sky = C565(0xc9, 0xec, 0xf5);
+  uint16_t cloud = C565(0xf5, 0xfb, 0xff);
+  uint16_t grass = C565(0x73, 0xc9, 0x63);
+  uint16_t dirt = C565(0xb7, 0x82, 0x50);
+  uint16_t ink = C565(0x20, 0x2a, 0x3d);
+  gfx->fillScreen(sky);
+  gfx->fillRoundRect(44, 86, 92, 20, 10, cloud);
+  gfx->fillRoundRect(312, 126, 110, 22, 11, cloud);
+  gfx->fillRect(0, groundY, 466, 12, grass);
+  gfx->fillRect(0, groundY + 12, 466, 103, dirt);
+  for (int x = -20; x < 486; x += 34) gfx->drawLine(x, groundY + 31, x + 18, groundY + 43, C565(0x8d, 0x61, 0x3d));
+  drawRunnerCreature(runnerX, (int)runnerY);
+  int ox = (int)runnerObstacleX;
+  gfx->fillRect(ox + 7, groundY - 35, 14, 35, C565(0x31, 0x9b, 0x58));
+  gfx->fillRect(ox, groundY - 24, 9, 8, C565(0x31, 0x9b, 0x58));
+  gfx->fillRect(ox + 19, groundY - 18, 9, 8, C565(0x31, 0x9b, 0x58));
+
+  gfx->fillRoundRect(14, 14, 438, 54, 14, C565(0xf5, 0xfb, 0xff));
+  gfx->drawRoundRect(14, 14, 438, 54, 14, ink);
+  gfx->setTextColor(ink);
+  gfx->setTextSize(2);
+  gfx->setCursor(30, 34);
+  gfx->print("COURSE");
+  char scoreText[18];
+  snprintf(scoreText, sizeof(scoreText), T(S_SCORE_FMT), gameScore);
+  gfx->setCursor(430 - strlen(scoreText) * 12, 34);
+  gfx->print(scoreText);
+
+  if (gameOverUntil) {
+    if (now > gameOverUntil) { gameOpen = false; return; }
+    gfx->fillRoundRect(91, 170, 284, 112, 18, C565(0xf5, 0xfb, 0xff));
+    gfx->drawRoundRect(91, 170, 284, 112, 18, ink);
+    gfx->setTextSize(3);
+    gfx->setCursor(126, 190);
+    gfx->print(scoreText);
+    gfx->setTextSize(2);
+    char gainText[24];
+    snprintf(gainText, sizeof(gainText), "+%u AGILITE", gameGain);
+    gfx->setCursor(CX - strlen(gainText) * 6, 242);
+    gfx->print(gainText);
+  } else {
+    gfx->setTextSize(2);
+    gfx->setCursor(116, 409);
+    gfx->print("TOUCHE POUR SAUTER");
+  }
+  gfx->flush();
+}
+
 void renderGame() {
   // sin fillScreen(NEGRO): drawGameScene cubre los 466x466 completos. Si el
   // DMA del flush anterior aun lee el buffer, vera contenido valido (no negro
   // a medio pintar), que era el parpadeo a 25 fps.
   bool night = sceneHour() < 6 || sceneHour() >= 20;
   uint16_t ink = night ? UI_INK_NIGHT : UI_INK;
+
+  if (gameMode == 5) {
+    renderRunnerGame();
+    return;
+  }
 
   if (gameMode == 1) {
     renderCatchGame();
@@ -7195,19 +7330,20 @@ void drawBar(int x, int y, const char *label, uint8_t val) {
   if (fw > 0) gfx->fillRoundRect(bx + 2, y + 2, fw, bh - 4, 3, fill);
 }
 
-void drawHomeBattleIcon(int cx, int cy) {
-  // Deux petites epees croisees, lisibles sans texte dans le cinquieme bouton.
-  const uint16_t blade = C565(0xe8, 0xee, 0xf7);
-  const uint16_t edge = C565(0x57, 0x67, 0x82);
-  const uint16_t grip = C565(0xe2, 0x55, 0x55);
-  for (int o = -1; o <= 1; o++) {
-    gfx->drawLine(cx - 12 + o, cy + 11, cx + 11 + o, cy - 12, edge);
-    gfx->drawLine(cx + 12 + o, cy + 11, cx - 11 + o, cy - 12, edge);
-  }
-  gfx->drawLine(cx - 10, cy + 9, cx + 10, cy - 11, blade);
-  gfx->drawLine(cx + 10, cy + 9, cx - 10, cy - 11, blade);
-  gfx->fillRect(cx - 16, cy + 7, 10, 4, grip);
-  gfx->fillRect(cx + 7, cy + 7, 10, 4, grip);
+void drawHomeGamepadIcon(int cx, int cy) {
+  // Manette pixel-art seule, sans fond ni texte, inspiree du visuel Canva.
+  const uint16_t edge = C565(0x24, 0x2e, 0x48);
+  const uint16_t body = C565(0xb9, 0xc7, 0xe2);
+  const uint16_t light = C565(0xe8, 0xf0, 0xff);
+  gfx->fillRoundRect(cx - 20, cy - 11, 40, 25, 7, edge);
+  gfx->fillRoundRect(cx - 17, cy - 9, 34, 20, 6, body);
+  gfx->fillRect(cx - 14, cy - 3, 12, 4, edge);
+  gfx->fillRect(cx - 10, cy - 7, 4, 12, edge);
+  gfx->fillRect(cx + 7, cy - 5, 5, 5, C565(0xe8, 0x4d, 0x65));
+  gfx->fillRect(cx + 12, cy + 1, 5, 5, C565(0x35, 0xa9, 0xe7));
+  gfx->fillRect(cx - 13, cy + 10, 8, 5, edge);
+  gfx->fillRect(cx + 6, cy + 10, 8, 5, edge);
+  gfx->drawLine(cx - 13, cy - 8, cx + 8, cy - 8, light);
 }
 
 void drawButtons() {
@@ -7219,10 +7355,11 @@ void drawButtons() {
     gfx->drawRoundRect(bx, by, frame, frame, 14, inkColor());
     if (!off) {
       if (i == 4) {
-        drawHomeBattleIcon(buttons[i].cx, buttons[i].cy);
-      } else if (i == 1) {
         drawBattleCaughtBall(buttons[i].cx + buttons[i].iconDx,
                              buttons[i].cy + buttons[i].iconDy, 29, 31);
+      } else if (i == 1) {
+        drawHomeGamepadIcon(buttons[i].cx + buttons[i].iconDx,
+                            buttons[i].cy + buttons[i].iconDy);
       } else {
         drawMapSized(buttons[i].icon, 16,
                      buttons[i].cx + buttons[i].iconDx,
