@@ -389,6 +389,41 @@ static void playTone(const Note &note) {
 }
 
 static void playSpeciesChirp(uint16_t dex) {
+  // Les vrais cris, installes en option par l'importateur USB, ont priorite.
+  // Format garanti par la page Web : WAV PCM mono 16 bits, 16 kHz, en-tete 44 octets.
+  char path[24];
+  snprintf(path, sizeof(path), "/cries/%03u.wav", (unsigned)dex);
+  File cry = SD_MMC.open(path, FILE_READ);
+  if (cry && cry.size() > 44) {
+    uint8_t header[44];
+    bool valid = cry.read(header, sizeof(header)) == sizeof(header) &&
+                 !memcmp(header, "RIFF", 4) && !memcmp(header + 8, "WAVE", 4) &&
+                 header[20] == 1 && header[21] == 0 &&  // PCM
+                 header[22] == 1 && header[23] == 0 &&  // mono
+                 header[24] == 0x80 && header[25] == 0x3e && header[26] == 0 && header[27] == 0 &&
+                 header[34] == 16 && header[35] == 0;
+    if (valid) {
+      int16_t mono[256];
+      while (true) {
+        size_t got = cry.read((uint8_t *)mono, sizeof(mono));
+        got &= ~1U;
+        if (!got) break;
+        int samples = (int)(got / 2);
+        for (int i = 0; i < samples; i++) {
+          int16_t s = (int16_t)((int32_t)mono[i] * modeGainPct() / 115);
+          buf[i * 2] = s;
+          buf[i * 2 + 1] = s;
+        }
+        i2s.write((uint8_t *)buf, samples * 4);
+      }
+      cry.close();
+      return;
+    }
+    cry.close();
+  } else if (cry) {
+    cry.close();
+  }
+  // Secours toujours disponible si la SD ou un fichier manque.
   SpeciesChirpProfile profile{};
   if (!speciesChirpProfile(dex, &profile)) return;
   for (uint8_t i = 0; i < profile.count; i++) {

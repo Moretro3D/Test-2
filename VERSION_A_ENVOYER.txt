@@ -1,6 +1,6 @@
-PokeTama Moretro3D V12.6 - MINI-JEU COURSE ET ICONES
+PokeTama Moretro3D V12.6 - 386 CRIS FIDELES SUR MICROSD
 
-VERSION INTERNE : 1.49.1-moretro3d-v12.6-runner-game
+VERSION INTERNE : 1.50.0-moretro3d-v12.6-authentic-cries
 
 NOUVEAUTES :
 - Réglages séparés pour la musique et les sons d'interaction.

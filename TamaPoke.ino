@@ -40,7 +40,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.49.1-moretro3d-v12.6-runner-game"
+#define FW_VERSION "1.50.0-moretro3d-v12.6-authentic-cries"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -595,6 +595,7 @@ uint16_t renderIntervalMs() {
   if (screenOff) return 5000;
 
   if (battleOpen) return battleResolved ? 210 : 125;
+  if (gameOpen && gameMode == 5) return 33;  // course fluide a environ 30 images/s
   if (gameOpen || sackOpen) return 78;
 
   // Pages statiques pilotées par Dirty : faible latence sans redraw permanent.
@@ -2329,7 +2330,7 @@ void startRunnerGame() {
   gameScore = 0;
   gameGain = 0;
   gameNewHi = false;
-  runnerY = 322;
+  runnerY = 315;
   runnerVY = 0;
   runnerObstacleX = 438;
   runnerGrounded = true;
@@ -2996,7 +2997,7 @@ void drawRunnerCreature(int x, int y) {
 }
 
 void renderRunnerGame() {
-  const int groundY = 351;
+  const int groundY = 344;
   const int runnerX = 108;
   uint32_t now = millis();
   uint32_t elapsed = now - runnerLastFrameAt;
@@ -3007,8 +3008,8 @@ void renderRunnerGame() {
   if (!gameOverUntil) {
     runnerVY += 0.72f * step;
     runnerY += runnerVY * step;
-    if (runnerY >= 322) {
-      runnerY = 322;
+    if (runnerY >= 315) {
+      runnerY = 315;
       runnerVY = 0;
       runnerGrounded = true;
     }
@@ -3024,32 +3025,46 @@ void renderRunnerGame() {
     }
   }
 
-  uint16_t sky = C565(0xc9, 0xec, 0xf5);
-  uint16_t cloud = C565(0xf5, 0xfb, 0xff);
-  uint16_t grass = C565(0x73, 0xc9, 0x63);
-  uint16_t dirt = C565(0xb7, 0x82, 0x50);
-  uint16_t ink = C565(0x20, 0x2a, 0x3d);
-  gfx->fillScreen(sky);
-  gfx->fillRoundRect(44, 86, 92, 20, 10, cloud);
-  gfx->fillRoundRect(312, 126, 110, 22, 11, cloud);
-  gfx->fillRect(0, groundY, 466, 12, grass);
-  gfx->fillRect(0, groundY + 12, 466, 103, dirt);
-  for (int x = -20; x < 486; x += 34) gfx->drawLine(x, groundY + 31, x + 18, groundY + 43, C565(0x8d, 0x61, 0x3d));
+  uint16_t skyTop = C565(0x75, 0xc9, 0xef);
+  uint16_t skyMid = C565(0xae, 0xe1, 0xf3);
+  uint16_t skyLow = C565(0xe8, 0xf4, 0xe8);
+  uint16_t cloud = C565(0xf8, 0xfc, 0xff);
+  uint16_t grass = C565(0x68, 0xc6, 0x58);
+  uint16_t grassDark = C565(0x3e, 0x91, 0x45);
+  uint16_t dirt = C565(0xa8, 0x72, 0x47);
+  uint16_t ink = C565(0x16, 0x20, 0x35);
+  static const char *const runTitle[LANG_COUNT] = { "CARRERA", "RUN", "COURSE", "LAUF", "CORSA", "CORRIDA" };
+  static const char *const jumpHint[LANG_COUNT] = { "TOCA PARA SALTAR", "TOUCH TO JUMP", "TOUCHE POUR SAUTER", "TIPPE ZUM SPRUNG", "TOCCA PER SALTARE", "TOCA PARA SALTAR" };
+  static const char *const agilityWord[LANG_COUNT] = { "AGILIDAD", "AGILITY", "AGILITE", "BEWEGLICHKEIT", "AGILITA", "AGILIDADE" };
+  uint8_t uiLang = gLang < LANG_COUNT ? gLang : LANG_EN;
+  gfx->fillRect(0, 0, 466, 120, skyTop);
+  gfx->fillRect(0, 120, 466, 120, skyMid);
+  gfx->fillRect(0, 240, 466, groundY - 240, skyLow);
+  // Nuages pixel-art et collines en couches : aucun grand aplat vide.
+  gfx->fillRect(38, 92, 88, 12, cloud); gfx->fillRect(54, 82, 54, 10, cloud);
+  gfx->fillRect(316, 132, 104, 12, cloud); gfx->fillRect(337, 120, 60, 12, cloud);
+  gfx->fillTriangle(0, groundY, 112, 244, 226, groundY, C565(0x87, 0xbe, 0x73));
+  gfx->fillTriangle(166, groundY, 315, 230, 466, groundY, C565(0x72, 0xac, 0x69));
+  gfx->fillRect(0, groundY, 466, 10, grass);
+  gfx->fillRect(0, groundY + 10, 466, 112, dirt);
+  for (int x = 0; x < 466; x += 16) gfx->fillRect(x, groundY + ((x / 16) & 1 ? 3 : 0), 8, 4, grassDark);
+  for (int x = -20; x < 486; x += 34) gfx->drawLine(x, groundY + 31, x + 18, groundY + 43, C565(0x80, 0x55, 0x38));
   drawRunnerCreature(runnerX, (int)runnerY);
   int ox = (int)runnerObstacleX;
   gfx->fillRect(ox + 7, groundY - 35, 14, 35, C565(0x31, 0x9b, 0x58));
   gfx->fillRect(ox, groundY - 24, 9, 8, C565(0x31, 0x9b, 0x58));
   gfx->fillRect(ox + 19, groundY - 18, 9, 8, C565(0x31, 0x9b, 0x58));
 
-  gfx->fillRoundRect(14, 14, 438, 54, 14, C565(0xf5, 0xfb, 0xff));
-  gfx->drawRoundRect(14, 14, 438, 54, 14, ink);
-  gfx->setTextColor(ink);
+  // Deux pastilles opaques, bien dans la zone ronde, au lieu d'une barre illisible.
+  gfx->fillRoundRect(72, 24, 150, 46, 14, ink);
+  gfx->fillRoundRect(244, 24, 150, 46, 14, ink);
+  gfx->setTextColor(UI_WHITE);
   gfx->setTextSize(2);
-  gfx->setCursor(30, 34);
-  gfx->print("COURSE");
+  gfx->setCursor(147 - strlen(runTitle[uiLang]) * 6, 39);
+  gfx->print(runTitle[uiLang]);
   char scoreText[18];
   snprintf(scoreText, sizeof(scoreText), T(S_SCORE_FMT), gameScore);
-  gfx->setCursor(430 - strlen(scoreText) * 12, 34);
+  gfx->setCursor(319 - strlen(scoreText) * 6, 39);
   gfx->print(scoreText);
 
   if (gameOverUntil) {
@@ -3060,14 +3075,16 @@ void renderRunnerGame() {
     gfx->setCursor(126, 190);
     gfx->print(scoreText);
     gfx->setTextSize(2);
-    char gainText[24];
-    snprintf(gainText, sizeof(gainText), "+%u AGILITE", gameGain);
+    char gainText[40];
+    snprintf(gainText, sizeof(gainText), "+%u %s", gameGain, agilityWord[uiLang]);
     gfx->setCursor(CX - strlen(gainText) * 6, 242);
     gfx->print(gainText);
   } else {
     gfx->setTextSize(2);
-    gfx->setCursor(116, 409);
-    gfx->print("TOUCHE POUR SAUTER");
+    gfx->fillRoundRect(108, 394, 250, 38, 12, C565(0xff, 0xf3, 0xc7));
+    gfx->setTextColor(ink);
+    gfx->setCursor(CX - strlen(jumpHint[uiLang]) * 6, 405);
+    gfx->print(jumpHint[uiLang]);
   }
   gfx->flush();
 }
@@ -5525,23 +5542,19 @@ void drawDailyGoalRow(int y, uint8_t idx) {
   uint16_t col = dailyGoalColor(type);
   gfx->fillRoundRect(48, y, 370, 58, 14, done ? col : uiPanel());
   gfx->drawRoundRect(48, y, 370, 58, 14, col);
-  gfx->fillCircle(76, y + 29, 17, col);
-  gfx->setTextColor(done ? UI_BG_DAY : UI_WHITE);
-  gfx->setTextSize(2);
-  gfx->setCursor(70, y + 21);
-  gfx->print(idx + 1);
   gfx->setTextSize(2);
   gfx->setTextColor(dailyTextColor());
-  gfx->setCursor(104, y + 11);
+  gfx->setCursor(68, y + 11);
   gfx->print(T(dailyGoalLabelId(type)));
 
   char prog[12];
   snprintf(prog, sizeof(prog), "%u/%u", progress, target);
-  gfx->setCursor(342, y + 11);
-  gfx->print(done ? T(S_DONE) : prog);
-  gfx->fillRoundRect(104, y + 38, 282, 7, 3, uiLine());
-  int fill = target ? (282 * progress) / target : 0;
-  if (fill > 0) gfx->fillRoundRect(104, y + 38, fill, 7, 3, col);
+  const char *rightText = done ? T(S_DONE) : prog;
+  gfx->setCursor(397 - strlen(rightText) * 12, y + 11);
+  gfx->print(rightText);
+  gfx->fillRoundRect(68, y + 38, 326, 7, 3, uiLine());
+  int fill = target ? (326 * progress) / target : 0;
+  if (fill > 0) gfx->fillRoundRect(68, y + 38, fill, 7, 3, col);
 }
 
 // pagina 2: objetivos diarios
@@ -7331,19 +7344,24 @@ void drawBar(int x, int y, const char *label, uint8_t val) {
 }
 
 void drawHomeGamepadIcon(int cx, int cy) {
-  // Manette pixel-art seule, sans fond ni texte, inspiree du visuel Canva.
-  const uint16_t edge = C565(0x24, 0x2e, 0x48);
-  const uint16_t body = C565(0xb9, 0xc7, 0xe2);
-  const uint16_t light = C565(0xe8, 0xf0, 0xff);
-  gfx->fillRoundRect(cx - 20, cy - 11, 40, 25, 7, edge);
-  gfx->fillRoundRect(cx - 17, cy - 9, 34, 20, 6, body);
-  gfx->fillRect(cx - 14, cy - 3, 12, 4, edge);
-  gfx->fillRect(cx - 10, cy - 7, 4, 12, edge);
-  gfx->fillRect(cx + 7, cy - 5, 5, 5, C565(0xe8, 0x4d, 0x65));
-  gfx->fillRect(cx + 12, cy + 1, 5, 5, C565(0x35, 0xa9, 0xe7));
-  gfx->fillRect(cx - 13, cy + 10, 8, 5, edge);
-  gfx->fillRect(cx + 6, cy + 10, 8, 5, edge);
-  gfx->drawLine(cx - 13, cy - 8, cx + 8, cy - 8, light);
+  // Sprite pixel-art transparent 18x10, reduit pour rester dans le bouton.
+  static const char *const px[10] = {
+    ".....11111111.....", "...112222222211...", "..12222222222221..",
+    ".12233222224455221", "122333222244455221", "122232222222245221",
+    "122222266222222221", ".1222222222222221.", "..11222222222211..",
+    "...11..........11."
+  };
+  const uint16_t pal[7] = {
+    0, C565(0x1d,0x27,0x3b), C565(0xa9,0xb8,0xd2), C565(0x2d,0x38,0x50),
+    C565(0x36,0x9d,0xe8), C565(0xef,0x4b,0x5e), C565(0x55,0x65,0x7f)
+  };
+  const int scale = 2, ox = cx - 18, oy = cy - 10;
+  for (int py = 0; py < 10; py++) {
+    for (int pxl = 0; pxl < 18; pxl++) {
+      uint8_t p = (uint8_t)(px[py][pxl] - '0');
+      if (p >= 1 && p <= 6) gfx->fillRect(ox + pxl * scale, oy + py * scale, scale, scale, pal[p]);
+    }
+  }
 }
 
 void drawButtons() {

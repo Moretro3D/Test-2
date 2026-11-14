@@ -147,6 +147,13 @@ static bool validMusicName(const String &name) {
   return name == "morning.wav" || name == "lofi.wav" || name == "night.wav";
 }
 
+static bool validCryName(const String &name) {
+  if (name.length() != 7 || !name.endsWith(".wav")) return false;
+  for (uint8_t i=0;i<3;i++) if (!isDigit(name[i])) return false;
+  int dex=name.substring(0,3).toInt();
+  return dex>=1 && dex<=386;
+}
+
 // Retourne la taille logique d'un TPK2. Si un ancien PUT a ajoute une seconde
 // copie a la fin, cette taille est inferieure a f.size() et permet de reparer.
 static uint32_t logicalTpk2Size(File &f) {
@@ -179,7 +186,8 @@ static void maintainOwnedDir(const char *root, uint8_t kind) {
     String name = sdBaseName(path);
     bool isDir = entry.isDirectory();
     bool valid = !isDir && (kind == 0 ? validMonName(name) :
-                            (kind == 1 ? validBackgroundName(name) : validMusicName(name)));
+                            (kind == 1 ? validBackgroundName(name) :
+                             (kind == 2 ? validMusicName(name) : validCryName(name))));
     uint32_t physical = entry.size();
     uint32_t logical = (valid && kind == 0 && name != "thumbs.bin") ? logicalTpk2Size(entry) : physical;
     entry.close();
@@ -199,6 +207,7 @@ static void maintainTamaPokeSd() {
   maintainOwnedDir("/mons", 0);
   maintainOwnedDir("/backgrounds", 1);
   maintainOwnedDir("/music", 2);
+  maintainOwnedDir("/cries", 3);
 }
 
 bool sdBegin() {
@@ -211,6 +220,7 @@ bool sdBegin() {
     SD_MMC.mkdir("/mons");
     SD_MMC.mkdir("/backgrounds");
     SD_MMC.mkdir("/music");
+    SD_MMC.mkdir("/cries");
     // Ne pas rescanner des centaines de gros sprites à chaque démarrage : la
     // maintenance complète est réservée aux commandes d'installation USB.
   } else {
@@ -319,6 +329,14 @@ static bool clearSdTree(const char *root) {
 }
 
 bool sdSerialCommand(const String &line) {
+  if (line == "PREPARE_CRIES") {
+    if (!sdReady) { SD_MMC.end(); delay(120); sdBegin(); }
+    if (!sdReady) { Serial.println("ERRSD"); return true; }
+    bool clean=clearSdTree("/cries");
+    bool dir=clean && SD_MMC.mkdir("/cries");
+    Serial.println(dir ? "READY" : "ERRCLEAN");
+    return true;
+  }
   if (line == "PREPARE") {
     if (!sdReady) {
       SD_MMC.end();

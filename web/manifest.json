@@ -1,25 +1,25 @@
 {
   "name": "PokeTama Moretro3D - V12.6 Miniatures Biomes",
-  "version": "1.49.1-moretro3d-v12.6-runner-game",
+  "version": "1.50.0-moretro3d-v12.6-authentic-cries",
   "new_install_prompt_erase": true,
   "builds": [
     {
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/poketama-1.49.1-moretro3d-v12.6-runner-game-bootloader.bin",
+          "path": "firmware/poketama-1.50.0-moretro3d-v12.6-authentic-cries-bootloader.bin",
           "offset": 0
         },
         {
-          "path": "firmware/poketama-1.49.1-moretro3d-v12.6-runner-game-partitions.bin",
+          "path": "firmware/poketama-1.50.0-moretro3d-v12.6-authentic-cries-partitions.bin",
           "offset": 32768
         },
         {
-          "path": "firmware/poketama-1.49.1-moretro3d-v12.6-runner-game-boot_app0.bin",
+          "path": "firmware/poketama-1.50.0-moretro3d-v12.6-authentic-cries-boot_app0.bin",
           "offset": 57344
         },
         {
-          "path": "firmware/poketama-1.49.1-moretro3d-v12.6-runner-game-app.bin",
+          "path": "firmware/poketama-1.50.0-moretro3d-v12.6-authentic-cries-app.bin",
           "offset": 65536
         }
       ]
