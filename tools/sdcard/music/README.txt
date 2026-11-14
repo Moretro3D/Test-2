@@ -1,4 +1,4 @@
-TamaPoke V9.9 - installation des OST
+PokeTama V12.2 - installation des OST
 
 Copier le dossier "music" complet a la racine de la carte microSD.
 Les chemins obtenus doivent etre :

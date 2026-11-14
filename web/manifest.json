@@ -1,25 +1,25 @@
 {
-  "name": "PokeTama Moretro3D - V12 Biome Ciel",
-  "version": "1.48.0-moretro3d-v12-sky-biome",
+  "name": "PokeTama Moretro3D - V12.2 Miniatures Biomes",
+  "version": "1.48.2-moretro3d-v12.2-biome-thumbnails",
   "new_install_prompt_erase": true,
   "builds": [
     {
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/poketama-1.48.0-moretro3d-v12-sky-biome-bootloader.bin",
+          "path": "firmware/poketama-1.48.2-moretro3d-v12.2-biome-thumbnails-bootloader.bin",
           "offset": 0
         },
         {
-          "path": "firmware/poketama-1.48.0-moretro3d-v12-sky-biome-partitions.bin",
+          "path": "firmware/poketama-1.48.2-moretro3d-v12.2-biome-thumbnails-partitions.bin",
           "offset": 32768
         },
         {
-          "path": "firmware/poketama-1.48.0-moretro3d-v12-sky-biome-boot_app0.bin",
+          "path": "firmware/poketama-1.48.2-moretro3d-v12.2-biome-thumbnails-boot_app0.bin",
           "offset": 57344
         },
         {
-          "path": "firmware/poketama-1.48.0-moretro3d-v12-sky-biome-app.bin",
+          "path": "firmware/poketama-1.48.2-moretro3d-v12.2-biome-thumbnails-app.bin",
           "offset": 65536
         }
       ]

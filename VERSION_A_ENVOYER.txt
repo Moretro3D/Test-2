@@ -1,9 +1,9 @@
-PokeTama Moretro3D V12 BIOME CIEL
+PokeTama Moretro3D V12.2 MINIATURES BIOMES
 
-VERSION INTERNE : 1.48.0-moretro3d-v12-sky-biome
+VERSION INTERNE : 1.48.2-moretro3d-v12.2-biome-thumbnails
 
 NOUVEAUTES :
-- Six biomes sélectionnables avant de lancer un combat sauvage.
+- Sept biomes sélectionnables avant de lancer un combat sauvage : Prairie, Plage, Forêt, Volcan, Montagne, Neige et Ciel.
 - Recherche animée de 2,4 secondes avant de révéler le Pokémon.
 - Chaque biome ne propose que des Pokémon associés à son environnement.
 - Décors pixel art adaptés au biome choisi pendant l'exploration.

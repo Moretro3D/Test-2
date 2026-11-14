@@ -39,7 +39,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.48.0-moretro3d-v12-sky-biome"
+#define FW_VERSION "1.48.2-moretro3d-v12.2-biome-thumbnails"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -457,10 +457,10 @@ void setup() {
   gfx->setTextSize(3);
   // 9 caracteres x 6 px x taille 3 = 162 px : centre exact a x=152.
   gfx->setCursor(CX - 79, 326); gfx->print("Moretro3D");
-  // Version publique V12 : exploration des biomes avec environnement Ciel.
+  // Version publique V12.2 : miniatures et exploration des sept biomes.
   gfx->setTextColor(C565(0x61,0xda,0xf2));
   gfx->setTextSize(2);
-  gfx->setCursor(CX - 24, 366); gfx->print("V12");
+  gfx->setCursor(CX - 30, 366); gfx->print("V12.2");
   gfx->flush();
   panel->setBrightness(120);
 
@@ -3832,7 +3832,7 @@ void renderBiomeSelection() {
   const uint16_t colors[7]={C565(0x36,0x8e,0x45),C565(0x2f,0x83,0xc7),C565(0x20,0x69,0x3b),C565(0xb8,0x48,0x28),C565(0x70,0x69,0x62),C565(0x88,0xb8,0xd8),C565(0x4f,0x98,0xd8)};
   for(uint8_t biome=0;biome<7;biome++) {
     int cx,cy; biomeBubblePosition(biome,cx,cy);
-    uint16_t dark=lerp565(colors[biome],UI_BLACK,5,16);
+    uint16_t dark=lerp565(colors[biome],C565(0x00,0x00,0x00),5,16);
     uint16_t light=lerp565(colors[biome],UI_WHITE,4,16);
     // Ombre, double contour et reflet donnent une vraie petite bulle.
     gfx->fillCircle(cx+3,cy+5,48,C565(0x04,0x09,0x12));

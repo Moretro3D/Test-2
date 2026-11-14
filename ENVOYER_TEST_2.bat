@@ -1,9 +1,9 @@
 @echo off
 setlocal EnableExtensions
-title PokeTama V12 - Envoi vers Test-2
+title PokeTama V12.2 - Envoi vers Test-2
 cd /d "%~dp0"
 
-echo PokeTama V12 - envoi vers Moretro3D/Test-2
+echo PokeTama V12.2 - envoi vers Moretro3D/Test-2
 echo.
 where git >nul 2>nul
 if errorlevel 1 (
@@ -27,15 +27,20 @@ if errorlevel 1 goto :connexion
 git -c safe.directory="%CD%" reset --mixed origin/main
 if errorlevel 1 goto :connexion
 
-echo Preparation des fichiers V11...
+rem Le pack complet depasse la limite GitHub de 100 Mo. Il ne change pas dans
+rem cette mise a jour : conserver strictement la copie deja publiee.
+git -c safe.directory="%CD%" checkout origin/main -- web/sprites.pak
+if errorlevel 1 goto :connexion
+
+echo Preparation des fichiers V12.2...
 git -c safe.directory="%CD%" add -A
 git -c safe.directory="%CD%" diff --cached --quiet
 if errorlevel 1 (
-  git -c safe.directory="%CD%" commit -m "PokeTama V12 biome Ciel"
+  git -c safe.directory="%CD%" commit -m "PokeTama V12.2 miniatures biomes"
   if errorlevel 1 goto :connexion
 )
 
-echo Envoi de la V11 sans effacement ni force push...
+echo Envoi de la V12.2 sans effacement ni force push...
 git -c safe.directory="%CD%" -c http.sslBackend=openssl push -u origin main
 if errorlevel 1 goto :connexion
 echo.

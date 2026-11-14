@@ -15,19 +15,19 @@ sdmon=(ROOT/"sdmon.cpp").read_text(encoding="utf-8")
 
 def ok(cond,msg):
     if not cond:
-        raise SystemExit("FAIL V9: "+msg)
+        raise SystemExit("FAIL V12.2: "+msg)
     print("OK  ",msg)
 
-ok("1.48.0-moretro3d-v12-sky-biome" in ino and
-   "1.48.0-moretro3d-v12-sky-biome" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
-   "1.48.0-moretro3d-v12-sky-biome" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "1.48.0-moretro3d-v12-sky-biome" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
-   "1.48.0-moretro3d-v12-sky-biome" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
-   "version 1.48.0 coherente et caches installateur invalides")
-ok('gfx->setCursor(CX - 24, 366); gfx->print("V12")' in ino and
-   '<div class="version">Firmware V12</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   '<div class="version">Firmware V12</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
-   "V12 affichee au demarrage, sur la page officielle et sur Shopify")
+ok("1.48.2-moretro3d-v12.2-biome-thumbnails" in ino and
+   "1.48.2-moretro3d-v12.2-biome-thumbnails" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.48.2-moretro3d-v12.2-biome-thumbnails" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.48.2-moretro3d-v12.2-biome-thumbnails" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   "1.48.2-moretro3d-v12.2-biome-thumbnails" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.48.2 coherente et caches installateur invalides")
+ok('gfx->setCursor(CX - 30, 366); gfx->print("V12.2")' in ino and
+   '<div class="version">Firmware V12.2</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   '<div class="version">Firmware V12.2</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
+   "V12.2 affichee au demarrage, sur la page officielle et sur Shopify")
 ok('location.replace("https://moretro3d.fr/pages/poketama")' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    'https://moretro3d.github.io/Test-1/manifest.json' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
    "GitHub Pages redirige vers Shopify et conserve le Web Flasher officiel")
@@ -37,7 +37,7 @@ ok("github.repository == 'Moretro3D/Test-2'" in workflow and
    "! grep -q 'location.replace' web/index.html" in workflow,
    "Test-2 affiche son Web Flasher sans redirection Shopify")
 test2_launcher=(ROOT/"OUVRIR_WEB_FLASHER_TEST_2.bat").read_text(encoding="utf-8")
-ok("https://moretro3d.github.io/Test-2/?v=1.48.0-moretro3d-v12-sky-biome" in test2_launcher,
+ok("https://moretro3d.github.io/Test-2/?v=1.48.2-moretro3d-v12.2-biome-thumbnails" in test2_launcher,
    "lanceur direct Test-2 avec contournement du cache")
 scene=ino[ino.index("void drawScene("):ino.index("void drawStarterPokeball(")]
 ok("HORIZON-38" not in scene and "uint16_t sea=" not in scene and
@@ -385,7 +385,8 @@ ok("biomeSelectOpen" in ino and "renderBiomeSelection" in ino and
    "selection de biome et exploration animee avant revelation")
 ok("void biomeBubblePosition" in ino and
    "gfx->fillCircle(cx,cy,44,colors[biome])" in ino and
-   "dx*dx+dy*dy>58L*58L" in ino,
+   "dx*dx+dy*dy>58L*58L" in ino and
+   "UI_BLACK" not in ino,
    "sept petites bulles de biome avec zones tactiles circulaires")
 music=ROOT/"tools/sdcard/music"
 for filename in ("morning.wav", "lofi.wav", "night.wav"):
@@ -500,4 +501,4 @@ if shutil.which("bash"):
 else:
     print("SKIP build_web.sh syntaxe (bash absent sur ce poste)")
 
-print("AUDIT FINAL V9 OK")
+print("AUDIT FINAL V12.2 OK")

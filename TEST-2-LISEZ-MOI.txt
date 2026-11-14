@@ -1,6 +1,6 @@
 POKETAMA TEST-2 - VERSION NORMALE COMPLETE 386 POKEMON
 
-VERSION INTERNE : 1.48.0 / V12 biome Ciel
+VERSION INTERNE : 1.48.2 / V12.2 miniatures de biomes
 
 Cette version conserve l'interface et le fonctionnement normaux. Les sprites
 des 386 Pokémon restent installés, mais la Boîte n'ouvre plus artificiellement

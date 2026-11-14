@@ -54,7 +54,7 @@ BATTLE_TYPE_IDS = {
 def main():
     if len(DEX) < 386:
         raise SystemExit(
-            "SECURITE V9: tools/dex_data.py est un ancien jeu Kanto (151). "
+            "SECURITE V12.2: tools/dex_data.py est un ancien jeu Kanto (151). "
             "dex.h #001-386 est la source active et ne doit pas etre ecrase."
         )
     out = []
