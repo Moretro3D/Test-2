@@ -1,4 +1,4 @@
-PokeTama V12.5 - installation des OST
+PokeTama V12.6 - installation des OST
 
 Copier le dossier "music" complet a la racine de la carte microSD.
 Les chemins obtenus doivent etre :

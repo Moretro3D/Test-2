@@ -1,25 +1,25 @@
 {
-  "name": "PokeTama Moretro3D - V12.5 Miniatures Biomes",
-  "version": "1.48.5-moretro3d-v12.5-canva-biomes-fill",
+  "name": "PokeTama Moretro3D - V12.6 Miniatures Biomes",
+  "version": "1.48.6-moretro3d-v12.6-profile-redesign",
   "new_install_prompt_erase": true,
   "builds": [
     {
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/poketama-1.48.5-moretro3d-v12.5-canva-biomes-fill-bootloader.bin",
+          "path": "firmware/poketama-1.48.6-moretro3d-v12.6-profile-redesign-bootloader.bin",
           "offset": 0
         },
         {
-          "path": "firmware/poketama-1.48.5-moretro3d-v12.5-canva-biomes-fill-partitions.bin",
+          "path": "firmware/poketama-1.48.6-moretro3d-v12.6-profile-redesign-partitions.bin",
           "offset": 32768
         },
         {
-          "path": "firmware/poketama-1.48.5-moretro3d-v12.5-canva-biomes-fill-boot_app0.bin",
+          "path": "firmware/poketama-1.48.6-moretro3d-v12.6-profile-redesign-boot_app0.bin",
           "offset": 57344
         },
         {
-          "path": "firmware/poketama-1.48.5-moretro3d-v12.5-canva-biomes-fill-app.bin",
+          "path": "firmware/poketama-1.48.6-moretro3d-v12.6-profile-redesign-app.bin",
           "offset": 65536
         }
       ]

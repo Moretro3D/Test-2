@@ -40,7 +40,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.48.5-moretro3d-v12.5-canva-biomes-fill"
+#define FW_VERSION "1.48.6-moretro3d-v12.6-profile-redesign"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -85,7 +85,7 @@ PmdMon galleryPmd;  // sprite grande de la vista detalle de la galeria (PMD/TPK2
 // galeria pokedex
 bool galleryOpen = false;
 bool galleryDirty = false;
-int galleryPage = 0;        // 10 paginas de 16
+int galleryPage = 0;        // pages de 12 Pokemon, grille 4 x 3
 int16_t galleryDetail = 0;  // dex en vista detalle, 0 = rejilla
 bool galleryInfoOpen = false;
 
@@ -94,8 +94,8 @@ bool cardOpen = false;        // ficha del bicho (deslizar vertical)
 bool kbOpen = false;          // teclado para renombrar al bicho
 char nameBuf[12] = "";
 uint8_t nameLen = 0;
-#define CARD_COUNT 10
-uint8_t cardPage = 0;         // 0 profil, 1 caractere, 2 quotidien, 3 boite, 4 combat, 5 medailles, 6 progres, 7 expedition, 8 records, 9 arenes Kanto
+#define CARD_COUNT 9
+uint8_t cardPage = 0;         // 0 profil, 1 caractere, 2 quotidien, 3 boite, 4 combat, 5 medailles, 6 progres, 7 expedition, 8 arenes Kanto
 uint8_t boxPage = 0;
 uint8_t boxSort = 0;          // 0 dex, 1 tipo, 2 criados primero
 int16_t boxSelectionDex = 0;  // popup de choix, sans quitter la Boite
@@ -458,10 +458,10 @@ void setup() {
   gfx->setTextSize(3);
   // 9 caracteres x 6 px x taille 3 = 162 px : centre exact a x=152.
   gfx->setCursor(CX - 79, 326); gfx->print("Moretro3D");
-  // Version publique V12.5 : sept miniatures pixel-art reellement embarquees.
+  // Version publique V12.6 : sept miniatures pixel-art reellement embarquees.
   gfx->setTextColor(C565(0x61,0xda,0xf2));
   gfx->setTextSize(2);
-  gfx->setCursor(CX - 30, 366); gfx->print("V12.5");
+  gfx->setCursor(CX - 30, 366); gfx->print("V12.6");
   gfx->flush();
   panel->setBrightness(120);
 
@@ -1270,7 +1270,7 @@ void onTap(int16_t x, int16_t y) {
       return;
     }
     if (x >= 136 && x <= 330 && y >= cardNavY && y <= cardNavY + 58) {
-      if (cardPage == 9 && kantoArenaDetail >= 0) {
+      if (cardPage == 8 && kantoArenaDetail >= 0) {
         kantoArenaDetail = -1;
         galleryPmd.unload();
         cardDirty = true;
@@ -1365,7 +1365,7 @@ void onTap(int16_t x, int16_t y) {
       startSack();
     } else if (cardPage == 7) {
       expeditionCardTap(x, y);
-    } else if (cardPage == 9) {
+    } else if (cardPage == 8) {
       if (kantoArenaDetail >= 0) {
         if (x >= 136 && x <= 330 && y >= 302 && y <= 348) {
           uint8_t arena = (uint8_t)kantoArenaDetail;
@@ -1461,7 +1461,7 @@ void onTap(int16_t x, int16_t y) {
   // Raccourci permanent : toucher la cabane du décor ouvre les arènes.
   if (x >= 155 && x <= 311 && y >= 122 && y <= 270) {
     cardOpen = true;
-    cardPage = 9;
+    cardPage = 8;
     kantoArenaDetail = -1;
     galleryPmd.unload();
     cardDirty = true;
@@ -3149,7 +3149,7 @@ void closeBattle() {
   wildPmd.unload();
   if (returnToArena) {
     cardOpen = true;
-    cardPage = 9;
+    cardPage = 8;
     cardDirty = true;
   }
   markUiDirty();
@@ -5000,63 +5000,64 @@ void drawMedalBadge(int x, int y, int i) {
   gfx->print(medalLabel(i));
 }
 
-// pagina 0: perfil (retrato grande, identidad, racha, vinculo, baya)
+// Page 0 : fiche principale compacte, portrait a gauche et informations a droite.
 void renderCardProfile() {
   const DexEntry &d = DEX_TBL[pet.speciesId];
   const char *nm = pet.nick[0] ? pet.nick : dexName(pet.speciesId);
-  char head[26];
-  snprintf(head, sizeof(head), T(S_NAME_FMT), pet.shiny ? "*" : "", nm, pet.level());
+  int nameLen=strlen(nm);
+  int nameSize=nameLen<=12?3:2;
   gfx->setTextColor(d.accent);
-  // auto-encoge: a tamano 3 los nombres largos no caben en la franja estrecha de
-  // arriba de la pantalla redonda, asi que se cortaban por el borde
-  int hlen = strlen(head);
-  int hts = (hlen <= 11) ? 3 : 2;
-  gfx->setTextSize(hts);
-  gfx->setCursor(CX - hlen * (hts == 3 ? 9 : 6), hts == 3 ? 34 : 40);
-  gfx->print(head);
-  if (pet.nick[0]) {  // especie real bajo el apodo
-    gfx->setTextColor(uiSub());
-    gfx->setTextSize(2);
-    const char *speciesName = dexName(pet.speciesId);
-    gfx->setCursor(CX - (strlen(speciesName) + 2) * 6, 64);
-    gfx->printf("(%s)", speciesName);
-  }
+  gfx->setTextSize(nameSize);
+  gfx->setCursor(CX-nameLen*(nameSize==3?9:6),30);
+  if(pet.shiny) gfx->print("*");
+  gfx->print(nm);
 
-  // retrato grande animado mit dem aktuell ausgewaehlten Sammlerrahmen
-  // Le cadre entoure la silhouette, pas le point d'ancrage situe aux pieds.
-  drawCollectionFrame(CX, 146, 98, pet.collectionFrame);
-  if (pmd.loaded) drawPmdAct(PMD_IDLE, CX, 206, millis(), true, false, 4);
+  const char *speciesName=dexName(pet.speciesId);
+  gfx->setTextColor(uiSub()); gfx->setTextSize(1);
+  gfx->setCursor(CX-(int)strlen(speciesName)*3,62); gfx->print(speciesName);
+  gfx->setCursor(CX-(int)strlen(T(S_RENAME_HINT))*3,76); gfx->print(T(S_RENAME_HINT));
 
-  // racha con llama
-  int sx = 138, sy = 224;
-  gfx->fillTriangle(sx + 8, sy, sx + 1, sy + 18, sx + 15, sy + 18, UI_BAR_BAD);
-  gfx->fillTriangle(sx + 8, sy + 7, sx + 4, sy + 18, sx + 12, sy + 18, UI_BAR_WARN);
-  char rl[30];
-  snprintf(rl, sizeof(rl), T(S_STREAK_FMT), pet.streak, pet.bestStreak);
-  gfx->setTextColor(uiInk());
-  gfx->setTextSize(2);
-  gfx->setCursor(sx + 24, sy + 2);
-  gfx->print(rl);
+  // Portrait isole dans une carte : le sprite ne se melange plus aux valeurs.
+  gfx->fillRoundRect(54,94,220,166,18,uiPanel());
+  gfx->drawRoundRect(54,94,220,166,18,uiLine());
+  drawCollectionFrame(164,174,72,pet.collectionFrame);
+  if(pmd.loaded) drawPmdAct(PMD_IDLE,164,232,millis(),true,false,3);
 
-  drawCardStat(258, T(S_VIN), pet.bond, 100, C565(0xd4, 0x52, 0x7e));
+  // Niveau.
+  gfx->fillRoundRect(286,94,126,48,12,lerp565(d.accent,uiPanel(),2,5));
+  gfx->setTextColor(uiContrastText(lerp565(d.accent,uiPanel(),2,5))); gfx->setTextSize(1);
+  gfx->setCursor(300,104); gfx->print(T(S_PROGRESS));
+  char levelText[16]; snprintf(levelText,sizeof(levelText),T(S_LVL_FMT),pet.level());
+  gfx->setTextSize(2); gfx->setCursor(300,120); gfx->print(levelText);
+
+  // Lien.
+  gfx->fillRoundRect(286,150,126,48,12,uiPanel());
+  gfx->drawRoundRect(286,150,126,48,12,C565(0xd4,0x52,0x7e));
+  gfx->setTextColor(uiSub()); gfx->setTextSize(1); gfx->setCursor(300,160); gfx->print(T(S_VIN));
+  char bondText[12]; snprintf(bondText,sizeof(bondText),"%u/100",pet.bond);
+  gfx->setTextColor(uiInk()); gfx->setTextSize(2); gfx->setCursor(300,176); gfx->print(bondText);
+
+  // Serie actuelle et meilleur score de combat.
+  gfx->fillRoundRect(286,206,126,54,12,uiPanel());
+  gfx->drawRoundRect(286,206,126,54,12,UI_BAR_WARN);
+  gfx->setTextColor(uiSub()); gfx->setTextSize(1); gfx->setCursor(300,216); gfx->print("SERIE / MAX");
+  char streakText[14]; snprintf(streakText,sizeof(streakText),"%u / %u",pet.streak,pet.bestStreak);
+  gfx->setTextColor(uiInk()); gfx->setTextSize(2); gfx->setCursor(300,234); gfx->print(streakText);
 
   const char *berry = !pet.berryKnown ? T(S_BERRY_UNK)
                       : pet.lovesBerry(0) ? T(S_BERRY_RED)
                       : pet.lovesBerry(1) ? T(S_BERRY_BLUE)
                                           : T(S_BERRY_GREEN);
-  char info[40];
-  snprintf(info, sizeof(info), T(S_INFO_FMT), berry,
-           (unsigned long)(pet.ageMinutes / 1440));
-  gfx->setTextColor(uiInk());
-  gfx->setTextSize(2);
-  gfx->setCursor(CX - strlen(info) * 6, 296);
-  gfx->print(info);
-
-  gfx->setTextColor(uiSub());
-  gfx->setCursor(CX - strlen(T(S_RENAME_HINT)) * 6, 326);
-  gfx->print(T(S_RENAME_HINT));
-
-
+  gfx->fillRoundRect(82,274,302,58,14,uiPanel());
+  gfx->drawRoundRect(82,274,302,58,14,uiLine());
+  static const char *const berryLabel[LANG_COUNT]={"BAYA","BERRY","BAIE","BEERE","BACCA","BAGA"};
+  gfx->setTextColor(uiSub()); gfx->setTextSize(1);
+  gfx->setCursor(98,286); gfx->print(berryLabel[gLang<LANG_COUNT?gLang:LANG_EN]);
+  gfx->setTextColor(uiInk()); gfx->setTextSize(2);
+  gfx->setCursor(98,304); gfx->print(berry);
+  char ageText[24]; snprintf(ageText,sizeof(ageText),T(S_AGE_DAYS_FMT),(unsigned long)(pet.ageMinutes/1440));
+  gfx->setTextColor(uiSub()); gfx->setTextSize(1);
+  gfx->setCursor(278,286); gfx->print(ageText);
 }
 
 StrId personalityNameId(PetPersonality p) {
@@ -6084,7 +6085,6 @@ void renderCard() {
   else if (cardPage == 5) renderCardMedals();
   else if (cardPage == 6) renderCardProgress();
   else if (cardPage == 7) renderCardExpedition();
-  else if (cardPage == 8) renderCardRecords();
   else renderCardKantoGyms();
 
   // Pages remontées + vrai bouton RETOUR.
@@ -6192,7 +6192,7 @@ void keyboardTap(int16_t x, int16_t y) {
 #define GAL_Y 82
 #define GAL_CELL 72
 #define GAL_COLS 4
-#define GAL_ROWS 4
+#define GAL_ROWS 3
 #define GAL_PAGE_SIZE (GAL_COLS * GAL_ROWS)
 
 int galleryPageCount() {
@@ -6250,6 +6250,11 @@ void drawPokedexShell(bool detail) {
 
 const char *pokedexInfoLabel() {
   static const char *const L[LANG_COUNT]={"INFORMACION","INFORMATION","INFORMATIONS","INFORMATION","INFORMAZIONI","INFORMACOES"};
+  return L[gLang<LANG_COUNT?gLang:LANG_EN];
+}
+
+const char *pokedexSeenLabel() {
+  static const char *const L[LANG_COUNT]={"VISTOS","SEEN","VUS","GESEHEN","VISTI","VISTOS"};
   return L[gLang<LANG_COUNT?gLang:LANG_EN];
 }
 
@@ -6403,6 +6408,18 @@ void renderGallery() {
       }
     }
   }
+
+  // Compteur Pokédex : espèces vues, jamais le nombre possédé dans la Boîte.
+  // knownDexCount additionne les rencontres enregistrées et les captures sans
+  // confondre ce total avec caughtCount().
+  char seenText[28];
+  snprintf(seenText,sizeof(seenText),"%s %u/%u",pokedexSeenLabel(),
+           (unsigned)pet.knownDexCount(),(unsigned)DEX_COUNT);
+  gfx->fillRoundRect(142,314,182,34,11,uiPanel());
+  gfx->drawRoundRect(142,314,182,34,11,uiLine());
+  gfx->setTextColor(uiInk()); gfx->setTextSize(2);
+  gfx->setCursor(CX-(int)strlen(seenText)*6,325); gfx->print(seenText);
+
   // Navigation latérale : aucune rangée de petites billes.
   int pages = galleryPageCount();
   if (galleryPage > 0) {

@@ -15,19 +15,19 @@ sdmon=(ROOT/"sdmon.cpp").read_text(encoding="utf-8")
 
 def ok(cond,msg):
     if not cond:
-        raise SystemExit("FAIL V12.5: "+msg)
+        raise SystemExit("FAIL V12.6: "+msg)
     print("OK  ",msg)
 
-ok("1.48.5-moretro3d-v12.5-canva-biomes-fill" in ino and
-   "1.48.5-moretro3d-v12.5-canva-biomes-fill" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
-   "1.48.5-moretro3d-v12.5-canva-biomes-fill" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "1.48.5-moretro3d-v12.5-canva-biomes-fill" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
-   "1.48.5-moretro3d-v12.5-canva-biomes-fill" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
-   "version 1.48.5 coherente et caches installateur invalides")
-ok('gfx->setCursor(CX - 30, 366); gfx->print("V12.5")' in ino and
-   '<div class="version">Firmware V12.5</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   '<div class="version">Firmware V12.5</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
-   "V12.5 affichee au demarrage, sur la page officielle et sur Shopify")
+ok("1.48.6-moretro3d-v12.6-profile-redesign" in ino and
+   "1.48.6-moretro3d-v12.6-profile-redesign" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.48.6-moretro3d-v12.6-profile-redesign" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.48.6-moretro3d-v12.6-profile-redesign" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   "1.48.6-moretro3d-v12.6-profile-redesign" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.48.6 coherente et caches installateur invalides")
+ok('gfx->setCursor(CX - 30, 366); gfx->print("V12.6")' in ino and
+   '<div class="version">Firmware V12.6</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   '<div class="version">Firmware V12.6</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
+   "V12.6 affichee au demarrage, sur la page officielle et sur Shopify")
 ok('location.replace("https://moretro3d.fr/pages/poketama")' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    'https://moretro3d.github.io/Test-1/manifest.json' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
    "GitHub Pages redirige vers Shopify et conserve le Web Flasher officiel")
@@ -37,7 +37,7 @@ ok("github.repository == 'Moretro3D/Test-2'" in workflow and
    "! grep -q 'location.replace' web/index.html" in workflow,
    "Test-2 affiche son Web Flasher sans redirection Shopify")
 test2_launcher=(ROOT/"OUVRIR_WEB_FLASHER_TEST_2.bat").read_text(encoding="utf-8")
-ok("https://moretro3d.github.io/Test-2/?v=1.48.5-moretro3d-v12.5-canva-biomes-fill" in test2_launcher,
+ok("https://moretro3d.github.io/Test-2/?v=1.48.6-moretro3d-v12.6-profile-redesign" in test2_launcher,
    "lanceur direct Test-2 avec contournement du cache")
 scene=ino[ino.index("void drawScene("):ino.index("void drawStarterPokeball(")]
 ok("HORIZON-38" not in scene and "uint16_t sea=" not in scene and
@@ -66,10 +66,11 @@ ok("galleryFilter" not in ino and "S_FILTER_ALL" not in ino and
    "Pokedex sans filtres ni mentions eleve/capture")
 ok("drawBattleCaughtBall(350,354,24,26)" not in ino,
    "aucun pictogramme de capture personnel dans le Pokedex")
-ok("#define GAL_ROWS 4" in ino and "#define GAL_PAGE_SIZE (GAL_COLS * GAL_ROWS)" in ino and
+ok("#define GAL_ROWS 3" in ino and "#define GAL_PAGE_SIZE (GAL_COLS * GAL_ROWS)" in ino and
    "galleryPage * GAL_PAGE_SIZE" in ino and
-   "snprintf(caught,sizeof(caught),T(S_CAUGHT_COUNT_FMT),(unsigned)pet.caughtCount())" not in ino,
-   "Pokedex en grille 4x4 sans compteur de captures")
+   "pokedexSeenLabel()" in ino and "pet.knownDexCount()" in ino and
+   "pet.caughtCount(),(unsigned)DEX_COUNT" not in ino,
+   "Pokedex en grille 4x3 avec compteur des Pokemon vus")
 ok("switchToCaught(galleryDetail)" not in ino and
    "drawPokedexInfoPopup(galleryDetail)" in ino and
    "galleryInfoOpen=true" in ino and
@@ -111,9 +112,14 @@ ok("light sleep" not in ino and "Sans erase garde save" not in ino and
 
 # Fiche
 ok('const char *cardBack=T(S_LAN_BACK)' in ino, "bouton RETOUR fiche traduit")
-ok("#define CARD_COUNT 10" in ino and "renderCardKantoGyms" in ino and
+ok("#define CARD_COUNT 9" in ino and "renderCardKantoGyms" in ino and
+   "else if (cardPage == 8) renderCardRecords()" not in ino and
    "KANTO_LEADER_DEX[8] = { 95, 121, 26, 45, 110, 65, 59, 112 }" in ino,
-   "page des huit arenes de Kanto et Pokemon emblematiques")
+   "page Records retiree et huit arenes conservees")
+ok("gfx->fillRoundRect(54,94,220,166,18,uiPanel())" in ino and
+   "drawCollectionFrame(164,174,72,pet.collectionFrame)" in ino and
+   "SERIE / MAX" in ino and "berryLabel[LANG_COUNT]" in ino,
+   "fiche Pokemon reorganisee avec portrait et informations separees")
 ok("const char *title=kantoArenaTitle()" in ino and
    ino.index("const char *title=kantoArenaTitle()") > ino.index("if (kantoArenaDetail >= 0)") and
    "gfx->setCursor(CX-(int)strlen(count)*6,64)" in ino,
@@ -141,7 +147,7 @@ ok("void drawKantoArenaBackground(uint8_t index)" in ino and
    "drawKantoBadge(120,246,i" in ino,
    "huit fonds d'arene thematiques et champion decale dans le cadre")
 ok("gfx->fillRoundRect(136,302,194,46,12,UI_BAR_BAD)" in ino and
-   "cardPage == 9 && kantoArenaDetail >= 0" in ino and
+   "cardPage == 8 && kantoArenaDetail >= 0" in ino and
    "int x=(i&1)?242:54, y=94+(i/2)*52" in ino,
    "retour doublon retire, retour inferieur actif et badges agrandis descendus")
 ok('prefs.putUChar("kbadge", kantoBadges)' in pet and
@@ -290,7 +296,7 @@ ok("void drawHomeGymCabin(uint8_t phase, uint8_t biome)" in ino and
    "Toit rouge étagé, large et immédiatement lisible" in ino and
    "Grand emblème Poké Ball centré dans le fronton" in ino and
    "Deux colonnes épaisses encadrent les doubles portes" in ino and
-   "cardPage = 9" in ino and "kantoArenaDetail = -1" in ino,
+   "cardPage = 8" in ino and "kantoArenaDetail = -1" in ino,
    "arene Pokemon pixel art tactile ouvrant directement les arenes Kanto")
 ok('#include "home_habitat_sprites.h"' in ino and
    "void drawHomeHabitatGround(uint8_t biome)" in ino and
@@ -511,4 +517,4 @@ if shutil.which("bash"):
 else:
     print("SKIP build_web.sh syntaxe (bash absent sur ce poste)")
 
-print("AUDIT FINAL V12.5 OK")
+print("AUDIT FINAL V12.6 OK")

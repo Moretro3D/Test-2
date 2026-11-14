@@ -49,7 +49,7 @@
       <button type="button" class="lang" data-lang="de" title="Deutsch" aria-label="Deutsch"><img src="flags/de.svg" alt="Deutschland" draggable="false"></button>
       <button type="button" class="lang" data-lang="it" title="Italiano" aria-label="Italiano"><img src="flags/it.svg" alt="Italia" draggable="false"></button>
       <button type="button" class="lang" data-lang="pt" title="Português" aria-label="Português"><img src="flags/pt.svg" alt="Portugal" draggable="false"></button>
-    </nav><div class="version">Firmware V12.5</div></div>
+    </nav><div class="version">Firmware V12.6</div></div>
   </header>
 
   <section class="hero">
@@ -71,7 +71,7 @@
   <section class="step">
     <div class="step-head"><span class="num">1</span><h2 data-i18n="firmwareTitle">Installer le firmware</h2></div>
     <p data-i18n="firmwareDesc">Branche le PokeTama en USB-C, clique sur Installer, sélectionne son port puis attends la fin.</p>
-    <esp-web-install-button manifest="manifest.json?v=1.48.5-moretro3d-v12.5-canva-biomes-fill">
+    <esp-web-install-button manifest="manifest.json?v=1.48.6-moretro3d-v12.6-profile-redesign">
       <button slot="activate" data-i18n="installButton">Installer le firmware Moretro3D</button>
       <span slot="unsupported" data-i18n="browserBad">Navigateur non compatible : utilise Chrome ou Edge.</span>
       <span slot="not-allowed" data-i18n="https">La connexion HTTPS est requise.</span>
@@ -247,7 +247,7 @@ document.getElementById('music').onclick = async () => {
   log(status(8));
   let items;
   try {
-    const resp = await fetch('music.pak?v=1.48.5-moretro3d-v12.5-canva-biomes-fill', { cache: 'no-store' });
+    const resp = await fetch('music.pak?v=1.48.6-moretro3d-v12.6-profile-redesign', { cache: 'no-store' });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     items = parsePak(await resp.arrayBuffer()).filter(it => it.name.startsWith('music/') && it.name.endsWith('.wav'));
     if (items.length !== 3) throw new Error('le paquet ne contient pas exactement trois OST');
@@ -279,7 +279,7 @@ document.getElementById('auto').onclick = async () => {
   let items;
   try {
     // Bundle complet servi depuis GitHub Pages : sprites, decors et OST.
-    const resp = await fetch('sprites.pak?v=1.48.5-moretro3d-v12.5-canva-biomes-fill', { cache: 'no-store' });
+    const resp = await fetch('sprites.pak?v=1.48.6-moretro3d-v12.6-profile-redesign', { cache: 'no-store' });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     items = parsePak(await resp.arrayBuffer());
   } catch (e) { log(status(16,e.message)); return; }

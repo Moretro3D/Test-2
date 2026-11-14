@@ -1,4 +1,4 @@
-PokeTama V12.5 - fonds habitat / heure
+PokeTama V12.6 - fonds habitat / heure
 
 Résolution de référence : 466x466 (écran AMOLED rond 1,75").
 24 fonds sont fournis : 6 habitats x 4 moments de la journée.
