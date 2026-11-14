@@ -29,7 +29,6 @@
 #include "battle_ball_icon.h"
 #include "battle_bases.h"
 #include "battle_ground_map.h"
-#include "battle_backgrounds.h"
 #include "box_backgrounds.h"
 #include "battle_sprite_layout.h"
 #include "kanto_leader_sprites.h"
@@ -41,7 +40,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.50.5-moretro3d-v12.6-biome-battles"
+#define FW_VERSION "1.50.6-moretro3d-v12.6-biome-battles-clean"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -3888,29 +3887,6 @@ uint8_t battleTerrainFor(uint8_t type1, uint8_t type2) {
   return 0;
 }
 
-void drawBattleBackgroundBiome(uint8_t biome) {
-  uint8_t phase=currentDayPhase();
-  uint8_t sourcePhase=(phase==3)?2:(phase==1?0:1); // jour, après-midi, nuit
-  const BattleBgRef &asset=BATTLE_BG_ASSETS[biome<6?biome:0][sourcePhase];
-  uint32_t pixel=0;
-  for(uint16_t i=0;i<asset.rleSize;i+=2) {
-    uint16_t left=pgm_read_byte(&asset.rle[i]);
-    uint8_t palette=pgm_read_byte(&asset.rle[i+1]);
-    uint16_t color=pgm_read_word(&asset.pal[palette]);
-    while(left) {
-      uint16_t sx=pixel%BATTLE_BG_W;
-      uint16_t sy=pixel/BATTLE_BG_W;
-      uint16_t rowLeft=BATTLE_BG_W-sx;
-      uint16_t take=left<rowLeft?left:rowLeft;
-      int dy=(int)((uint32_t)sy*320/BATTLE_BG_H);
-      int dy2=(int)((uint32_t)(sy+1)*320/BATTLE_BG_H);
-      gfx->fillRect(-23+sx*2,dy,take*2,dy2-dy,color);
-      pixel+=take;
-      left-=take;
-    }
-  }
-}
-
 const char *biomeChooseTitle() {
   static const char *const L[LANG_COUNT]={
     "ELIGE BIOMA","CHOOSE BIOME","CHOISIS UN BIOME","BIOM WAHLEN","SCEGLI BIOMA","ESCOLHE BIOMA"
@@ -3942,19 +3918,6 @@ void biomeBubblePosition(uint8_t biome,int &cx,int &cy) {
   static const int16_t Y[7]={126,126,126,252,252,252,252};
   uint8_t i=biome<7?biome:0;
   cx=X[i]; cy=Y[i];
-}
-
-void drawSkyBiomeBackground() {
-  uint16_t top=C565(0x25,0x75,0xc4), bottom=C565(0x9d,0xdc,0xf2);
-  for(int y=0;y<320;y+=8) gfx->fillRect(0,y,466,8,lerp565(top,bottom,y,320));
-  const int cloudX[5]={54,150,255,355,420};
-  const int cloudY[5]={102,182,78,222,145};
-  for(uint8_t i=0;i<5;i++) {
-    gfx->fillCircle(cloudX[i],cloudY[i],24,UI_WHITE);
-    gfx->fillCircle(cloudX[i]+24,cloudY[i]+5,19,UI_WHITE);
-    gfx->fillCircle(cloudX[i]-22,cloudY[i]+8,16,UI_WHITE);
-    gfx->fillRect(cloudX[i]-22,cloudY[i]+5,46,20,UI_WHITE);
-  }
 }
 
 void drawBiomeIcon(uint8_t biome,int cx,int cy) {

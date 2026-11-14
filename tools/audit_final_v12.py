@@ -19,12 +19,12 @@ def ok(cond,msg):
         raise SystemExit("FAIL V12.6: "+msg)
     print("OK  ",msg)
 
-ok("1.50.5-moretro3d-v12.6-biome-battles" in ino and
-   "1.50.5-moretro3d-v12.6-biome-battles" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
-   "1.50.5-moretro3d-v12.6-biome-battles" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "1.50.5-moretro3d-v12.6-biome-battles" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
-   "1.50.5-moretro3d-v12.6-biome-battles" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
-   "version 1.50.5 coherente et caches installateur invalides")
+ok("1.50.6-moretro3d-v12.6-biome-battles-clean" in ino and
+   "1.50.6-moretro3d-v12.6-biome-battles-clean" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.50.6-moretro3d-v12.6-biome-battles-clean" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.50.6-moretro3d-v12.6-biome-battles-clean" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   "1.50.6-moretro3d-v12.6-biome-battles-clean" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.50.6 coherente et caches installateur invalides")
 ok('gfx->setCursor(CX - 30, 366); gfx->print("V12.6")' in ino and
    '<div class="version">Firmware V12.6</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    '<div class="version">Firmware V12.6</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
@@ -80,7 +80,8 @@ ok("void drawBiomeCanvasBackground(uint8_t biome)" in ino and
    "if (biomeSelected<6) drawBattleBackgroundBiome" not in ino,
    "radar de recherche sur les sept pixel arts de biomes sans ancien fond")
 ok("drawBiomeCanvasBackground(biome);" in ino and
-   "if (biome<6) drawBattleBackgroundBiome(biome); else drawSkyBiomeBackground();" not in ino,
+   "drawBattleBackgroundBiome" not in ino and "drawSkyBiomeBackground" not in ino and
+   '#include "battle_backgrounds.h"' not in ino,
    "sept decors Canvas du radar reutilises comme fonds de combat")
 cries_web=(ROOT/"web/cries-installer.js").read_text(encoding="utf-8")
 ok("/cries/%03u.wav" in audio and "WAVE" in audio and "playSpeciesChirp" in audio and
@@ -125,7 +126,7 @@ ok("github.repository == 'Moretro3D/Test-2'" in workflow and
    "! grep -q 'location.replace' web/index.html" in workflow,
    "Test-2 affiche son Web Flasher sans redirection Shopify")
 test2_launcher=(ROOT/"OUVRIR_WEB_FLASHER_TEST_2.bat").read_text(encoding="utf-8")
-ok("https://moretro3d.github.io/Test-2/?v=1.50.5-moretro3d-v12.6-biome-battles" in test2_launcher,
+ok("https://moretro3d.github.io/Test-2/?v=1.50.6-moretro3d-v12.6-biome-battles-clean" in test2_launcher,
    "lanceur direct Test-2 avec contournement du cache")
 scene=ino[ino.index("void drawScene("):ino.index("void drawStarterPokeball(")]
 ok("HORIZON-38" not in scene and "uint16_t sea=" not in scene and

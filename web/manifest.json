@@ -1,25 +1,25 @@
 {
   "name": "PokeTama Moretro3D - V12.6 Miniatures Biomes",
-  "version": "1.50.5-moretro3d-v12.6-biome-battles",
+  "version": "1.50.6-moretro3d-v12.6-biome-battles-clean",
   "new_install_prompt_erase": true,
   "builds": [
     {
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/poketama-1.50.5-moretro3d-v12.6-biome-battles-bootloader.bin",
+          "path": "firmware/poketama-1.50.6-moretro3d-v12.6-biome-battles-clean-bootloader.bin",
           "offset": 0
         },
         {
-          "path": "firmware/poketama-1.50.5-moretro3d-v12.6-biome-battles-partitions.bin",
+          "path": "firmware/poketama-1.50.6-moretro3d-v12.6-biome-battles-clean-partitions.bin",
           "offset": 32768
         },
         {
-          "path": "firmware/poketama-1.50.5-moretro3d-v12.6-biome-battles-boot_app0.bin",
+          "path": "firmware/poketama-1.50.6-moretro3d-v12.6-biome-battles-clean-boot_app0.bin",
           "offset": 57344
         },
         {
-          "path": "firmware/poketama-1.50.5-moretro3d-v12.6-biome-battles-app.bin",
+          "path": "firmware/poketama-1.50.6-moretro3d-v12.6-biome-battles-clean-app.bin",
           "offset": 65536
         }
       ]

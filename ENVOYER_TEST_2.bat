@@ -36,7 +36,7 @@ echo Preparation des fichiers V12.6...
 git -c safe.directory="%CD%" add -A
 git -c safe.directory="%CD%" diff --cached --quiet
 if errorlevel 1 (
-  git -c safe.directory="%CD%" commit -m "PokeTama V12.6 fonds Canvas radar et combats 1.50.5"
+  git -c safe.directory="%CD%" commit -m "PokeTama V12.6 fonds Canvas combats sans anciens fonds 1.50.6"
   if errorlevel 1 goto :connexion
 )
 
