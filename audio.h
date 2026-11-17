@@ -63,6 +63,7 @@ bool audioEnabled();
 void audioSetMode(uint8_t mode);
 uint8_t audioMode();
 void audioSetVolume(uint8_t volume);
+void audioPreviewVolume(uint8_t volume);
 uint8_t audioVolume();
 void audioSetMusicEnabled(bool on);
 bool audioMusicEnabled();

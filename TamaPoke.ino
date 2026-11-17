@@ -386,6 +386,7 @@ uint32_t choiceUntil = 0;   // se cierra solo a este millis
 int16_t tX0, tY0, tXl, tYl; // gesto en curso (inicio y ultima posicion)
 uint32_t tStart = 0;
 bool holdFired = false;
+bool volumeDrag = false;
 
 void markUiDirty() {
   uiDirty = true;
@@ -523,6 +524,7 @@ void setup() {
   uint8_t audioTheme=(audioHour>=7 && audioHour<13) ? 0 : ((audioHour>=13 && audioHour<20) ? 1 : 2);
   audioPreloadMusic(audioTheme);  // réserve la PSRAM avant sprites/miniatures
   thumbs.load();
+  shinyThumbs.load("/mons/thumbs_shiny.bin");
 
   // Laisse profiter de l'ecran de marque 1,5 seconde supplementaire une fois
   // l'initialisation terminee. Le framebuffer reste stable : aucun flash noir.
@@ -1033,6 +1035,12 @@ void handleTouch() {
     swallowGesture = (dimStage > 0) || screenOff;  // si estaba a oscuras, solo despierta
     screenOff = false;
     lastInteract = millis();
+    volumeDrag = !swallowGesture && clockOpen && settingsPage == 2 && y >= 174 && y <= 250 && x >= 58 && x <= 408;
+    if (volumeDrag) {
+      audioPreviewVolume((uint8_t)constrain((int32_t)(x - 76) * 100 / 314, 0, 100));
+      clockDirty = true;
+      swallowGesture = true;
+    }
     if (!swallowGesture && gameOpen && gameMode == 0) {
       gameTap(x, y);         // ball: cuenta al tocar, no al soltar
       swallowGesture = true; // evita doble tap al levantar el dedo
@@ -1043,11 +1051,20 @@ void handleTouch() {
   } else if (pressed) {  // sigue apoyado
     tXl = x;
     tYl = y;
+    if (volumeDrag) {
+      audioPreviewVolume((uint8_t)constrain((int32_t)(x - 76) * 100 / 314, 0, 100));
+      clockDirty = true;
+    }
   } else if (wasPressed) {  // levanta el dedo: resolver gesto
     lastInteract = millis();
     int dx = tXl - tX0, dy = tYl - tY0;
     uint32_t dt = millis() - tStart;
-    if (!holdFired && !swallowGesture) {
+    if (volumeDrag) {
+      audioSetVolume(audioVolume());
+      volumeDrag = false;
+      clockDirty = true;
+      if (audioEnabled()) sfxPlay(SFX_LEVEL);
+    } else if (!holdFired && !swallowGesture) {
       if (abs(dx) > 80 && abs(dy) < 70 && dt < 800) onSwipe(dx > 0 ? 1 : -1);
       else if (abs(dy) > 80 && abs(dx) < 70 && dt < 800) onSwipeV(dy > 0 ? 1 : -1);
       else if (dt < 1500 && abs(dx) < 40 && abs(dy) < 40) onTap(tX0, tY0);
@@ -6558,7 +6575,7 @@ void renderGallery() {
       // animado y a color si se conoce; silueta estatica si no (estilo "?")
       drawPmdActM(galleryPmd, PMD_IDLE, CX, 300, known ? millis() : 0, true, !known, 6, galleryDetail);
     } else {
-      const uint8_t *t = thumbs.get(galleryDetail);
+      const uint8_t *t = (shinyDexMode ? shinyThumbs : thumbs).get(galleryDetail);
       if (t) drawThumb(t, CX - GAL_CELL, 135, 4, !known);
     }
     // Bouton RETOUR vers la grille Pokédex.
@@ -6612,7 +6629,7 @@ void renderGallery() {
       int16_t dex = galleryDexAt(galleryPage * GAL_PAGE_SIZE + r * GAL_COLS + c);
       if (dex <= 0) continue;
       int x = GAL_X + c * GAL_CELL, y = GAL_Y + r * GAL_CELL;
-      const uint8_t *t = thumbs.get(dex);
+      const uint8_t *t = (shinyDexMode ? shinyThumbs : thumbs).get(dex);
       if (t) {
         bool reg = pet.isRegistered(dex);
         bool caught = pet.isCaught(dex);

@@ -61,10 +61,10 @@ def shrink(w, h, pal, data):
     return nw, nh, newpal, bytes(out)
 
 
-def main():
+def build(shiny=False):
     blobs = []
     for dex in range(1, 387):
-        path = os.path.join(DIR, f'p{dex:03d}.bin')
+        path = os.path.join(DIR, f'p{"s" if shiny else ""}{dex:03d}.bin')
         w, h, pal, data = read_pmd_idle_frame0(path)
         nw, nh, npal, ndata = shrink(w, h, pal, data)
         if len(npal) > 255:
@@ -80,7 +80,7 @@ def main():
         offsets.append(pos)
         pos += len(b)
 
-    out = os.path.join(DIR, 'thumbs.bin')
+    out = os.path.join(DIR, 'thumbs_shiny.bin' if shiny else 'thumbs.bin')
     with open(out, 'wb') as f:
         f.write(b'TPTH')
         f.write(struct.pack('<H', 386))
@@ -88,6 +88,11 @@ def main():
         for b in blobs:
             f.write(b)
     print(f"guardado {out}: {pos / 1024:.0f} KB, {len(blobs)} miniaturas")
+
+
+def main():
+    build(False)
+    build(True)
 
 
 if __name__ == '__main__':

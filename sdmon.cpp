@@ -6,6 +6,7 @@
 bool sdReady = false;
 bool sdDirty = false;
 SdThumbs thumbs;
+SdThumbs shinyThumbs;
 
 bool PmdMon::load(uint16_t dexNum, bool shiny) {
   unload();
@@ -84,17 +85,17 @@ void PmdMon::unload() {
   loaded = false;
 }
 
-bool SdThumbs::load() {
+bool SdThumbs::load(const char *path) {
   if (!sdReady) return false;
-  File f = SD_MMC.open("/mons/thumbs.bin", FILE_READ);
+  File f = SD_MMC.open(path, FILE_READ);
   if (!f) {
-    Serial.println("sin thumbs.bin (galeria sin miniaturas)");
+    Serial.printf("sin %s (galeria sin miniaturas)\n",path);
     return false;
   }
   uint32_t size = f.size();
   data = (uint8_t *)ps_malloc(size);
   if (!data || f.read(data, size) != size || memcmp(data, "TPTH", 4) != 0) {
-    Serial.println("thumbs.bin invalido");
+    Serial.printf("miniaturas invalidas: %s\n",path);
     if (data) { free(data); data = nullptr; }
     f.close();
     return false;
@@ -124,7 +125,7 @@ static String sdBaseName(const String &path) {
 }
 
 static bool validMonName(const String &name) {
-  if (name == "thumbs.bin") return true;
+  if (name == "thumbs.bin" || name == "thumbs_shiny.bin") return true;
   int digit = name.startsWith("ps") ? 2 : (name.startsWith("p") ? 1 : -1);
   int expectedLen = digit == 2 ? 9 : 8;
   if (digit < 0 || name.length() != expectedLen || !name.endsWith(".bin")) return false;

@@ -49,10 +49,11 @@ struct SdThumbs {
   uint8_t *data = nullptr;
   uint32_t dataSize = 0;
   uint16_t count = 0;
-  bool load();
+  bool load(const char *path="/mons/thumbs.bin");
   const uint8_t *get(int16_t dex) const;  // blob: w,h,palCount,pal[],idx[]
 };
 extern SdThumbs thumbs;
+extern SdThumbs shinyThumbs;
 
 bool sdBegin();                 // monta la SD (SDMMC 1-bit), true si hay tarjeta
 bool sdSerialCommand(const String &line);  // PUT/LS por USB; true si la maneja

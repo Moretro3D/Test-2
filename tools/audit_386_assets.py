@@ -61,24 +61,25 @@ def main():
     if duplicates:
         print("ATTENTION: binaires normaux identiques:", duplicates)
 
-    thumbs = MONS / "thumbs.bin"
-    if not thumbs.exists():
-        raise RuntimeError("thumbs.bin absent")
-    data = thumbs.read_bytes()
-    if data[:4] != b"TPTH" or len(data) < 6:
-        raise RuntimeError("thumbs.bin invalide")
-    count = struct.unpack_from("<H", data, 4)[0]
-    if count != 386:
-        raise RuntimeError(f"thumbs.bin count={count}, attendu 386")
-    head = 6 + 4 * count
-    for dex in range(1, count + 1):
-        off = struct.unpack_from("<I", data, 6 + 4 * (dex - 1))[0]
-        if off < head or off + 3 > len(data):
-            raise RuntimeError(f"thumbs.bin #{dex:03d}: offset invalide {off}")
-        w, h, pal = data[off:off + 3]
-        need = 3 + 2 * pal + w * h
-        if not w or not h or not pal or off + need > len(data):
-            raise RuntimeError(f"thumbs.bin #{dex:03d}: blob invalide {w}x{h}, pal={pal}")
+    for thumb_name in ("thumbs.bin", "thumbs_shiny.bin"):
+        thumbs = MONS / thumb_name
+        if not thumbs.exists():
+            raise RuntimeError(f"{thumb_name} absent")
+        data = thumbs.read_bytes()
+        if data[:4] != b"TPTH" or len(data) < 6:
+            raise RuntimeError(f"{thumb_name} invalide")
+        count = struct.unpack_from("<H", data, 4)[0]
+        if count != 386:
+            raise RuntimeError(f"{thumb_name} count={count}, attendu 386")
+        head = 6 + 4 * count
+        for dex in range(1, count + 1):
+            off = struct.unpack_from("<I", data, 6 + 4 * (dex - 1))[0]
+            if off < head or off + 3 > len(data):
+                raise RuntimeError(f"{thumb_name} #{dex:03d}: offset invalide {off}")
+            w, h, pal = data[off:off + 3]
+            need = 3 + 2 * pal + w * h
+            if not w or not h or not pal or off + need > len(data):
+                raise RuntimeError(f"{thumb_name} #{dex:03d}: blob invalide {w}x{h}, pal={pal}")
 
     # Audit statique anti-régression du bug #278 -> #22.
     sdh = (ROOT / "sdmon.h").read_text(encoding="utf-8")

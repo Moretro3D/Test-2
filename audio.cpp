@@ -549,9 +549,13 @@ void audioSetMode(uint8_t mode) {
 
 uint8_t audioMode() { return gMode; }
 
-void audioSetVolume(uint8_t volume) {
+void audioPreviewVolume(uint8_t volume) {
   gVolume = volume > 100 ? 100 : volume;
   gMode = gVolume == 0 ? SOUND_OFF : (gVolume <= 33 ? SOUND_LOW : (gVolume <= 66 ? SOUND_MED : SOUND_FULL));
+}
+
+void audioSetVolume(uint8_t volume) {
+  audioPreviewVolume(volume);
   Preferences p;
   p.begin("tamapoke", false);
   p.putUChar("vol", gVolume);

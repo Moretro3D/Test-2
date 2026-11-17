@@ -88,6 +88,9 @@ ok("audioSetMusicEnabled" in audio_cpp and "audioMusicEnabled" in audio_h and
 ok("audioSetVolume" in audio_cpp and "audioVolume" in audio_h and
    'p.putUChar("vol", gVolume)' in audio_cpp and "314UL*audioVolume()/100UL" in ino,
    "volume precis 0-100 par jauge tactile et migration des anciens paliers")
+ok("bool volumeDrag" in ino and "audioPreviewVolume" in ino and
+   "audioSetVolume(audioVolume())" in ino and "void audioPreviewVolume" in audio_cpp,
+   "curseur de volume glissable en temps reel et sauvegarde seulement au relachement")
 ok("maybePlayCareReminder" in ino and
    "speciesChirpPlay(pet.speciesId)" in ino and
    "audioMode() != SOUND_OFF" in ino,
@@ -142,6 +145,11 @@ ok("cardPage = p < 0 ? CARD_COUNT - 1" in ino and
 ok("bool shinyDexMode" in ino and 'shinyDexMode ? "SHINYDEX" : "POKEDEX"' in ino and
    "galleryPmd.load(dex, shinyDexMode)" in ino and 'gfx->print("*")' not in ino[ino.find("void renderGallery()"):ino.find("void galleryTap")],
    "Shinydex distinct a droite et Pokedex a gauche sans etoile")
+ok("SdThumbs shinyThumbs" in (ROOT/"sdmon.cpp").read_text(encoding="utf-8") and
+   'shinyThumbs.load("/mons/thumbs_shiny.bin")' in ino and
+   "(shinyDexMode ? shinyThumbs : thumbs).get" in ino and
+   (ROOT/"tools/sdcard/mons/thumbs_shiny.bin").exists(),
+   "386 miniatures Shiny colorees distinctes chargees dans le Shinydex")
 ok("/save/profiles/p%03d%s" in pet_cpp and
    "writeSdStoredProfile(speciesId, p)" in pet_cpp and
    "readSdStoredProfile(dex, p)" in pet_cpp and
