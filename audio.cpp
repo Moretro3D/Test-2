@@ -21,6 +21,7 @@
 static I2SClass i2s;
 static bool gReady = false;
 static uint8_t gMode = SOUND_FULL;
+static uint8_t gVolume = 75;
 static volatile bool gMusicEnabled = true;
 static QueueHandle_t gQ = nullptr;
 static volatile bool gBusy = false;
@@ -345,21 +346,11 @@ static int16_t oscSample(uint8_t wave, int phase, int period, int16_t amp) {
 }
 
 static uint8_t modeGainPct() {
-  switch (gMode) {
-    case SOUND_LOW: return 58;
-    case SOUND_MED: return 82;
-    case SOUND_FULL: return 118;
-    default: return 0;
-  }
+  return gVolume ? (uint8_t)min(118U, (unsigned)(8 + gVolume * 110U / 100U)) : 0;
 }
 
 static uint8_t musicGainPct() {
-  switch (gMode) {
-    case SOUND_LOW: return 45;   // ambiance discrète
-    case SOUND_MED: return 85;   // niveau de base audible
-    case SOUND_FULL: return 135; // musique renforcée
-    default: return 0;
-  }
+  return gVolume ? (uint8_t)min(135U, (unsigned)(5 + gVolume * 130U / 100U)) : 0;
 }
 
 static bool criticalSfx(uint8_t id) {
@@ -451,9 +442,8 @@ static void audioTask(void *) {
   for (;;) {
     if (!xQueueReceive(gQ, &event, portMAX_DELAY) || !gReady) continue;
     bool isSfx = event.kind == AUDIO_EVENT_SFX && event.value < SFX_COUNT;
-    bool isChirp = event.kind == AUDIO_EVENT_CHIRP && event.value >= 1 && event.value <= 386 && gMode >= SOUND_LOW;
-    bool isAmbient = event.kind == AUDIO_EVENT_AMBIENT && event.value < 3 && gMode >= SOUND_LOW && gMusicEnabled;
-    if (isSfx && gMode < SFX_MIN_MODE[event.value]) continue;
+    bool isChirp = event.kind == AUDIO_EVENT_CHIRP && event.value >= 1 && event.value <= 386 && gVolume > 0;
+    bool isAmbient = event.kind == AUDIO_EVENT_AMBIENT && event.value < 3 && gVolume > 0 && gMusicEnabled;
     if (isSfx || isChirp || isAmbient) {
       gBusy = true;
       digitalWrite(PA, HIGH);  // enciende el amplificador
@@ -472,7 +462,7 @@ static void audioTask(void *) {
           do {
             if (!playMusicChunk(theme)) { wavOk=false; break; }
             if (uxQueueMessagesWaiting(gQ) > 0) break; // priorite aux SFX/cris
-          } while (gMode >= SOUND_LOW && gMusicEnabled && gAmbientTheme == theme &&
+          } while (gVolume > 0 && gMusicEnabled && gAmbientTheme == theme &&
                    (int32_t)(gAmbientKeepAliveUntil - millis()) > 0);
         }
         if (!wavOk) {
@@ -509,7 +499,11 @@ void audioBegin() {
     gMode = p.getBool("snd", true) ? SOUND_FULL : SOUND_OFF;
   }
   gMusicEnabled = p.getBool("music", true);
+  if (p.isKey("vol")) gVolume = p.getUChar("vol", 75);
+  else gVolume = gMode == SOUND_OFF ? 0 : (gMode == SOUND_LOW ? 25 : (gMode == SOUND_MED ? 50 : 75));
   p.end();
+  if (gVolume > 100) gVolume = 100;
+  gMode = gVolume == 0 ? SOUND_OFF : (gVolume <= 33 ? SOUND_LOW : (gVolume <= 66 ? SOUND_MED : SOUND_FULL));
   if (gMode > SOUND_FULL) gMode = SOUND_FULL;
 
   gReady = true;
@@ -519,7 +513,7 @@ void audioBegin() {
 }
 
 void sfxPlay(uint8_t id) {
-  if (!gReady || gMode == SOUND_OFF || !gQ || id >= SFX_COUNT || gMode < SFX_MIN_MODE[id]) return;
+  if (!gReady || gVolume == 0 || !gQ || id >= SFX_COUNT) return;
 
   // Die Modi sollen sich spuerbar anfuehlen: "viel" spielt alles, "mittel"
   // laesst schnelle Wiederholungen etwas aus, "wenig" bleibt bei grossen
@@ -544,14 +538,29 @@ bool audioEnabled() { return gMode != SOUND_OFF; }
 void audioSetMode(uint8_t mode) {
   if (mode > SOUND_FULL) mode = SOUND_FULL;
   gMode = mode;
+  gVolume = mode == SOUND_OFF ? 0 : (mode == SOUND_LOW ? 25 : (mode == SOUND_MED ? 50 : 75));
   Preferences p;
   p.begin("tamapoke", false);
   p.putUChar("sndm", gMode);
   p.putBool("snd", gMode != SOUND_OFF);
+  p.putUChar("vol", gVolume);
   p.end();
 }
 
 uint8_t audioMode() { return gMode; }
+
+void audioSetVolume(uint8_t volume) {
+  gVolume = volume > 100 ? 100 : volume;
+  gMode = gVolume == 0 ? SOUND_OFF : (gVolume <= 33 ? SOUND_LOW : (gVolume <= 66 ? SOUND_MED : SOUND_FULL));
+  Preferences p;
+  p.begin("tamapoke", false);
+  p.putUChar("vol", gVolume);
+  p.putUChar("sndm", gMode);
+  p.putBool("snd", gVolume != 0);
+  p.end();
+}
+
+uint8_t audioVolume() { return gVolume; }
 
 void audioSetMusicEnabled(bool on) {
   gMusicEnabled = on;
@@ -569,7 +578,7 @@ bool audioBusy() {
 }
 
 void audioAmbientPlay(uint8_t theme) {
-  if (!gReady || !gMusicEnabled || gMode < SOUND_LOW || !gQ || theme >= 3) return;
+  if (!gReady || !gMusicEnabled || gVolume == 0 || !gQ || theme >= 3) return;
   gAmbientTheme = theme;
   gAmbientKeepAliveUntil = millis() + 650;
   if (audioBusy()) return;
@@ -583,7 +592,7 @@ bool audioPreloadMusic(uint8_t theme) {
 }
 
 void speciesChirpPlay(int16_t dex) {
-  if (!gReady || !gQ || gMode < SOUND_LOW || dex < 1 || dex > 386) return;
+  if (!gReady || !gQ || gVolume == 0 || dex < 1 || dex > 386) return;
   uint32_t now = millis();
   if (now - gLastChirpAt < 800UL) return;
   gLastChirpAt = now;

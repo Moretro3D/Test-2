@@ -16,19 +16,36 @@ workflow=(ROOT/".github/workflows/pages.yml").read_text(encoding="utf-8")
 
 def ok(cond,msg):
     if not cond:
-        raise SystemExit("FAIL V12.6: "+msg)
+        raise SystemExit("FAIL V12: "+msg)
     print("OK  ",msg)
 
-ok("1.50.6-moretro3d-v12.6-biome-battles-clean" in ino and
-   "1.50.6-moretro3d-v12.6-biome-battles-clean" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
-   "1.50.6-moretro3d-v12.6-biome-battles-clean" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "1.50.6-moretro3d-v12.6-biome-battles-clean" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
-   "1.50.6-moretro3d-v12.6-biome-battles-clean" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
-   "version 1.50.6 coherente et caches installateur invalides")
-ok('gfx->setCursor(CX - 30, 366); gfx->print("V12.6")' in ino and
-   '<div class="version">Firmware V12.6</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   '<div class="version">Firmware V12.6</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
-   "V12.6 affichee au demarrage, sur la page officielle et sur Shopify")
+ok("1.50.8-moretro3d-v12-runner-display-fix" in ino and
+   "1.50.8-moretro3d-v12-runner-display-fix" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.50.8-moretro3d-v12-runner-display-fix" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.50.8-moretro3d-v12-runner-display-fix" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   "1.50.8-moretro3d-v12-runner-display-fix" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.50.8 coherente et caches installateur invalides")
+ok('gfx->setCursor(CX - 18, 366); gfx->print("V12")' in ino and
+   '<div class="version">PokeTama V12</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   '<div class="version">PokeTama V12</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   '"name": "PokeTama V12"' in (ROOT/"web/manifest.json").read_text(encoding="utf-8"),
+   "nom public limite a PokeTama V12 sur appareil, Test-2 et Shopify")
+ok("<footer>" not in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "<footer>" not in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   "footer1" not in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "footer1" not in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
+   "textes inferieurs retires de Test-2 et de la page officielle")
+ok("0 profil, 1 boite, 2 combat, 3 arenes Kanto, 4 caractere, 5 quotidien, 6 medailles, 7 progres, 8 expedition" in ino and
+   "if (cardPage == 1) renderCardBox();" in ino and
+   "else if (cardPage == 2) renderCardStats();" in ino and
+   "else if (cardPage == 3) renderCardKantoGyms();" in ino and
+   "else if (cardPage == 4) renderCardPersonality();" in ino and
+   "else if (cardPage == 5) renderCardDaily();" in ino and
+   "else if (cardPage == 6) renderCardMedals();" in ino and
+   "else if (cardPage == 7) renderCardProgress();" in ino and
+   "else renderCardExpedition();" in ino and
+   "if(cardPage!=1) boxSelectionDex=0;" in ino,
+   "ordre Profil, Boite, Combat, Arenes puis autres pages synchronise")
 pet_cpp = (ROOT/"pet.cpp").read_text(encoding="utf-8")
 pet_h = (ROOT/"pet.h").read_text(encoding="utf-8")
 ok(all(goal in pet_h for goal in ("DAILY_GOAL_FEED", "DAILY_GOAL_CLEAN")) and
@@ -44,6 +61,11 @@ ok("drawDailyGoalRow(136 + i * 66, i)" in ino and
    "gfx->fillRoundRect(68, y + 38, 326, 7" in ino and
    "gfx->print(idx + 1)" not in ino,
    "page Quotidien corrigee sans numeros de cases et progression elargie")
+ok("if (gameOpen && gameMode == 5) return 58;" in ino and
+   "runnerLastFrameAt = now;" in ino and
+   "float step = elapsed / 16.0f;" in ino and
+   "gfx->fillScreen" not in ino[ino.index("void renderRunnerGame()"):ino.index("void renderGame()")],
+   "course sans rafraichissements noirs, physique temporelle et DMA espace")
 ok("Btn buttons[5]" in ino and
    ino.count("for (int i = 0; i < 5; i++)") >= 2 and
    "drawHomeBattleIcon" not in ino and
@@ -54,15 +76,18 @@ ok("Btn buttons[5]" in ino and
 ok("GAME_MENU_TILES[6]" in ino and "case 5: startRunnerGame()" in ino and
    "gameMode = 5" in ino and "renderRunnerGame" in ino and
    "applyRunnerResult" in pet and "trSpe = v > 100 ? 100 : v" in pet and
-   "gameOpen && gameMode == 5) return 33" in ino and
+   "gameOpen && gameMode == 5) return 58" in ino and
    "Sprite pixel-art transparent 18x10" in ino,
-   "course fluide a 30 fps, decor enrichi, score lisible et vraie manette pixel-art")
+   "course fluide sans surcharge AMOLED, decor enrichi, score lisible et vraie manette pixel-art")
 audio_cpp = (ROOT/"audio.cpp").read_text(encoding="utf-8")
 audio_h = (ROOT/"audio.h").read_text(encoding="utf-8")
 ok("audioSetMusicEnabled" in audio_cpp and "audioMusicEnabled" in audio_h and
    'p.putBool("music", on)' in audio_cpp and
-   "!gMusicEnabled || gMode < SOUND_LOW" in audio_cpp,
+   "!gMusicEnabled || gVolume == 0" in audio_cpp,
    "musique desactivable independamment des sons et interactions")
+ok("audioSetVolume" in audio_cpp and "audioVolume" in audio_h and
+   'p.putUChar("vol", gVolume)' in audio_cpp and "314UL*audioVolume()/100UL" in ino,
+   "volume precis 0-100 par jauge tactile et migration des anciens paliers")
 ok("maybePlayCareReminder" in ino and
    "speciesChirpPlay(pet.speciesId)" in ino and
    "audioMode() != SOUND_OFF" in ino,
@@ -91,18 +116,32 @@ ok("/cries/%03u.wav" in audio and "WAVE" in audio and "playSpeciesChirp" in audi
    "386 cris fideles convertis en WAV 16 kHz sur SD avec secours synthetique")
 ok('id="cries"' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    'id="cries"' in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
-   "cries-installer.js?v=1.50.0" in (ROOT/"web/index.html").read_text(encoding="utf-8"),
+   "cries-installer.js?v=1.50.8" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "https://moretro3d.github.io/Test-1/cries-installer.js?v=1.50.8" in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
    "bouton Cris integre aux importateurs USB GitHub et Shopify")
+ok((ROOT/"web/index.html").read_text(encoding="utf-8").count("installAuthenticCries()") == 1 and
+   (ROOT/"web/shopify.html").read_text(encoding="utf-8").count("installAuthenticCries()") == 1 and
+   "document.getElementById('cries').onclick = () => installAuthenticCries();" in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
+   "cris conserves sur un bouton separe pour reinstallation independante")
 ok("Verifier que la page correspond exactement au firmware" in workflow and
    'grep -q \'id="cries"\' web/index.html' in workflow and
    (ROOT/"ENVOYER_FIRMWARE_ET_PAGE_OFFICIELLE.bat").exists() and
    "Firmware et page officielle" in (ROOT/"ENVOYER_TEST_1.bat").read_text(encoding="utf-8"),
    "firmware et page officielle publies ensemble avec verification bloquante")
-ok("ageMinutes % 5 == 0) fullness" in pet_cpp and
+ok("ageMinutes % 5 == 0) { uint8_t oldFullness" in pet_cpp and
    "ageMinutes % 6 == 0) energy" in pet_cpp and
    "ageMinutes % 6 == 0) hygiene" in pet_cpp and
-   "ageMinutes % 6 == 0) joy" in pet_cpp,
+   "joy = dropTo(joy, 1 + poops" in pet_cpp,
    "baisse des quatre jauges ralentie a plusieurs heures")
+ok("(oldFullness+24)/25" in pet_cpp and "random(100) < 12) poops++" not in pet_cpp and
+   pet_cpp.count("joy = dropTo(joy, 1 + poops") >= 3,
+   "une crotte par tranche de 25 pourcent de faim et joie acceleree par 1-3 crottes")
+ok("cardPage = p < 0 ? CARD_COUNT - 1" in ino and
+   "cardPage = (uint8_t)((cardPage + 1) % CARD_COUNT)" in ino,
+   "navigation circulaire dans les neuf pages jusqu'aux expeditions")
+ok("bool shinyDexMode" in ino and 'shinyDexMode ? "SHINYDEX" : "POKEDEX"' in ino and
+   "galleryPmd.load(dex, shinyDexMode)" in ino and 'gfx->print("*")' not in ino[ino.find("void renderGallery()"):ino.find("void galleryTap")],
+   "Shinydex distinct a droite et Pokedex a gauche sans etoile")
 ok("/save/profiles/p%03d%s" in pet_cpp and
    "writeSdStoredProfile(speciesId, p)" in pet_cpp and
    "readSdStoredProfile(dex, p)" in pet_cpp and
@@ -126,7 +165,7 @@ ok("github.repository == 'Moretro3D/Test-2'" in workflow and
    "! grep -q 'location.replace' web/index.html" in workflow,
    "Test-2 affiche son Web Flasher sans redirection Shopify")
 test2_launcher=(ROOT/"OUVRIR_WEB_FLASHER_TEST_2.bat").read_text(encoding="utf-8")
-ok("https://moretro3d.github.io/Test-2/?v=1.50.6-moretro3d-v12.6-biome-battles-clean" in test2_launcher,
+ok("https://moretro3d.github.io/Test-2/?v=1.50.8-moretro3d-v12-runner-display-fix" in test2_launcher,
    "lanceur direct Test-2 avec contournement du cache")
 scene=ino[ino.index("void drawScene("):ino.index("void drawStarterPokeball(")]
 ok("HORIZON-38" not in scene and "uint16_t sea=" not in scene and
@@ -169,7 +208,7 @@ ok("switchToCaught(galleryDetail)" not in ino and
 ok("boxSelectionDex=dex" in ino and
    "pet.switchToCaught(dex)" in ino and
    "const char *care=T(S_CARE_ACTION)" in ino and
-   "galleryDetail = dex;" not in ino[ino.index("else if (cardPage == 3)"):ino.index("else if (cardPage == 4")],
+   "galleryDetail = dex;" not in ino[ino.index("else if (cardPage == 1)"):ino.index("else if (cardPage == 2")],
    "popup S'occuper selectionne le compagnon sans quitter la Boite")
 ok("confirmUntil" not in ino and "pet.release();" not in ino,
    "relachement par appui long totalement retire de l'accueil")
@@ -236,7 +275,7 @@ ok("void drawKantoArenaBackground(uint8_t index)" in ino and
    "drawKantoBadge(120,246,i" in ino,
    "huit fonds d'arene thematiques et champion decale dans le cadre")
 ok("gfx->fillRoundRect(136,302,194,46,12,UI_BAR_BAD)" in ino and
-   "cardPage == 8 && kantoArenaDetail >= 0" in ino and
+   "cardPage == 3 && kantoArenaDetail >= 0" in ino and
    "int x=(i&1)?242:54, y=94+(i/2)*52" in ino,
    "retour doublon retire, retour inferieur actif et badges agrandis descendus")
 ok('prefs.putUChar("kbadge", kantoBadges)' in pet and
@@ -385,7 +424,7 @@ ok("void drawHomeGymCabin(uint8_t phase, uint8_t biome)" in ino and
    "Toit rouge étagé, large et immédiatement lisible" in ino and
    "Grand emblème Poké Ball centré dans le fronton" in ino and
    "Deux colonnes épaisses encadrent les doubles portes" in ino and
-   "cardPage = 8" in ino and "kantoArenaDetail = -1" in ino,
+   "cardPage = 3" in ino and "kantoArenaDetail = -1" in ino,
    "arene Pokemon pixel art tactile ouvrant directement les arenes Kanto")
 ok('showHomeGym = p.getBool("homegym", true)' in ino and
    'p.putBool("homegym", showHomeGym)' in ino and
@@ -509,7 +548,7 @@ ok("SD_MMC.open(MUSIC_PATHS[theme]" in audio and
    "SAMPLE_RATE * 240 / 1000" in audio,
    "lecture WAV SD en blocs courts avec repli synthetise")
 ok("gAmbientKeepAliveUntil" in audio and "uxQueueMessagesWaiting(gQ) > 0" in audio and
-   "musicGainPct() / 100" in audio and "case SOUND_FULL: return 135" in audio and "ps_malloc(bytes)" in audio,
+   "musicGainPct() / 100" in audio and "gVolume * 130U / 100U" in audio and "ps_malloc(bytes)" in audio,
    "OST WAV continue, sans coupure d'ampli entre blocs et sans saturation")
 ok("SD_MMC.exists(path) && !SD_MMC.remove(path)" in sdmon,
    "chargement USB remplace les fichiers SD sans les agrandir")
@@ -611,4 +650,4 @@ if shutil.which("bash"):
 else:
     print("SKIP build_web.sh syntaxe (bash absent sur ce poste)")
 
-print("AUDIT FINAL V12.6 OK")
+print("AUDIT FINAL V12 OK")

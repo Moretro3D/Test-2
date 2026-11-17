@@ -231,22 +231,19 @@ void Pet::syncClock(uint32_t nowEpoch) {
     if (sleeping) {  // repos long : les besoins restent stables pendant la nuit
       if (ageMinutes % 5 == 0) energy = clamp100(energy + 3);
       if (ageMinutes % 10 == 0) {
-        fullness = dropTo(fullness, 1, 30);
-        joy = dropTo(joy, 1, 35);
+        uint8_t oldFullness=fullness; fullness = dropTo(fullness, 1, 30);
+        if((oldFullness+24)/25 != (fullness+24)/25 && poops<3) poops++;
+        joy = dropTo(joy, 1 + poops, 35);
       }
       if (ageMinutes % 15 == 0) hygiene = dropTo(hygiene, 1, 45);
       continue;
     }
-    if (ageMinutes % 5 == 0) fullness = dropTo(fullness, 1, 15);
+    if (ageMinutes % 5 == 0) { uint8_t oldFullness=fullness; fullness=dropTo(fullness,1,15); if((oldFullness+24)/25!=(fullness+24)/25 && poops<3) poops++; }
     if (ageMinutes % 6 == 0) energy = dropTo(energy, 1, 15);
     if (ageMinutes % 6 == 0) hygiene = dropTo(hygiene, 1, 15);
-    if (ageMinutes % 6 == 0) joy = dropTo(joy, 1, 15);
+    if (ageMinutes % 6 == 0) joy = dropTo(joy, 1 + poops, 15);
   }
   if (!isEgg()) {
-    if (!sleeping) {  // durmiendo no ensucia
-      uint8_t p = poops + mins / 240;
-      poops = p > 3 ? 3 : p;
-    }
     // Le niveau gagné hors ligne est traité au retour dans la boucle principale,
     // avec une animation par étape pour préserver les chaînes d'évolution.
   }
@@ -283,8 +280,9 @@ void Pet::tick() {
     if (ageMinutes % 5 == 0) energy = clamp100(energy + 3);
     if (weight > 0 && ageMinutes % 3 == 0) weight--;
     if (ageMinutes % 10 == 0) {
-      fullness = dropTo(fullness, 1, 30);
-      joy = dropTo(joy, 1, 35);
+      uint8_t oldFullness=fullness; fullness = dropTo(fullness, 1, 30);
+      if((oldFullness+24)/25 != (fullness+24)/25 && poops<3) poops++;
+      joy = dropTo(joy, 1 + poops, 35);
     }
     if (ageMinutes % 15 == 0) hygiene = dropTo(hygiene, 1, 45);
     checkMedals();  // aun puede cruzar un nivel por edad mientras duerme
@@ -294,9 +292,8 @@ void Pet::tick() {
 
   if (ageMinutes % MINUTES_PER_LEVEL == 0) sfxPlay(SFX_LEVEL);  // subio de nivel (despierto)
 
-  if (ageMinutes % 5 == 0) fullness = dropTo(fullness, 1, 0);
+  if (ageMinutes % 5 == 0) { uint8_t oldFullness=fullness; fullness=dropTo(fullness,1,0); if((oldFullness+24)/25!=(fullness+24)/25 && poops<3) poops++; }
   if (ageMinutes % 6 == 0) energy = dropTo(energy, 1, 0);
-  if (fullness > 40 && poops < 3 && ageMinutes % 5 == 0 && random(100) < 12) poops++;
 
   if (ageMinutes % 6 == 0) hygiene = dropTo(hygiene, 1, 0);
   if (poops && ageMinutes % (10 - 2 * poops) == 0) hygiene = dropTo(hygiene, 1, 0);
@@ -314,7 +311,7 @@ void Pet::tick() {
     goodTicks = 0;
   }
 
-  if (ageMinutes % 6 == 0) joy = dropTo(joy, 1, 0);
+  if (ageMinutes % 6 == 0) joy = dropTo(joy, 1 + poops, 0);
   if (ageMinutes % 4 == 0 && (fullness < 30 || hygiene < 30))
     joy = dropTo(joy, 1, 0);
 
@@ -1789,3 +1786,4 @@ void Pet::syncSdSave() {
                 (unsigned long)saveSequence,(unsigned)caughtCount());
 #endif
 }
+

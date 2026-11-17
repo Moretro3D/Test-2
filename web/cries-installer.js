@@ -4,6 +4,7 @@
 (function(){
   const CRY_BASE='https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/legacy/';
   const TARGET_RATE=16000;
+  const cryEncoder=new TextEncoder();
 
   function putAscii(view, offset, text){
     for(let i=0;i<text.length;i++) view.setUint8(offset+i,text.charCodeAt(i));
@@ -54,39 +55,43 @@
     throw lastError;
   }
 
-  window.installAuthenticCries=async function(){
-    const button=document.getElementById('cries');
-    if(!writer){ log('Connecte d’abord le PokeTama.'); return; }
+  window.installAuthenticCries=async function(options){
+    options=options||{};
+    const button=options.button||document.getElementById('cries');
+    const cryWriter=options.writer||window.writer;
+    const cryWait=options.waitFor||window.waitFor;
+    const crySend=options.sendOne||window.sendOne;
+    const cryLog=options.log||window.log;
+    const controls=options.controls||[document.getElementById('auto'),document.getElementById('music')];
+    const setControls=disabled=>controls.filter(Boolean).forEach(control=>control.disabled=disabled);
+    if(!cryWriter){ cryLog('Connecte d’abord le PokeTama.'); return; }
     button.disabled=true;
-    document.getElementById('auto').disabled=true;
-    document.getElementById('music').disabled=true;
-    const bar=document.getElementById('bar'),fill=bar.firstElementChild;
-    bar.style.display='block'; fill.style.width='0%';
-    log('Préparation du dossier /cries sans toucher aux sauvegardes…');
-    await writer.write(enc.encode('PREPARE_CRIES\n'));
-    if(!await waitFor('READY',120000)){
-      log('ÉCHEC MICROSD : impossible de préparer le dossier des cris.');
-      button.disabled=false; document.getElementById('auto').disabled=false; document.getElementById('music').disabled=false;
-      return;
-    }
-    const AudioCtor=window.AudioContext||window.webkitAudioContext;
-    if(!AudioCtor){ log('Ce navigateur ne peut pas convertir les fichiers audio. Utilise Chrome ou Edge.'); return; }
-    const ctx=new AudioCtor();
+    setControls(true);
+    const bar=options.bar||document.getElementById('bar'),fill=bar?(bar.firstElementChild||bar):null;
+    if(bar) bar.style.display='block'; if(fill){ fill.style.width='0%'; fill.value=0; }
+    let ctx=null;
     try{
-      log('Téléchargement, conversion et copie des 386 cris fidèles…');
+      cryLog('Préparation du dossier /cries sans toucher aux sauvegardes…');
+      await cryWriter.write(cryEncoder.encode('PREPARE_CRIES\n'));
+      if(!await cryWait('READY',120000)) throw new Error('microSD non prête ou réponse USB absente');
+      if(fill){ fill.style.width='1%'; fill.value=1; }
+      const AudioCtor=window.AudioContext||window.webkitAudioContext;
+      if(!AudioCtor) throw new Error('conversion audio indisponible : utilise Chrome ou Edge');
+      ctx=new AudioCtor();
+      cryLog('Téléchargement, conversion et copie des 386 cris fidèles…');
       for(let id=1;id<=386;id++){
         const wav=await fetchCry(id,ctx);
         const name='cries/'+String(id).padStart(3,'0')+'.wav';
-        if(!await sendOne(name,wav)) throw new Error('transfert interrompu sur '+name);
-        fill.style.width=(id/386*100).toFixed(1)+'%';
-        if(id===1||id%10===0||id===386) log('Cris installés : '+id+'/386');
+        if(!await crySend(name,wav)) throw new Error('transfert interrompu sur '+name);
+        if(fill){ fill.style.width=(id/386*100).toFixed(1)+'%'; fill.value=id/386*100; }
+        if(id===1||id%10===0||id===386) cryLog('Cris installés : '+id+'/386');
       }
-      log('386/386 cris installés. Redémarre le PokeTama avec le bouton PWR.');
+      cryLog('386/386 cris installés. Redémarre le PokeTama avec le bouton PWR.');
     }catch(error){
-      log('ÉCHEC CRIS : '+error.message+'. Relance le bouton pour recommencer proprement.');
+      cryLog('ÉCHEC CRIS : '+error.message+'. Relance le bouton pour recommencer proprement.');
     }finally{
-      await ctx.close();
-      button.disabled=false; document.getElementById('auto').disabled=false; document.getElementById('music').disabled=false;
+      if(ctx) await ctx.close();
+      button.disabled=false; setControls(false);
     }
   };
 })();

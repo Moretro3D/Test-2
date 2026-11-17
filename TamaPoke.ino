@@ -40,7 +40,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.50.6-moretro3d-v12.6-biome-battles-clean"
+#define FW_VERSION "1.50.8-moretro3d-v12-runner-display-fix"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -87,6 +87,7 @@ bool galleryOpen = false;
 bool galleryDirty = false;
 int galleryPage = 0;        // pages de 12 Pokemon, grille 4 x 3
 int16_t galleryDetail = 0;  // dex en vista detalle, 0 = rejilla
+bool shinyDexMode = false;  // Pokédex normal à gauche, Shinydex à droite
 bool galleryInfoOpen = false;
 
 bool screenOff = false;       // pulsacion corta del boton PWR
@@ -95,7 +96,7 @@ bool kbOpen = false;          // teclado para renombrar al bicho
 char nameBuf[12] = "";
 uint8_t nameLen = 0;
 #define CARD_COUNT 9
-uint8_t cardPage = 0;         // 0 profil, 1 caractere, 2 quotidien, 3 boite, 4 combat, 5 medailles, 6 progres, 7 expedition, 8 arenes Kanto
+uint8_t cardPage = 0;         // 0 profil, 1 boite, 2 combat, 3 arenes Kanto, 4 caractere, 5 quotidien, 6 medailles, 7 progres, 8 expedition
 uint8_t boxPage = 0;
 uint8_t boxSort = 0;          // 0 dex, 1 tipo, 2 criados primero
 int16_t boxSelectionDex = 0;  // popup de choix, sans quitter la Boite
@@ -473,10 +474,10 @@ void setup() {
   gfx->setTextSize(3);
   // 9 caracteres x 6 px x taille 3 = 162 px : centre exact a x=152.
   gfx->setCursor(CX - 79, 326); gfx->print("Moretro3D");
-  // Version publique V12.6 : sept miniatures pixel-art reellement embarquees.
+  // Version publique V12 : sept miniatures pixel-art reellement embarquees.
   gfx->setTextColor(C565(0x61,0xda,0xf2));
   gfx->setTextSize(2);
-  gfx->setCursor(CX - 30, 366); gfx->print("V12.6");
+  gfx->setCursor(CX - 18, 366); gfx->print("V12");
   gfx->flush();
   panel->setBrightness(120);
 
@@ -595,7 +596,11 @@ uint16_t renderIntervalMs() {
   if (screenOff) return 5000;
 
   if (battleOpen) return battleResolved ? 210 : 125;
-  if (gameOpen && gameMode == 5) return 33;  // course fluide a environ 30 images/s
+  // La course garde une physique calculee avec le temps reel, mais limite les
+  // transferts plein ecran. A 30 i/s, certaines revisions AMOLED recevaient le
+  // frame suivant avant la fin du DMA precedent et affichaient un bref ecran
+  // noir. 58 ms reste fluide visuellement et laisse une marge sure au panneau.
+  if (gameOpen && gameMode == 5) return 58;
   if (gameOpen || sackOpen) return 78;
 
   // Pages statiques pilotées par Dirty : faible latence sans redraw permanent.
@@ -726,7 +731,7 @@ void loop() {
   // Die Expeditionskarte bleibt sonst als statischer Screen stehen. Ein
   // sekundenweises Dirty-Render ist nur aktiv, waehrend ihr Countdown sichtbar ist.
   static uint32_t lastExpeditionCardTick = 0;
-  if (cardOpen && cardPage == 7 && now - lastExpeditionCardTick >= 1000UL) {
+  if (cardOpen && cardPage == 8 && now - lastExpeditionCardTick >= 1000UL) {
     lastExpeditionCardTick = now;
     cardDirty = true;
   }
@@ -778,7 +783,7 @@ void loop() {
   bool expeditionActiveNow = pet.expeditionActive(pet.lastSeenEpoch);
   if (expeditionWasActive && !expeditionActiveNow && pet.expeditionEndEpoch) {
     sfxPlay(SFX_EXPEDITION_FOUND);
-    if (cardOpen && cardPage == 7) cardDirty = true;
+    if (cardOpen && cardPage == 8) cardDirty = true;
   }
   expeditionWasActive = expeditionActiveNow;
 
@@ -1103,13 +1108,14 @@ void onSwipe(int dir) {
   if (cardOpen) {  // dentro de la ficha: cambiar paginas
     int p = (int)cardPage + (dir > 0 ? -1 : 1);  // izquierda avanza
     uint8_t old = cardPage;
-    cardPage = p < 0 ? 0 : (p >= CARD_COUNT ? CARD_COUNT - 1 : p);
+    cardPage = p < 0 ? CARD_COUNT - 1 : (p >= CARD_COUNT ? 0 : p);
     if (cardPage != old) { expeditionTrainChoiceOpen = false; kantoArenaDetail = -1; galleryPmd.unload(); cardDirty = true; sfxPlay(SFX_MENU); }
     return;
   }
   if (!galleryOpen) {
     if (!pet.ceremony) {
       galleryOpen = true;
+      shinyDexMode = dir > 0;
       galleryPage = 0;
       galleryDetail = 0;
       galleryDirty = true;
@@ -1281,31 +1287,27 @@ void onTap(int16_t x, int16_t y) {
     // Fleches tactiles en complement du glissement horizontal.
     int cardNavY = 354;
     if (y >= cardNavY && y <= cardNavY + 58 && x >= 76 && x <= 132) {
-      if (cardPage > 0) {
-        cardPage--;
-        expeditionTrainChoiceOpen = false;
-        kantoArenaDetail = -1;
-        galleryPmd.unload();
-        cardDirty = true;
-        sfxPlay(SFX_MENU);
-      } else sfxPlay(SFX_DENY);
+      cardPage = cardPage > 0 ? cardPage - 1 : CARD_COUNT - 1;
+      expeditionTrainChoiceOpen = false;
+      kantoArenaDetail = -1;
+      galleryPmd.unload();
+      cardDirty = true;
+      sfxPlay(SFX_MENU);
       lockTouchBrief();
       return;
     }
     if (y >= cardNavY && y <= cardNavY + 58 && x >= 334 && x <= 390) {
-      if (cardPage + 1 < CARD_COUNT) {
-        cardPage++;
-        expeditionTrainChoiceOpen = false;
-        kantoArenaDetail = -1;
-        galleryPmd.unload();
-        cardDirty = true;
-        sfxPlay(SFX_MENU);
-      } else sfxPlay(SFX_DENY);
+      cardPage = (uint8_t)((cardPage + 1) % CARD_COUNT);
+      expeditionTrainChoiceOpen = false;
+      kantoArenaDetail = -1;
+      galleryPmd.unload();
+      cardDirty = true;
+      sfxPlay(SFX_MENU);
       lockTouchBrief();
       return;
     }
     if (x >= 136 && x <= 330 && y >= cardNavY && y <= cardNavY + 58) {
-      if (cardPage == 8 && kantoArenaDetail >= 0) {
+      if (cardPage == 3 && kantoArenaDetail >= 0) {
         kantoArenaDetail = -1;
         galleryPmd.unload();
         cardDirty = true;
@@ -1318,7 +1320,7 @@ void onTap(int16_t x, int16_t y) {
       return;
     }
     if (cardPage == 0 && y < 84) openKeyboard();  // tocar el nombre = renombrar
-    else if (cardPage == 3) {
+    else if (cardPage == 1) {
       if(boxSelectionDex>0) {
         if(y>=254 && y<=296 && x>=82 && x<=226) {
           if(pet.toggleBoxFavorite(0,boxSelectionDex)) {
@@ -1388,19 +1390,19 @@ void onTap(int16_t x, int16_t y) {
           lockTouchBrief();
         }
       }
-    } else if (cardPage == 4 && y >= 264 && y <= 310 && x >= 82 && x <= 384) {
+    } else if (cardPage == 2 && y >= 264 && y <= 310 && x >= 82 && x <= 384) {
       cardOpen = false;
       markUiDirty();
       lockTouchBrief();
       startBattle();
-    } else if (cardPage == 4 && y >= 312 && y <= 358 && x >= 82 && x <= 384) {
+    } else if (cardPage == 2 && y >= 312 && y <= 358 && x >= 82 && x <= 384) {
       cardOpen = false;            // boton ENTRENAR FUERZA
       markUiDirty();
       lockTouchBrief();
       startSack();
-    } else if (cardPage == 7) {
-      expeditionCardTap(x, y);
     } else if (cardPage == 8) {
+      expeditionCardTap(x, y);
+    } else if (cardPage == 3) {
       if (kantoArenaDetail >= 0) {
         if (x >= 136 && x <= 330 && y >= 302 && y <= 348) {
           uint8_t arena = (uint8_t)kantoArenaDetail;
@@ -1496,7 +1498,7 @@ void onTap(int16_t x, int16_t y) {
   // Raccourci permanent : toucher la cabane du décor ouvre les arènes.
   if (showHomeGym && x >= 155 && x <= 311 && y >= 122 && y <= 270) {
     cardOpen = true;
-    cardPage = 8;
+    cardPage = 3;
     kantoArenaDetail = -1;
     galleryPmd.unload();
     cardDirty = true;
@@ -3340,7 +3342,7 @@ void closeBattle() {
   wildPmd.unload();
   if (returnToArena) {
     cardOpen = true;
-    cardPage = 8;
+    cardPage = 3;
     cardDirty = true;
   }
   markUiDirty();
@@ -4786,12 +4788,17 @@ void renderSoundSettings() {
   static const char *const musicLabels[LANG_COUNT]={"MUSICA","MUSIC","MUSIQUE","MUSIK","MUSICA","MUSICA"};
   drawSettingsRow(64,76,338,48,musicLabels[gLang<LANG_COUNT?gLang:LANG_EN],
                   audioMusicEnabled()?T(S_ON):T(S_OFF),audioMusicEnabled());
-  static const StrId modes[4]={S_SND_FULL,S_SND_MED,S_SND_LOW,S_SND_OFF};
-  static const uint8_t values[4]={SOUND_FULL,SOUND_MED,SOUND_LOW,SOUND_OFF};
-  for(uint8_t i=0;i<4;i++) {
-    bool active=audioMode()==values[i];
-    drawSettingsRow(64,146+i*50,338,44,T(modes[i]),active ? T(S_ACTIVE) : "",active);
-  }
+  static const char *const volumeLabels[LANG_COUNT]={"VOLUMEN","VOLUME","VOLUME","LAUTSTARKE","VOLUME","VOLUME"};
+  char volumeText[8]; snprintf(volumeText,sizeof(volumeText),"%u%%",(unsigned)audioVolume());
+  gfx->setTextColor(uiInk()); gfx->setTextSize(2); gfx->setCursor(72,158); gfx->print(volumeLabels[gLang<LANG_COUNT?gLang:LANG_EN]);
+  gfx->setCursor(350,158); gfx->print(volumeText);
+  gfx->fillRoundRect(72,196,322,28,14,uiPanel());
+  gfx->fillRoundRect(76,200,(int)(314UL*audioVolume()/100UL),20,10,UI_BAR_OK);
+  gfx->drawRoundRect(72,196,322,28,14,uiLine());
+  int knobX=76+(int)(314UL*audioVolume()/100UL);
+  gfx->fillCircle(knobX,210,13,UI_WHITE); gfx->drawCircle(knobX,210,13,uiInk());
+  gfx->setTextColor(uiSub()); gfx->setTextSize(1);
+  gfx->setCursor(72,240); gfx->print("0"); gfx->setCursor(372,240); gfx->print("100");
   gfx->fillRoundRect(128,360,210,46,14,UI_BAR_OK);
   gfx->setTextColor(UI_WHITE); gfx->setTextSize(2);
   gfx->setCursor(CX-12,374); gfx->print("OK");
@@ -4873,10 +4880,10 @@ void clockTap(int16_t x,int16_t y) {
       sfxPlay(SFX_LEVEL);
       return;
     }
-    if (x>=54 && x<=412 && y>=140 && y<=346) {
-      uint8_t row=(uint8_t)((y-140)/50);
-      static const uint8_t values[4]={SOUND_FULL,SOUND_MED,SOUND_LOW,SOUND_OFF};
-      if(row<4) { audioSetMode(values[row]); clockDirty=true; if(audioEnabled()) sfxPlay(SFX_LEVEL); return; }
+    if (x>=58 && x<=408 && y>=174 && y<=250) {
+      int value=(int32_t)(x-76)*100/314;
+      audioSetVolume((uint8_t)constrain(value,0,100));
+      clockDirty=true; if(audioEnabled()) sfxPlay(SFX_LEVEL); return;
     }
     return;
   }
@@ -6291,27 +6298,27 @@ void renderCardKantoGyms() {
 
 void renderCard() {
   cardDirty = false;
-  if(cardPage!=3) boxSelectionDex=0;
+  if(cardPage!=1) boxSelectionDex=0;
   gfx->fillScreen(uiBg());
   // Mode cover : 600x432, centré et rogné par l'écran rond. Le décor déborde
   // volontairement à gauche, à droite et en haut pour ne laisser aucune marge.
-  if (cardPage == 3) drawBoxBackgroundAsset(pet.boxBackground,-67,-20,4);
+  if (cardPage == 1) drawBoxBackgroundAsset(pet.boxBackground,-67,-20,4);
   if (cardPage == 0) renderCardProfile();
-  else if (cardPage == 1) renderCardPersonality();
-  else if (cardPage == 2) renderCardDaily();
-  else if (cardPage == 3) renderCardBox();
-  else if (cardPage == 4) renderCardStats();
-  else if (cardPage == 5) renderCardMedals();
-  else if (cardPage == 6) renderCardProgress();
-  else if (cardPage == 7) renderCardExpedition();
-  else renderCardKantoGyms();
+  else if (cardPage == 1) renderCardBox();
+  else if (cardPage == 2) renderCardStats();
+  else if (cardPage == 3) renderCardKantoGyms();
+  else if (cardPage == 4) renderCardPersonality();
+  else if (cardPage == 5) renderCardDaily();
+  else if (cardPage == 6) renderCardMedals();
+  else if (cardPage == 7) renderCardProgress();
+  else renderCardExpedition();
 
   // Pages remontées + vrai bouton RETOUR.
   int navY = 360;
-  uint16_t navInk = cardPage == 2 ? dailyTextColor() : uiInk();
-  uint16_t navSub = cardPage == 2 ? dailyTextColor() : uiSub();
-  uint16_t prevCol = cardPage > 0 ? navInk : navSub;
-  uint16_t nextCol = cardPage + 1 < CARD_COUNT ? navInk : navSub;
+  uint16_t navInk = cardPage == 5 ? dailyTextColor() : uiInk();
+  uint16_t navSub = cardPage == 5 ? dailyTextColor() : uiSub();
+  uint16_t prevCol = navInk;
+  uint16_t nextCol = navInk;
   gfx->fillRoundRect(76, navY, 56, 42, 12, uiPanel());
   gfx->drawRoundRect(76, navY, 56, 42, 12, prevCol);
   gfx->fillRoundRect(334, navY, 56, 42, 12, uiPanel());
@@ -6530,10 +6537,9 @@ void renderGallery() {
     const DexEntry &d = DEX_TBL[galleryDetail];
     bool reg = pet.isRegistered(galleryDetail);
     bool caught = pet.isCaught(galleryDetail);
-    bool known = reg || caught;
+    bool known = shinyDexMode ? pet.isShinyRegistered(galleryDetail) : (reg || caught);
     char head[24];
-    snprintf(head, sizeof(head), "N.%03u %s%s", displayedDexNumber(galleryDetail),
-             pet.isShinyRegistered(galleryDetail) ? "*" : "", known ? dexName(galleryDetail) : "???");
+    snprintf(head, sizeof(head), "N.%03u %s", displayedDexNumber(galleryDetail), known ? dexName(galleryDetail) : "???");
     gfx->setTextColor(UI_WHITE);
     int glen = strlen(head);
     int gts = (glen <= 13) ? 3 : 2;  // auto-encoge nombres largos (no caben a t3)
@@ -6597,8 +6603,9 @@ void renderGallery() {
   drawPokedexShell(false);
   gfx->setTextColor(UI_WHITE);
   gfx->setTextSize(3);
-  gfx->setCursor(CX - 7 * 9, 28);
-  gfx->print("POKEDEX");
+  const char *dexTitle=shinyDexMode ? "SHINYDEX" : "POKEDEX";
+  gfx->setCursor(CX - (int)strlen(dexTitle) * 9, 28);
+  gfx->print(dexTitle);
 
   for (int r = 0; r < GAL_ROWS; r++) {
     for (int c = 0; c < GAL_COLS; c++) {
@@ -6609,14 +6616,8 @@ void renderGallery() {
       if (t) {
         bool reg = pet.isRegistered(dex);
         bool caught = pet.isCaught(dex);
-        bool known = reg || caught;
+        bool known = shinyDexMode ? pet.isShinyRegistered(dex) : (reg || caught);
         drawThumb(t, x, y, 2, !known);
-        if (pet.isShinyRegistered(dex)) {
-          gfx->setTextColor(UI_BAR_WARN);
-          gfx->setTextSize(2);
-          gfx->setCursor(x + 62, y + 4);
-          gfx->print("*");
-        }
       } else {
         char num[6];
         snprintf(num, sizeof(num), "%d", dex);
@@ -6632,8 +6633,9 @@ void renderGallery() {
   // knownDexCount additionne les rencontres enregistrées et les captures sans
   // confondre ce total avec caughtCount().
   char seenText[28];
-  snprintf(seenText,sizeof(seenText),"%s %u/%u",pokedexSeenLabel(),
-           (unsigned)pet.knownDexCount(),(unsigned)DEX_COUNT);
+  unsigned dexTotal=pet.knownDexCount();
+  if(shinyDexMode) { dexTotal=0; for(int16_t d=1;d<=DEX_COUNT;d++) if(pet.isShinyRegistered(d)) dexTotal++; }
+  snprintf(seenText,sizeof(seenText),"%s %u/%u",shinyDexMode?"SHINY":pokedexSeenLabel(),dexTotal,(unsigned)DEX_COUNT);
   gfx->fillRoundRect(142,314,182,34,11,uiPanel());
   gfx->drawRoundRect(142,314,182,34,11,uiLine());
   gfx->setTextColor(uiInk()); gfx->setTextSize(2);
@@ -6672,7 +6674,7 @@ void renderGallery() {
 
 void galleryTap(int16_t x, int16_t y) {
   if (galleryDetail) {
-    bool known=pet.isRegistered(galleryDetail)||pet.isCaught(galleryDetail);
+    bool known=shinyDexMode ? pet.isShinyRegistered(galleryDetail) : (pet.isRegistered(galleryDetail)||pet.isCaught(galleryDetail));
     if(galleryInfoOpen) {
       if(x>=120 && x<=346 && y>=306 && y<=370) {
         galleryInfoOpen=false;
@@ -6774,9 +6776,9 @@ void galleryTap(int16_t x, int16_t y) {
   galleryDetail = dex;
   galleryInfoOpen = false;
   spriteAuditShiny = false;
-  galleryPmd.load(dex, false);
+  galleryPmd.load(dex, shinyDexMode);
   sfxPlay(SFX_MENU);
-  if (pet.isRegistered(dex) || pet.isCaught(dex)) speciesChirpPlay(dex);
+  if (shinyDexMode ? pet.isShinyRegistered(dex) : (pet.isRegistered(dex) || pet.isCaught(dex))) speciesChirpPlay(dex);
 }
 
 void drawBattery() {
