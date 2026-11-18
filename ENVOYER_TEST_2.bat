@@ -1,9 +1,9 @@
 @echo off
 setlocal EnableExtensions
-title PokeTama V12 - Envoi vers Test-2
+title PokeTama V13 - Envoi vers Test-2
 cd /d "%~dp0"
 
-echo PokeTama V12 - envoi vers Moretro3D/Test-2
+echo PokeTama V13 - envoi vers Moretro3D/Test-2
 echo.
 where git >nul 2>nul
 if errorlevel 1 (
@@ -32,15 +32,15 @@ rem cette mise a jour : conserver strictement la copie deja publiee.
 git -c safe.directory="%CD%" checkout origin/main -- web/sprites.pak
 if errorlevel 1 goto :connexion
 
-echo Preparation des fichiers V12...
+echo Preparation des fichiers V13...
 git -c safe.directory="%CD%" add -A
 git -c safe.directory="%CD%" diff --cached --quiet
 if errorlevel 1 (
-  git -c safe.directory="%CD%" commit -m "PokeTama V12 correctif course 1.50.8"
+  git -c safe.directory="%CD%" commit -m "PokeTama V13 correctif course 1.51.0"
   if errorlevel 1 goto :connexion
 )
 
-echo Envoi de la V12 sans effacement ni force push...
+echo Envoi de la V13 sans effacement ni force push...
 git -c safe.directory="%CD%" -c http.sslBackend=openssl push -u origin main
 if errorlevel 1 goto :connexion
 echo.

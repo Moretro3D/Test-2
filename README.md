@@ -21,7 +21,7 @@ Choisis librement une generation :
 
 Les noms suivent la langue selectionnee. Plante est affiche en vert, Feu en rouge et Eau en bleu.
 
-## Version actuelle V12
+## Version actuelle V13
 
 - Nouvelle page `shopify.html` dédiée à l'intégration dans Moretro3D.fr.
 - Contenu central uniquement : aucun header ni footer ajouté par PokeTama.

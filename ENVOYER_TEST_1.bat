@@ -1,9 +1,9 @@
 @echo off
 setlocal EnableExtensions
-title PokeTama V12 - Firmware et page officielle
+title PokeTama V13 - Firmware et page officielle
 cd /d "%~dp0"
 
-echo PokeTama V12 - FIRMWARE + PAGE + IMPORTATEUR USB
+echo PokeTama V13 - FIRMWARE + PAGE + IMPORTATEUR USB
 echo Depot officiel : Moretro3D/Test-1
 echo.
 where git >nul 2>nul
@@ -33,15 +33,15 @@ rem cette mise a jour : conserver strictement la copie deja publiee.
 git -c safe.directory="%CD%" checkout origin/main -- web/sprites.pak
 if errorlevel 1 goto :connexion
 
-echo Preparation simultanee du firmware et de la page officielle V12...
+echo Preparation simultanee du firmware et de la page officielle V13...
 git -c safe.directory="%CD%" add -A
 git -c safe.directory="%CD%" diff --cached --quiet
 if errorlevel 1 (
-  git -c safe.directory="%CD%" commit -m "PokeTama V12 correctif course 1.50.8"
+  git -c safe.directory="%CD%" commit -m "PokeTama V13 correctif course 1.51.0"
   if errorlevel 1 goto :connexion
 )
 
-echo Envoi officiel de la V12 sans effacement ni force push...
+echo Envoi officiel de la V13 sans effacement ni force push...
 git -c safe.directory="%CD%" -c http.sslBackend=openssl push -u origin main
 if errorlevel 1 goto :connexion
 echo.

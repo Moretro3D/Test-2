@@ -40,7 +40,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.50.8-moretro3d-v12-runner-display-fix"
+#define FW_VERSION "1.51.0-moretro3d-v13"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -475,10 +475,10 @@ void setup() {
   gfx->setTextSize(3);
   // 9 caracteres x 6 px x taille 3 = 162 px : centre exact a x=152.
   gfx->setCursor(CX - 79, 326); gfx->print("Moretro3D");
-  // Version publique V12 : sept miniatures pixel-art reellement embarquees.
+  // Version publique V13 : sept miniatures pixel-art reellement embarquees.
   gfx->setTextColor(C565(0x61,0xda,0xf2));
   gfx->setTextSize(2);
-  gfx->setCursor(CX - 18, 366); gfx->print("V12");
+  gfx->setCursor(CX - 18, 366); gfx->print("V13");
   gfx->flush();
   panel->setBrightness(120);
 

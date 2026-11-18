@@ -9,7 +9,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 FQBN="esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=16M,PSRAM=opi,PartitionScheme=app3M_fat9M_16MB"
-VERSION="1.50.8-moretro3d-v12-runner-display-fix"
+VERSION="1.51.0-moretro3d-v13"
 
 echo "Préparation du sketch TamaPoke..."
 python3 "$ROOT/tools/audit_no_personal_save.py"
@@ -71,7 +71,7 @@ python3 "$ROOT/tools/audit_386_assets.py"
 echo "Audit intégral des évolutions #001-386..."
 python3 "$ROOT/tools/audit_evolutions.py"
 
-echo "Audit final V12 interface + combat + habitats..."
-python3 "$ROOT/tools/audit_final_v12.py"
+echo "Audit final V13 interface + combat + habitats..."
+python3 "$ROOT/tools/audit_final_v13.py"
 
 echo "BUILD TERMINE"

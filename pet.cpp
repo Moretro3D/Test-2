@@ -229,7 +229,7 @@ void Pet::syncClock(uint32_t nowEpoch) {
       continue;
     }
     if (sleeping) {  // repos long : les besoins restent stables pendant la nuit
-      if (ageMinutes % 5 == 0) energy = clamp100(energy + 3);
+      if (ageMinutes % 4 == 0) energy = clamp100(energy + 3);
       if (ageMinutes % 10 == 0) {
         uint8_t oldFullness=fullness; fullness = dropTo(fullness, 1, 30);
         if((oldFullness+24)/25 != (fullness+24)/25 && poops<3) poops++;
@@ -277,7 +277,7 @@ void Pet::tick() {
   // heures. Le joueur n'est plus oblige de revenir toutes les quelques minutes.
   // El peso aun se quema; la racha de buen cuidado (goodTicks) queda en pausa.
   if (sleeping) {
-    if (ageMinutes % 5 == 0) energy = clamp100(energy + 3);
+    if (ageMinutes % 4 == 0) energy = clamp100(energy + 3);
     if (weight > 0 && ageMinutes % 3 == 0) weight--;
     if (ageMinutes % 10 == 0) {
       uint8_t oldFullness=fullness; fullness = dropTo(fullness, 1, 30);

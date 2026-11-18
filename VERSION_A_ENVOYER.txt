@@ -1,22 +1,25 @@
-PokeTama V12
+PokeTama V13
 
-VERSION INTERNE : 1.50.8-moretro3d-v12-runner-display-fix
+VERSION INTERNE : 1.51.0-moretro3d-v13
 
-NOUVEAUTES :
-- Réglages séparés pour la musique et les sons d'interaction.
-- Cris du Pokémon lors des caresses et rappels sonores discrets écran éteint.
-- Cinquième bouton Combat ajouté à l'accueil avec accès direct aux biomes.
-- Page Quotidien entièrement réagencée en trois cartes lisibles.
-- Sept missions variées : nourrir, nettoyer, jouer, mémoire, interaction, combat ou capture.
-- Objectifs plus courts et mieux équilibrés.
-- Lot du jour affiché avant de commencer.
-- Récompense complète : un objet utile, +12 joie, +8 énergie et +3 lien.
-- Le mot « Gagner » est remplacé par une mission Combat plus claire.
-- Chaque Pokémon conserve désormais son profil individuel sur la microSD.
-- Niveau, âge, statistiques, lien, surnom, forme Shiny et état de soin sont restaurés au changement de Pokémon.
-- Migration automatique des anciens profils encore présents dans la mémoire interne.
-- Un fichier séparé avec contrôle CRC est utilisé pour chaque Pokémon dans /save/profiles.
-- Les captures et sauvegardes existantes ne sont ni remplacées ni effacées.
+NOUVEAUTES DEPUIS LA V12 :
+- Volume réglable précisément de 0 à 100 % avec un véritable curseur tactile.
+- Le curseur suit le doigt en direct et sauvegarde la valeur au relâchement.
+- La musique reste activable ou désactivable indépendamment des interactions.
+- Navigation circulaire des pages : aller à gauche depuis Profil ouvre directement Expéditions.
+- Les crottes sont liées à la faim : une par tranche de 25 % consommée, maximum trois.
+- La joie diminue progressivement plus vite avec une, deux ou trois crottes.
+- Récupération d'énergie légèrement accélérée pendant le sommeil, en ligne et hors ligne.
+- Nouveau Shinydex séparé du Pokédex, accessible par un glissement vers la droite.
+- Le Pokédex normal reste accessible par un glissement vers la gauche.
+- Suppression de l'étoile Shiny dans le Pokédex normal.
+- 386 véritables miniatures Shiny en couleur ajoutées au Shinydex.
+- Les formes Shiny inconnues restent affichées sous forme de silhouettes.
+- La fiche du Shinydex utilise le véritable sprite Shiny animé.
+- « Tout installer sur la microSD » installe maintenant aussi automatiquement les 386 cris.
+- Le bouton séparé des cris reste disponible pour une réparation ciblée.
+- Correctif de l'installation des cris depuis Shopify.
+- Toutes les sauvegardes V12 et antérieures restent compatibles et ne sont pas effacées.
 
 DEPLOIEMENT TEST :
 1. Extraire entièrement le ZIP.

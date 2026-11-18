@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PokeTama V12</title>
+<title>PokeTama V13</title>
 <style>
   :root { --bg:#f2efe1; --ink:#2a2a36; --accent:#4f93c4; --ok:#58b868; --bad:#e8503a; --track:#d8d2bd; }
   * { box-sizing: border-box; }
@@ -44,7 +44,7 @@
       <button type="button" class="lang" data-lang="de" title="Deutsch" aria-label="Deutsch"><img src="flags/de.svg" alt="Deutschland" draggable="false"></button>
       <button type="button" class="lang" data-lang="it" title="Italiano" aria-label="Italiano"><img src="flags/it.svg" alt="Italia" draggable="false"></button>
       <button type="button" class="lang" data-lang="pt" title="Português" aria-label="Português"><img src="flags/pt.svg" alt="Portugal" draggable="false"></button>
-    </nav><div class="version">PokeTama V12</div></div>
+    </nav><div class="version">PokeTama V13</div></div>
 <section class="hero">
     <div>
       <div class="eyebrow" data-i18n="eyebrow">Compagnon Pokémon de poche</div>
@@ -64,7 +64,7 @@
   <section class="step">
     <div class="step-head"><span class="num">1</span><h2 data-i18n="firmwareTitle">Installer le firmware</h2></div>
     <p data-i18n="firmwareDesc">Branche le PokeTama en USB-C, clique sur Installer, sélectionne son port puis attends la fin.</p>
-    <esp-web-install-button manifest="https://moretro3d.github.io/Test-1/manifest.json?v=1.50.8-moretro3d-v12-runner-display-fix">
+    <esp-web-install-button manifest="https://moretro3d.github.io/Test-1/manifest.json?v=1.51.0-moretro3d-v13">
       <button slot="activate" data-i18n="installButton">Installer le firmware Moretro3D</button>
       <span slot="unsupported" data-i18n="browserBad">Navigateur non compatible : utilise Chrome ou Edge.</span>
       <span slot="not-allowed" data-i18n="https">La connexion HTTPS est requise.</span>
@@ -98,7 +98,7 @@
 <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 <script src="configurator.js?v=9.47" defer></script>
 <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js"></script>
-<script src="https://moretro3d.github.io/Test-1/cries-installer.js?v=1.50.8"></script>
+<script src="https://moretro3d.github.io/Test-1/cries-installer.js?v=1.51.0"></script>
 <script>
 const I18N = {
   fr:{eyebrow:"Compagnon Pokémon de poche",lead:"Installe le firmware, prépare ta microSD et démarre ton aventure depuis une seule page sécurisée.",gens:"3 générations",round:"AMOLED rond",usbUpdate:"Mise à jour USB",unsupported:"⚠️ Ton navigateur ne prend pas en charge la connexion USB. Utilise <b>Chrome</b> ou <b>Edge</b> sur ordinateur.",installTitle:"Installation en deux étapes",firmwareTitle:"Installer le firmware",firmwareDesc:"Branche le PokeTama en USB-C, clique sur Installer, sélectionne son port puis attends la fin.",installButton:"Installer le firmware Moretro3D",browserBad:"Navigateur non compatible : utilise Chrome ou Edge.",https:"La connexion HTTPS est requise.",updateNote:"<b>Mise à jour :</b> choisis l'installation <u>sans effacer</u> pour conserver ton Pokémon et ta sauvegarde. L'effacement complet est réservé à une installation neuve.",sdTitle:"Préparer la microSD",sdDesc:"Insère la microSD, connecte le PokeTama puis installe automatiquement les 386 sprites, les décors et les trois musiques.",closeNote:"Ferme d'abord la fenêtre de l'étape 1 : un seul programme peut utiliser le port USB.",connect:"Connecter le PokeTama",installSd:"Tout installer sur la microSD",repairMusic:"Réparer uniquement les musiques",spritesNote:"<b>Sprites déjà installés ?</b> Le dernier bouton remplace uniquement les trois OST sans toucher aux autres fichiers.",before:"Avant de commencer",firstTitle:"Premier démarrage",firstDesc:"Choisis la langue, la génération 1, 2 ou 3, puis ton Pokémon de départ.",safeTitle:"Mise à jour sûre",safeDesc:"Ta sauvegarde reste intacte avec une installation sans effacement.",compatibleTitle:"Navigateur compatible",compatibleDesc:"Utilise Chrome ou Edge sur ordinateur avec un câble USB de données."},
@@ -250,7 +250,7 @@ document.getElementById('music').onclick = async () => {
   log(status(8));
   let items;
   try {
-    const resp = await fetch('https://moretro3d.github.io/Test-1/music.pak?v=1.50.8-moretro3d-v12-runner-display-fix', { cache: 'no-store' });
+    const resp = await fetch('https://moretro3d.github.io/Test-1/music.pak?v=1.51.0-moretro3d-v13', { cache: 'no-store' });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     items = parsePak(await resp.arrayBuffer()).filter(it => it.name.startsWith('music/') && it.name.endsWith('.wav'));
     if (items.length !== 3) throw new Error('le paquet ne contient pas exactement trois OST');
@@ -282,12 +282,16 @@ document.getElementById('auto').onclick = async () => {
   let items;
   try {
     // Bundle complet servi depuis GitHub Pages : sprites, decors et OST.
-    const resp = await fetch('https://moretro3d.github.io/Test-1/sprites.pak?v=1.50.8-moretro3d-v12-runner-display-fix', { cache: 'no-store' });
+    const resp = await fetch('https://moretro3d.github.io/Test-1/sprites.pak?v=1.51.0-moretro3d-v13', { cache: 'no-store' });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     items = parsePak(await resp.arrayBuffer());
   } catch (e) { log(status(16,e.message)); return; }
   log(status(17,items.length));
-  await sendAll(items);
+  const allOk = await sendAll(items);
+  if (allOk) {
+    log('Ressources principales installées. Installation automatique des 386 cris…');
+    await installAuthenticCries();
+  }
 };
 
 </script>

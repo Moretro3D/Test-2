@@ -16,20 +16,20 @@ workflow=(ROOT/".github/workflows/pages.yml").read_text(encoding="utf-8")
 
 def ok(cond,msg):
     if not cond:
-        raise SystemExit("FAIL V12: "+msg)
+        raise SystemExit("FAIL V13: "+msg)
     print("OK  ",msg)
 
-ok("1.50.8-moretro3d-v12-runner-display-fix" in ino and
-   "1.50.8-moretro3d-v12-runner-display-fix" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
-   "1.50.8-moretro3d-v12-runner-display-fix" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "1.50.8-moretro3d-v12-runner-display-fix" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
-   "1.50.8-moretro3d-v12-runner-display-fix" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
-   "version 1.50.8 coherente et caches installateur invalides")
-ok('gfx->setCursor(CX - 18, 366); gfx->print("V12")' in ino and
-   '<div class="version">PokeTama V12</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   '<div class="version">PokeTama V12</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
-   '"name": "PokeTama V12"' in (ROOT/"web/manifest.json").read_text(encoding="utf-8"),
-   "nom public limite a PokeTama V12 sur appareil, Test-2 et Shopify")
+ok("1.51.0-moretro3d-v13" in ino and
+   "1.51.0-moretro3d-v13" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.51.0-moretro3d-v13" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.51.0-moretro3d-v13" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   "1.51.0-moretro3d-v13" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.51.0 coherente et caches installateur invalides")
+ok('gfx->setCursor(CX - 18, 366); gfx->print("V13")' in ino and
+   '<div class="version">PokeTama V13</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   '<div class="version">PokeTama V13</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   '"name": "PokeTama V13"' in (ROOT/"web/manifest.json").read_text(encoding="utf-8"),
+   "nom public limite a PokeTama V13 sur appareil, Test-2 et Shopify")
 ok("<footer>" not in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    "<footer>" not in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
    "footer1" not in (ROOT/"web/index.html").read_text(encoding="utf-8") and
@@ -119,13 +119,15 @@ ok("/cries/%03u.wav" in audio and "WAVE" in audio and "playSpeciesChirp" in audi
    "386 cris fideles convertis en WAV 16 kHz sur SD avec secours synthetique")
 ok('id="cries"' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    'id="cries"' in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
-   "cries-installer.js?v=1.50.8" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "https://moretro3d.github.io/Test-1/cries-installer.js?v=1.50.8" in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
+   "cries-installer.js?v=1.51.0" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "https://moretro3d.github.io/Test-1/cries-installer.js?v=1.51.0" in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
    "bouton Cris integre aux importateurs USB GitHub et Shopify")
-ok((ROOT/"web/index.html").read_text(encoding="utf-8").count("installAuthenticCries()") == 1 and
-   (ROOT/"web/shopify.html").read_text(encoding="utf-8").count("installAuthenticCries()") == 1 and
+ok((ROOT/"web/index.html").read_text(encoding="utf-8").count("installAuthenticCries()") >= 2 and
+   (ROOT/"web/shopify.html").read_text(encoding="utf-8").count("installAuthenticCries()") >= 2 and
    "document.getElementById('cries').onclick = () => installAuthenticCries();" in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
-   "cris conserves sur un bouton separe pour reinstallation independante")
+   "cris inclus dans Tout installer et conserves sur un bouton de reinstallation independante")
+ok(pet_cpp.count("ageMinutes % 4 == 0) energy = clamp100(energy + 3)") == 2,
+   "recuperation d'energie legerement acceleree pendant le sommeil en ligne et hors ligne")
 ok("Verifier que la page correspond exactement au firmware" in workflow and
    'grep -q \'id="cries"\' web/index.html' in workflow and
    (ROOT/"ENVOYER_FIRMWARE_ET_PAGE_OFFICIELLE.bat").exists() and
@@ -173,7 +175,7 @@ ok("github.repository == 'Moretro3D/Test-2'" in workflow and
    "! grep -q 'location.replace' web/index.html" in workflow,
    "Test-2 affiche son Web Flasher sans redirection Shopify")
 test2_launcher=(ROOT/"OUVRIR_WEB_FLASHER_TEST_2.bat").read_text(encoding="utf-8")
-ok("https://moretro3d.github.io/Test-2/?v=1.50.8-moretro3d-v12-runner-display-fix" in test2_launcher,
+ok("https://moretro3d.github.io/Test-2/?v=1.51.0-moretro3d-v13" in test2_launcher,
    "lanceur direct Test-2 avec contournement du cache")
 scene=ino[ino.index("void drawScene("):ino.index("void drawStarterPokeball(")]
 ok("HORIZON-38" not in scene and "uint16_t sea=" not in scene and
@@ -658,4 +660,4 @@ if shutil.which("bash"):
 else:
     print("SKIP build_web.sh syntaxe (bash absent sur ce poste)")
 
-print("AUDIT FINAL V12 OK")
+print("AUDIT FINAL V13 OK")
