@@ -18,9 +18,7 @@ trap 'rm -rf "$TMP"' EXIT
 
 SKETCH="$TMP/TamaPoke"
 BUILD="$TMP/build"
-CACHE="${HOME}/.cache/arduino/poketama-build"
 mkdir -p "$SKETCH" "$BUILD" "$ROOT/web/firmware"
-mkdir -p "$CACHE"
 
 # Arduino exige que le fichier .ino principal porte le même nom que
 # le dossier du sketch. On copie donc toutes les sources dans TamaPoke/.
@@ -32,7 +30,6 @@ echo "Compilation..."
 arduino-cli compile \
   --fqbn "$FQBN" \
   --build-path "$BUILD" \
-  --build-cache-path "$CACHE" \
   "$SKETCH"
 
 echo "Copie des binaires pour le Web Flasher..."
@@ -72,6 +69,6 @@ echo "Audit intégral des évolutions #001-386..."
 python3 "$ROOT/tools/audit_evolutions.py"
 
 echo "Audit final V13 interface + combat + habitats..."
-python3 "$ROOT/tools/audit_final_v13.py"
+python3 "$ROOT/tools/audit_final_v12.py"
 
 echo "BUILD TERMINE"
