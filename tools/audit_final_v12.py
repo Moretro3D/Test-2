@@ -122,9 +122,10 @@ ok('id="cries"' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    "cries-installer.js?v=1.51.0" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    "https://moretro3d.github.io/Test-1/cries-installer.js?v=1.51.0" in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
    "bouton Cris integre aux importateurs USB GitHub et Shopify")
-ok((ROOT/"web/index.html").read_text(encoding="utf-8").count("installAuthenticCries()") >= 2 and
-   (ROOT/"web/shopify.html").read_text(encoding="utf-8").count("installAuthenticCries()") >= 2 and
-   "document.getElementById('cries').onclick = () => installAuthenticCries();" in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
+ok((ROOT/"web/index.html").read_text(encoding="utf-8").count("installAuthenticCries(criesOptions())") >= 2 and
+   (ROOT/"web/shopify.html").read_text(encoding="utf-8").count("installAuthenticCries(criesOptions())") >= 2 and
+   "const criesOptions = () => ({" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "writer, waitFor, sendOne, log" in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
    "cris inclus dans Tout installer et conserves sur un bouton de reinstallation independante")
 ok(pet_cpp.count("ageMinutes % 4 == 0) energy = clamp100(energy + 3)") == 2,
    "recuperation d'energie legerement acceleree pendant le sommeil en ligne et hors ligne")

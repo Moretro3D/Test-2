@@ -249,7 +249,13 @@ document.getElementById('connect').onclick = async () => {
   } catch (e) { log(status(6,e.message)); }
 };
 
-document.getElementById('cries').onclick = () => installAuthenticCries();
+const criesOptions = () => ({
+  writer, waitFor, sendOne, log,
+  button: document.getElementById('cries'),
+  bar: document.getElementById('bar'),
+  controls: [document.getElementById('auto'), document.getElementById('music')]
+});
+document.getElementById('cries').onclick = () => installAuthenticCries(criesOptions());
 
 document.getElementById('music').onclick = async () => {
   if (!writer) { log(status(7)); return; }
@@ -299,7 +305,7 @@ document.getElementById('auto').onclick = async () => {
   const allOk = await sendAll(items);
   if (allOk) {
     log('Ressources principales installées. Installation automatique des 386 cris…');
-    await installAuthenticCries();
+    await installAuthenticCries(criesOptions());
   }
 };
 
