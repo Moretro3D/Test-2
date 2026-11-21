@@ -10,6 +10,7 @@ manifest_path = web / "manifest.json"
 index_path = web / "index.html"
 sprites_path = web / "sprites.pak"
 music_path = web / "music.pak"
+cries_installer_path = web / "cries-installer.js"
 
 errors = []
 
@@ -24,6 +25,7 @@ require(index_path, "index.html", 100)
 require(manifest_path, "manifest.json", 50)
 require(sprites_path, "sprites.pak", 1024)
 require(music_path, "music.pak", 1000000)
+require(cries_installer_path, "cries-installer.js", 1000)
 
 if sprites_path.is_file():
     raw = sprites_path.read_bytes()
@@ -77,8 +79,14 @@ if index_path.is_file():
         errors.append("index.html ne référence pas manifest.json")
     if "esp-web-tools" not in html:
         errors.append("index.html ne charge pas ESP Web Tools")
-    if 'id="music"' not in html or "music.pak?" not in html:
-        errors.append("réparation musicale USB absente")
+    if html.count('id="auto"') != 1:
+        errors.append("bouton unique d'installation microSD absent ou dupliqué")
+    if 'id="music"' in html or 'id="cries"' in html:
+        errors.append("anciens boutons séparés musique/cris encore présents")
+    if "sprites.pak?" not in html:
+        errors.append("bundle sprites, décors et OST absent de l'installation complète")
+    if "installAuthenticCries(criesOptions())" not in html:
+        errors.append("386 cris absents de l'installation complète")
 
 if errors:
     print("ECHEC VERIFICATION WEB:")
@@ -93,4 +101,5 @@ print(" - ESP32-S3 OK")
 print(" - offsets firmware OK")
 print(" - 4 binaires firmware OK")
 print(" - sprites.pak OK")
-print(" - music.pak et réparation USB OK")
+print(" - bouton microSD unique OK")
+print(" - sprites, décors, OST et 386 cris installés ensemble")
