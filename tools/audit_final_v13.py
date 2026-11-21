@@ -185,6 +185,12 @@ ok("github.repository == 'Moretro3D/Test-2'" in workflow and
 test2_launcher=(ROOT/"OUVRIR_WEB_FLASHER_TEST_2.bat").read_text(encoding="utf-8")
 ok("https://moretro3d.github.io/Test-2/?v=1.51.2-moretro3d-v13" in test2_launcher,
    "lanceur direct Test-2 avec contournement du cache")
+push_scripts = [(ROOT/name).read_text(encoding="utf-8") for name in
+                ("ENVOYER_TEST_1.bat", "ENVOYER_TEST_2.bat", "ENVOYER_SUR_GITHUB.bat")]
+ok(all("config --global --add safe.directory" not in script and
+       "rebase origin/main" in script and "rebase --abort" in script
+       for script in push_scripts),
+   "envois GitHub sans conflit de proprietaire avec seconde tentative securisee")
 scene=ino[ino.index("void drawScene("):ino.index("void drawStarterPokeball(")]
 ok("HORIZON-38" not in scene and "uint16_t sea=" not in scene and
    "Aucun ancien habitat n'est dessine ici" in scene and

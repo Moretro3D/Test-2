@@ -11,9 +11,6 @@ if errorlevel 1 (
   pause
   exit /b 1
 )
-set "POKETAMA_SAFE_DIR=%CD:\=/%"
-git config --global --add safe.directory "%POKETAMA_SAFE_DIR%"
-if errorlevel 1 goto :connexion
 if not exist ".git\HEAD" git init
 git -c safe.directory="%CD%" branch -M main
 git -c safe.directory="%CD%" config user.name >nul 2>nul || git -c safe.directory="%CD%" config user.name "Moretro3D"
@@ -42,12 +39,24 @@ if errorlevel 1 (
 
 echo Envoi de la V13 sans effacement ni force push...
 git -c safe.directory="%CD%" -c http.sslBackend=openssl push -u origin main
-if errorlevel 1 goto :connexion
+if errorlevel 1 (
+  echo Le depot a change pendant la preparation. Nouvelle tentative securisee...
+  git -c safe.directory="%CD%" -c http.sslBackend=openssl fetch origin main
+  if errorlevel 1 goto :connexion
+  git -c safe.directory="%CD%" rebase origin/main
+  if errorlevel 1 goto :rebase
+  git -c safe.directory="%CD%" -c http.sslBackend=openssl push -u origin main
+  if errorlevel 1 goto :connexion
+)
 echo.
 echo TERMINE : ouvre https://github.com/Moretro3D/Test-2/actions
 echo Quand l'action est verte, lance OUVRIR_WEB_FLASHER_TEST_2.bat.
 pause
 exit /b 0
+
+:rebase
+git -c safe.directory="%CD%" rebase --abort >nul 2>nul
+goto :connexion
 
 :connexion
 echo.
