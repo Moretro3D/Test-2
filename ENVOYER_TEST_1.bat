@@ -37,7 +37,7 @@ echo Preparation simultanee du firmware et de la page officielle V13...
 git -c safe.directory="%CD%" add -A
 git -c safe.directory="%CD%" diff --cached --quiet
 if errorlevel 1 (
-  git -c safe.directory="%CD%" commit -m "PokeTama V13 correctif course 1.51.0"
+  git -c safe.directory="%CD%" commit -m "PokeTama V13 correctif course 1.51.2"
   if errorlevel 1 goto :connexion
 )
 

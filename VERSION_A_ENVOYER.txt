@@ -1,8 +1,8 @@
 PokeTama V13
 
-VERSION INTERNE : 1.51.0-moretro3d-v13
+VERSION INTERNE : 1.51.2-moretro3d-v13
 
-NOUVEAUTES DEPUIS LA V12 :
+NOUVEAUTES DEPUIS LA V13 :
 - Volume réglable précisément de 0 à 100 % avec un véritable curseur tactile.
 - Le curseur suit le doigt en direct et sauvegarde la valeur au relâchement.
 - La musique reste activable ou désactivable indépendamment des interactions.
@@ -19,7 +19,7 @@ NOUVEAUTES DEPUIS LA V12 :
 - « Tout installer sur la microSD » installe maintenant aussi automatiquement les 386 cris.
 - Le bouton séparé des cris reste disponible pour une réparation ciblée.
 - Correctif de l'installation des cris depuis Shopify.
-- Toutes les sauvegardes V12 et antérieures restent compatibles et ne sont pas effacées.
+- Toutes les sauvegardes V13 et antérieures restent compatibles et ne sont pas effacées.
 
 DEPLOIEMENT TEST :
 1. Extraire entièrement le ZIP.

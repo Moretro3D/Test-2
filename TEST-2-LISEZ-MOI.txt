@@ -1,6 +1,6 @@
 POKETAMA TEST-2 - VERSION NORMALE COMPLETE 386 POKEMON
 
-VERSION INTERNE : 1.51.0-moretro3d-v13
+VERSION INTERNE : 1.51.2-moretro3d-v13
 
 Cette version conserve l'interface et le fonctionnement normaux. Les sprites
 des 386 Pokémon restent installés, mais la Boîte n'ouvre plus artificiellement

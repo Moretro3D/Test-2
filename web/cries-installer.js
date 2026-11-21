@@ -5,6 +5,7 @@
   const CRY_BASE='https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/legacy/';
   const TARGET_RATE=16000;
   const cryEncoder=new TextEncoder();
+  const PROGRESS_KEY='poketama-cries-v13-progress';
 
   function putAscii(view, offset, text){
     for(let i=0;i<text.length;i++) view.setUint8(offset+i,text.charCodeAt(i));
@@ -78,14 +79,24 @@
       const AudioCtor=window.AudioContext||window.webkitAudioContext;
       if(!AudioCtor) throw new Error('conversion audio indisponible : utilise Chrome ou Edge');
       ctx=new AudioCtor();
-      cryLog('Téléchargement, conversion et copie des 386 cris fidèles…');
-      for(let id=1;id<=386;id++){
+      let completed=Math.max(0,Math.min(386,Number(localStorage.getItem(PROGRESS_KEY)||0)));
+      if(completed>=386){ completed=0; localStorage.setItem(PROGRESS_KEY,'0'); }
+      if(completed) cryLog('Reprise automatique à partir du cri '+(completed+1)+'/386.');
+      else cryLog('Téléchargement, conversion et copie des 386 cris fidèles…');
+      for(let id=completed+1;id<=386;id++){
         const wav=await fetchCry(id,ctx);
         const name='cries/'+String(id).padStart(3,'0')+'.wav';
-        if(!await crySend(name,wav)) throw new Error('transfert interrompu sur '+name);
+        let sent=false;
+        for(let attempt=1;attempt<=3 && !sent;attempt++){
+          sent=await crySend(name,wav);
+          if(!sent && attempt<3){ cryLog('Nouvelle tentative '+(attempt+1)+'/3 pour '+name+'…'); await new Promise(r=>setTimeout(r,1200)); }
+        }
+        if(!sent) throw new Error('transfert interrompu sur '+name);
+        localStorage.setItem(PROGRESS_KEY,String(id));
         if(fill){ fill.style.width=(id/386*100).toFixed(1)+'%'; fill.value=id/386*100; }
         if(id===1||id%10===0||id===386) cryLog('Cris installés : '+id+'/386');
       }
+      localStorage.removeItem(PROGRESS_KEY);
       cryLog('386/386 cris installés. Redémarre le PokeTama avec le bouton PWR.');
     }catch(error){
       cryLog('ÉCHEC CRIS : '+error.message+'. Relance le bouton pour recommencer proprement.');

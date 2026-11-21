@@ -333,8 +333,9 @@ bool sdSerialCommand(const String &line) {
   if (line == "PREPARE_CRIES") {
     if (!sdReady) { SD_MMC.end(); delay(120); sdBegin(); }
     if (!sdReady) { Serial.println("ERRSD"); return true; }
-    bool clean=clearSdTree("/cries");
-    bool dir=clean && SD_MMC.mkdir("/cries");
+    // Ne jamais effacer les cris déjà terminés : l'importateur peut reprendre
+    // après un câble instable ou un timeout au milieu des 386 fichiers.
+    bool dir=SD_MMC.exists("/cries") || SD_MMC.mkdir("/cries");
     Serial.println(dir ? "READY" : "ERRCLEAN");
     return true;
   }
@@ -395,7 +396,7 @@ bool sdSerialCommand(const String &line) {
     while (remaining > 0) {
       size_t want = remaining > sizeof(buf) ? sizeof(buf) : remaining;
       size_t received = 0;
-      uint32_t deadline = millis() + 8000;
+      uint32_t deadline = millis() + 15000;
       // readBytes() peut rendre un bloc partiel. Ne jamais envoyer l'ACK avant
       // d'avoir reçu exactement le bloc demandé, sinon navigateur et carte se
       // désynchronisent après quelques paquets.

@@ -19,12 +19,12 @@ def ok(cond,msg):
         raise SystemExit("FAIL V13: "+msg)
     print("OK  ",msg)
 
-ok("1.51.0-moretro3d-v13" in ino and
-   "1.51.0-moretro3d-v13" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
-   "1.51.0-moretro3d-v13" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "1.51.0-moretro3d-v13" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
-   "1.51.0-moretro3d-v13" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
-   "version 1.51.0 coherente et caches installateur invalides")
+ok("1.51.2-moretro3d-v13" in ino and
+   "1.51.2-moretro3d-v13" in (ROOT/"web/manifest.json").read_text(encoding="utf-8") and
+   "1.51.2-moretro3d-v13" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "1.51.2-moretro3d-v13" in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   "1.51.2-moretro3d-v13" in (ROOT/"tools/build_web.sh").read_text(encoding="utf-8"),
+   "version 1.51.2 coherente et caches installateur invalides")
 ok('gfx->setCursor(CX - 18, 366); gfx->print("V13")' in ino and
    '<div class="version">PokeTama V13</div>' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    '<div class="version">PokeTama V13</div>' in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
@@ -114,23 +114,30 @@ ok("drawBiomeCanvasBackground(biome);" in ino and
 cries_web=(ROOT/"web/cries-installer.js").read_text(encoding="utf-8")
 ok("/cries/%03u.wav" in audio and "WAVE" in audio and "playSpeciesChirp" in audio and
    "PREPARE_CRIES" in sdmon and 'SD_MMC.mkdir("/cries")' in sdmon and
-   "PokeAPI/cries" in cries_web and "for(let id=1;id<=386;id++)" in cries_web and
+   "PokeAPI/cries" in cries_web and "for(let id=completed+1;id<=386;id++)" in cries_web and
    "TARGET_RATE=16000" in cries_web and "audioBufferToWav16" in cries_web,
    "386 cris fideles convertis en WAV 16 kHz sur SD avec secours synthetique")
-ok('id="cries"' in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   'id="cries"' in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
-   "cries-installer.js?v=1.51.0" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
-   "https://moretro3d.github.io/Test-1/cries-installer.js?v=1.51.0" in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
-   "bouton Cris integre aux importateurs USB GitHub et Shopify")
-ok((ROOT/"web/index.html").read_text(encoding="utf-8").count("installAuthenticCries(criesOptions())") >= 2 and
-   (ROOT/"web/shopify.html").read_text(encoding="utf-8").count("installAuthenticCries(criesOptions())") >= 2 and
+ok("PROGRESS_KEY" in cries_web and "attempt<=3" in cries_web and
+   "localStorage.setItem(PROGRESS_KEY,String(id))" in cries_web and
+   'SD_MMC.exists("/cries") || SD_MMC.mkdir("/cries")' in sdmon and
+   'clearSdTree("/cries")' not in sdmon and "millis() + 15000" in sdmon,
+   "installation des cris reprenable avec trois tentatives et sans effacer les fichiers termines")
+ok('id="cries"' not in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   'id="music"' not in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   'id="cries"' not in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   'id="music"' not in (ROOT/"web/shopify.html").read_text(encoding="utf-8") and
+   "cries-installer.js?v=1.51.2" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
+   "https://moretro3d.github.io/Test-1/cries-installer.js?v=1.51.2" in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
+   "un seul bouton microSD sur les importateurs USB GitHub et Shopify")
+ok((ROOT/"web/index.html").read_text(encoding="utf-8").count("installAuthenticCries(criesOptions())") == 1 and
+   (ROOT/"web/shopify.html").read_text(encoding="utf-8").count("installAuthenticCries(criesOptions())") == 1 and
    "const criesOptions = () => ({" in (ROOT/"web/index.html").read_text(encoding="utf-8") and
    "writer, waitFor, sendOne, log" in (ROOT/"web/shopify.html").read_text(encoding="utf-8"),
-   "cris inclus dans Tout installer et conserves sur un bouton de reinstallation independante")
+   "sprites decors OST et cris inclus dans le bouton unique Tout installer")
 ok(pet_cpp.count("ageMinutes % 4 == 0) energy = clamp100(energy + 3)") == 2,
    "recuperation d'energie legerement acceleree pendant le sommeil en ligne et hors ligne")
 ok("Verifier que la page correspond exactement au firmware" in workflow and
-   'grep -q \'id="cries"\' web/index.html' in workflow and
+   '! grep -q \'id="cries"\' web/index.html' in workflow and
    (ROOT/"ENVOYER_FIRMWARE_ET_PAGE_OFFICIELLE.bat").exists() and
    "Firmware et page officielle" in (ROOT/"ENVOYER_TEST_1.bat").read_text(encoding="utf-8"),
    "firmware et page officielle publies ensemble avec verification bloquante")
@@ -176,7 +183,7 @@ ok("github.repository == 'Moretro3D/Test-2'" in workflow and
    "! grep -q 'location.replace' web/index.html" in workflow,
    "Test-2 affiche son Web Flasher sans redirection Shopify")
 test2_launcher=(ROOT/"OUVRIR_WEB_FLASHER_TEST_2.bat").read_text(encoding="utf-8")
-ok("https://moretro3d.github.io/Test-2/?v=1.51.0-moretro3d-v13" in test2_launcher,
+ok("https://moretro3d.github.io/Test-2/?v=1.51.2-moretro3d-v13" in test2_launcher,
    "lanceur direct Test-2 avec contournement du cache")
 scene=ino[ino.index("void drawScene("):ino.index("void drawStarterPokeball(")]
 ok("HORIZON-38" not in scene and "uint16_t sea=" not in scene and
