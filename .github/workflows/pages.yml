@@ -72,13 +72,13 @@ jobs:
         run: python3 tools/verify_web.py
       - name: Verifier que la page correspond exactement au firmware
         run: |
-          grep -q '1.51.2-moretro3d-v13' web/manifest.json
+          grep -q '1.51.3-moretro3d-v13' web/manifest.json
           test "$(grep -c 'id="auto"' web/index.html)" -eq 1
           test "$(grep -c 'id="auto"' web/shopify.html)" -eq 1
           ! grep -q 'id="cries"' web/index.html
           ! grep -q 'id="music"' web/index.html
-          grep -q 'cries-installer.js?v=1.51.2' web/index.html
-          grep -q 'https://moretro3d.github.io/Test-1/cries-installer.js?v=1.51.2' web/shopify.html
+          grep -q 'cries-installer.js?v=1.51.3' web/index.html
+          grep -q 'https://moretro3d.github.io/Test-1/cries-installer.js?v=1.51.3' web/shopify.html
           test -s web/cries-installer.js
           grep -q 'for(let id=completed+1;id<=386;id++)' web/cries-installer.js
       - name: Afficher directement le Web Flasher sur Test-2

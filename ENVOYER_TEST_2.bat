@@ -33,7 +33,7 @@ echo Preparation des fichiers V13...
 git -c safe.directory="%CD%" add -A
 git -c safe.directory="%CD%" diff --cached --quiet
 if errorlevel 1 (
-  git -c safe.directory="%CD%" commit -m "PokeTama V13 correctif course 1.51.2"
+  git -c safe.directory="%CD%" commit -m "PokeTama V13 correctif course 1.51.3"
   if errorlevel 1 goto :connexion
 )
 

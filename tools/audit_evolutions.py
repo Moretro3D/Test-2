@@ -55,8 +55,10 @@ if re.search(r'evolveLevel\s*\+\s*(?:pet\.)?careMistakes',combined):
     raise SystemExit("FAIL: careMistakes modifie encore un niveau d'évolution")
 if E[172][1:] != (25,18) or E[25][1:] != (26,30):
     raise SystemExit("FAIL chaîne Pichu -> Pikachu -> Raichu")
-if "if (!pet.evolving() && pet.canEvolveNow())" not in ino or "pet.evolve();" not in ino:
-    raise SystemExit("FAIL déclenchement automatique absent")
+if "if (!pet.evolving() && pet.canEvolveNow())" in ino:
+    raise SystemExit("FAIL l'évolution automatique contourne encore le choix du joueur")
+if "choiceKind = 1; choiceUntil = millis() + 12000" not in ino or "pet.evolve();" not in ino:
+    raise SystemExit("FAIL dialogue tactile Évoluer / Garder absent")
 if "isEgg() || sleeping || ceremony != CER_NONE || evolving()" in pet:
     raise SystemExit("FAIL tests moteur : canEvolveNow interdit une évolution explicite pendant l'animation")
 if "evo = T(S_SPECIAL_EVOLUTION)" in ino:
@@ -68,5 +70,5 @@ print(" - aucun cycle")
 print(" - aucun seuil de niveau non croissant")
 print(" - toutes les évolutions ont un niveau de 1 à 100")
 print(" - Pichu niveau 100 évolue en deux étapes jusqu'à Raichu")
-print(" - déclenchement automatique après chaque animation")
+print(" - choix tactile Évoluer / Garder au niveau requis")
 print(" - careMistakes ne change plus jamais le seuil")

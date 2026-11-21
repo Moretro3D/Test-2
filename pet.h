@@ -235,7 +235,7 @@ public:
     return 1.0f - (float)left / (float)EVOLVE_ANIM_MS;
   }
   bool canEvolveNow() const;  // condiciones de evolucion cumplidas (lista)
-  void evolve();              // dispara la transformacion (la llama un toque del usuario)
+  void evolve();              // déclenche la transformation après confirmation tactile
   bool wantEvolveButton() const { return canEvolveNow() && level() > evoDeclinedLv; }
   void declineEvolve() { evoDeclinedLv = level(); }              // re-ofrece al subir de nivel
   // Premier demarrage : uniquement les neuf starters 1G/2G/3G.

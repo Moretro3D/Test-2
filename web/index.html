@@ -71,7 +71,7 @@
   <section class="step">
     <div class="step-head"><span class="num">1</span><h2 data-i18n="firmwareTitle">Installer le firmware</h2></div>
     <p data-i18n="firmwareDesc">Branche le PokeTama en USB-C, clique sur Installer, sélectionne son port puis attends la fin.</p>
-    <esp-web-install-button manifest="manifest.json?v=1.51.2-moretro3d-v13">
+    <esp-web-install-button manifest="manifest.json?v=1.51.3-moretro3d-v13">
       <button slot="activate" data-i18n="installButton">Installer le firmware Moretro3D</button>
       <span slot="unsupported" data-i18n="browserBad">Navigateur non compatible : utilise Chrome ou Edge.</span>
       <span slot="not-allowed" data-i18n="https">La connexion HTTPS est requise.</span>
@@ -105,7 +105,7 @@
 <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 <script src="configurator.js?v=9.47" defer></script>
 <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js"></script>
-<script src="cries-installer.js?v=1.51.2"></script>
+<script src="cries-installer.js?v=1.51.3"></script>
 <script>
 const I18N = {
   fr:{eyebrow:"Compagnon Pokémon de poche",lead:"Installe le firmware, prépare ta microSD et démarre ton aventure depuis une seule page sécurisée.",gens:"3 générations",round:"AMOLED rond",usbUpdate:"Mise à jour USB",unsupported:"⚠️ Ton navigateur ne prend pas en charge la connexion USB. Utilise <b>Chrome</b> ou <b>Edge</b> sur ordinateur.",installTitle:"Installation en deux étapes",firmwareTitle:"Installer le firmware",firmwareDesc:"Branche le PokeTama en USB-C, clique sur Installer, sélectionne son port puis attends la fin.",installButton:"Installer le firmware Moretro3D",browserBad:"Navigateur non compatible : utilise Chrome ou Edge.",https:"La connexion HTTPS est requise.",updateNote:"<b>Mise à jour :</b> choisis l'installation <u>sans effacer</u> pour conserver ton Pokémon et ta sauvegarde. L'effacement complet est réservé à une installation neuve.",sdTitle:"Préparer la microSD",sdDesc:"Insère la microSD, connecte le PokeTama puis installe les sprites, les décors, les trois OST et les 386 cris avec un seul bouton.",closeNote:"Ferme d'abord la fenêtre de l'étape 1 : un seul programme peut utiliser le port USB.",connect:"Connecter le PokeTama",installSd:"Tout installer sur la microSD",repairMusic:"Réparer uniquement les musiques",spritesNote:"",before:"Avant de commencer",firstTitle:"Premier démarrage",firstDesc:"Choisis la langue, la génération 1, 2 ou 3, puis ton Pokémon de départ.",safeTitle:"Mise à jour sûre",safeDesc:"Ta sauvegarde reste intacte avec une installation sans effacement.",compatibleTitle:"Navigateur compatible",compatibleDesc:"Utilise Chrome ou Edge sur ordinateur avec un câble USB de données."},
@@ -265,7 +265,7 @@ document.getElementById('auto').onclick = async () => {
   let items;
   try {
     // Bundle complet servi depuis GitHub Pages : sprites, decors et OST.
-    const resp = await fetch('sprites.pak?v=1.51.2-moretro3d-v13', { cache: 'no-store' });
+    const resp = await fetch('sprites.pak?v=1.51.3-moretro3d-v13', { cache: 'no-store' });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     items = parsePak(await resp.arrayBuffer());
   } catch (e) { log(status(16,e.message)); return; }

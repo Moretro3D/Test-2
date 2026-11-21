@@ -920,6 +920,7 @@ uint8_t Pet::applyRunnerResult(uint8_t score) {
   int burn = (int)weight - score;
   weight = burn > 0 ? burn : 0;
   if (score >= 4) heartUntil = millis() + HEART_MS;
+  if (score > gameHi) gameHi = score;
   addBond(1);
   registerCare();
   noteDailyGoal(DAILY_GOAL_PLAY, 1);

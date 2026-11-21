@@ -40,7 +40,7 @@
 
 // Version del firmware. Subir este numero en cada release (y manifest.json para
 // el instalador web). Se muestra en la pantalla de ajustes y por serie al arrancar.
-#define FW_VERSION "1.51.2-moretro3d-v13"
+#define FW_VERSION "1.51.3-moretro3d-v13"
 #define HELP_PAGE_COUNT 6
 #define HELP_LINE_COUNT 6
 
@@ -666,17 +666,8 @@ void loop() {
   uint32_t loopStart = now;
   pet.update(now);
 
-  // Évolution automatique, y compris pour un ancien Pokémon déjà niveau 100.
-  // Une seule forme à la fois : la suivante attend la fin de l'animation.
-  if (!pet.evolving() && pet.canEvolveNow()) {
-    const int16_t oldSpecies = pet.speciesId;
-    evoPmd.unload();
-    pet.evolve();
-    evoPmd.load(oldSpecies, pet.shiny);
-    sdDirty = true;
-    markUiDirty();
-    lockTouchBrief();
-  }
+  // Au niveau requis, le bouton d'évolution laisse à nouveau le choix au
+  // joueur. Les anciennes conditions « spéciales » restent supprimées.
   handleTouch();
   handleSerial();
   ensureMon();
@@ -2380,7 +2371,7 @@ int ballHitRadius() {
 
 void gameTap(int16_t x, int16_t y) {
   if (gameMode == 5) {
-    if (gameOverUntil) return;
+    if (gameOverUntil) { gameOpen = false; sfxPlay(SFX_TAP); return; }
     if (y < 72) { gameOpen = false; sfxPlay(SFX_TAP); return; }
     if (runnerGrounded) {
       runnerVY = -9.8f;
@@ -2544,9 +2535,10 @@ void finishTypeGame() {
 
 void finishRunnerGame() {
   if (gameOverUntil) return;
+  gameNewHi = (gameScore > pet.gameHi);
   gameGain = pet.applyRunnerResult(gameScore);
-  sfxPlay(gameScore >= 6 ? SFX_LEVEL : SFX_MINIGAME_BAD);
-  gameOverUntil = millis() + 4200;
+  sfxPlay(gameNewHi && gameScore > 0 ? SFX_MEDAL : (gameScore >= 6 ? SFX_LEVEL : SFX_MINIGAME_BAD));
+  gameOverUntil = millis() + 5200;
 }
 
 void typeTap(int16_t x, int16_t y) {
@@ -3060,6 +3052,8 @@ void renderRunnerGame() {
   static const char *const runTitle[LANG_COUNT] = { "CARRERA", "RUN", "COURSE", "LAUF", "CORSA", "CORRIDA" };
   static const char *const jumpHint[LANG_COUNT] = { "TOCA PARA SALTAR", "TOUCH TO JUMP", "TOUCHE POUR SAUTER", "TIPPE ZUM SPRUNG", "TOCCA PER SALTARE", "TOCA PARA SALTAR" };
   static const char *const agilityWord[LANG_COUNT] = { "AGILIDAD", "AGILITY", "AGILITE", "BEWEGLICHKEIT", "AGILITA", "AGILIDADE" };
+  static const char *const finishTitle[LANG_COUNT] = { "CARRERA TERMINADA", "RUN COMPLETE", "COURSE TERMINEE", "LAUF BEENDET", "CORSA FINITA", "CORRIDA TERMINADA" };
+  static const char *const tapClose[LANG_COUNT] = { "TOCA PARA CERRAR", "TOUCH TO CLOSE", "TOUCHE POUR FERMER", "TIPPE ZUM SCHLIESSEN", "TOCCA PER CHIUDERE", "TOCA PARA FECHAR" };
   uint8_t uiLang = gLang < LANG_COUNT ? gLang : LANG_EN;
   gfx->fillRect(0, 0, 466, 120, skyTop);
   gfx->fillRect(0, 120, 466, 120, skyMid);
@@ -3079,7 +3073,9 @@ void renderRunnerGame() {
   gfx->fillRect(ox, groundY - 24, 9, 8, C565(0x31, 0x9b, 0x58));
   gfx->fillRect(ox + 19, groundY - 18, 9, 8, C565(0x31, 0x9b, 0x58));
 
-  // Deux pastilles opaques, bien dans la zone ronde, au lieu d'une barre illisible.
+  // HUD compact à double bordure : le score reste lisible sur tous les ciels.
+  gfx->fillRoundRect(69, 21, 156, 52, 16, C565(0x34, 0x45, 0x66));
+  gfx->fillRoundRect(241, 21, 156, 52, 16, C565(0x34, 0x45, 0x66));
   gfx->fillRoundRect(72, 24, 150, 46, 14, ink);
   gfx->fillRoundRect(244, 24, 150, 46, 14, ink);
   gfx->setTextColor(UI_WHITE);
@@ -3093,16 +3089,42 @@ void renderRunnerGame() {
 
   if (gameOverUntil) {
     if (now > gameOverUntil) { gameOpen = false; return; }
-    gfx->fillRoundRect(91, 170, 284, 112, 18, C565(0xf5, 0xfb, 0xff));
-    gfx->drawRoundRect(91, 170, 284, 112, 18, ink);
-    gfx->setTextSize(3);
-    gfx->setCursor(126, 190);
-    gfx->print(scoreText);
+    const uint16_t panel = C565(0x12, 0x1b, 0x31);
+    const uint16_t panelEdge = C565(0x55, 0xe0, 0xd0);
+    const uint16_t gold = C565(0xff, 0xd1, 0x66);
+    gfx->fillRoundRect(76, 139, 314, 214, 22, C565(0x2d, 0x3d, 0x5f));
+    gfx->fillRoundRect(80, 135, 306, 214, 22, panel);
+    gfx->drawRoundRect(80, 135, 306, 214, 22, panelEdge);
+    gfx->fillRoundRect(105, 151, 256, 8, 4, panelEdge);
+    gfx->setTextColor(UI_WHITE);
     gfx->setTextSize(2);
+    gfx->setCursor(CX - strlen(finishTitle[uiLang]) * 6, 171);
+    gfx->print(finishTitle[uiLang]);
+    gfx->setTextColor(gold);
+    gfx->setTextSize(3);
+    gfx->setCursor(CX - strlen(scoreText) * 9, 207);
+    gfx->print(scoreText);
+    char recordText[24];
+    gfx->setTextSize(2);
+    if (gameNewHi && gameScore > 0) {
+      gfx->setTextColor(gold);
+      gfx->setCursor(CX - strlen(T(S_NEW_RECORD)) * 6, 247);
+      gfx->print(T(S_NEW_RECORD));
+    } else {
+      snprintf(recordText, sizeof(recordText), T(S_RECORD_FMT), pet.gameHi);
+      gfx->setTextColor(C565(0xb8, 0xc6, 0xe5));
+      gfx->setCursor(CX - strlen(recordText) * 6, 247);
+      gfx->print(recordText);
+    }
     char gainText[40];
     snprintf(gainText, sizeof(gainText), "+%u %s", gameGain, agilityWord[uiLang]);
-    gfx->setCursor(CX - strlen(gainText) * 6, 242);
+    gfx->setTextColor(panelEdge);
+    gfx->setCursor(CX - strlen(gainText) * 6, 277);
     gfx->print(gainText);
+    gfx->setTextColor(C565(0xb8, 0xc6, 0xe5));
+    gfx->setTextSize(1);
+    gfx->setCursor(CX - strlen(tapClose[uiLang]) * 3, 320);
+    gfx->print(tapClose[uiLang]);
   } else {
     gfx->setTextSize(2);
     gfx->fillRoundRect(108, 394, 250, 38, 12, C565(0xff, 0xf3, 0xc7));

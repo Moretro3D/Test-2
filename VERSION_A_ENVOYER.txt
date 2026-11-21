@@ -1,6 +1,6 @@
 PokeTama V13
 
-VERSION INTERNE : 1.51.2-moretro3d-v13
+VERSION INTERNE : 1.51.3-moretro3d-v13
 
 NOUVEAUTES DEPUIS LA V13 :
 - Volume réglable précisément de 0 à 100 % avec un véritable curseur tactile.
